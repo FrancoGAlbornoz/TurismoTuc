@@ -8,7 +8,7 @@ import { pool } from "../config/DB.js";
 // Listar todos los turistas activos
 export const getTuristas = (req, res) => {
   const sql = `
-    SELECT id_turista, nombre, apellido, email, telefono, direccion, nacionalidad
+    SELECT id_turista, nombre, apellido, dni, email, telefono, direccion, nacionalidad
     FROM Turistas
     WHERE eliminado = 0
     ORDER BY nombre ASC
@@ -27,7 +27,7 @@ export const getTuristas = (req, res) => {
 export const getTuristaById = (req, res) => {
   const { id } = req.params;
   const sql = `
-    SELECT id_turista, nombre, apellido, email, telefono, direccion, nacionalidad
+    SELECT id_turista, nombre, apellido, dni, email, telefono, direccion, nacionalidad
     FROM Turistas
     WHERE id_turista = ? AND eliminado = 0
   `;
@@ -44,20 +44,23 @@ export const getTuristaById = (req, res) => {
 
 // Crear un nuevo turista
 export const createTurista = (req, res) => {
-  const { nombre, apellido, email, telefono, direccion, nacionalidad } = req.body;
+  const { nombre, apellido, dni, email, telefono, direccion, nacionalidad } = req.body;
 
-  if (!nombre || !apellido)
-    return res.status(400).json({ message: "Faltan datos obligatorios" });
+  if (!nombre || !apellido || !dni)
+    return res.status(400).json({ message: "Faltan datos obligatorios (nombre, apellido o DNI)" });
 
   const sql = `
-    INSERT INTO Turistas (nombre, apellido, email, telefono, direccion, nacionalidad)
-    VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO Turistas (nombre, apellido, dni, email, telefono, direccion, nacionalidad)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
   `;
-  const values = [nombre, apellido, email, telefono, direccion, nacionalidad];
+  const values = [nombre, apellido, dni, email, telefono, direccion, nacionalidad];
 
   pool.query(sql, values, (err, result) => {
     if (err) {
       console.error("Error al crear turista:", err);
+      if (err.code === "ER_DUP_ENTRY") {
+        return res.status(400).json({ message: "El DNI ingresado ya existe" });
+      }
       return res.status(500).json({ message: "Error al crear turista" });
     }
     res.status(201).json({ message: "Turista agregado correctamente", id: result.insertId });
@@ -67,18 +70,21 @@ export const createTurista = (req, res) => {
 // Modificar un turista existente
 export const updateTurista = (req, res) => {
   const { id } = req.params;
-  const { nombre, apellido, email, telefono, direccion, nacionalidad } = req.body;
+  const { nombre, apellido, dni, email, telefono, direccion, nacionalidad } = req.body;
 
   const sql = `
     UPDATE Turistas
-    SET nombre=?, apellido=?, email=?, telefono=?, direccion=?, nacionalidad=?
+    SET nombre=?, apellido=?, dni=?, email=?, telefono=?, direccion=?, nacionalidad=?
     WHERE id_turista=? AND eliminado=0
   `;
-  const values = [nombre, apellido, email, telefono, direccion, nacionalidad, id];
+  const values = [nombre, apellido, dni, email, telefono, direccion, nacionalidad, id];
 
   pool.query(sql, values, (err, result) => {
     if (err) {
       console.error("Error al actualizar turista:", err);
+      if (err.code === "ER_DUP_ENTRY") {
+        return res.status(400).json({ message: "El DNI ingresado ya existe" });
+      }
       return res.status(500).json({ message: "Error al actualizar turista" });
     }
     if (result.affectedRows === 0)
@@ -106,9 +112,8 @@ export const deleteTurista = (req, res) => {
   });
 };
 
-
 // =============================
-// RESERVAS DE UN TURISTA (VERSIÓN FINAL CON TU BD)
+// RESERVAS DE UN TURISTA
 // =============================
 export const getReservasByTurista = (req, res) => {
   const { id } = req.params;
@@ -122,7 +127,7 @@ export const getReservasByTurista = (req, res) => {
       r.monto_total,
       r.estado_reserva,
       r.fecha_reserva,
-      DATE_FORMAT(f.fecha, '%Y-%m-%d') AS fecha_salida,   -- 👈 alias consistente con la UI
+      DATE_FORMAT(f.fecha, '%Y-%m-%d') AS fecha_salida,
       f.hora_salida
     FROM Reservas r
     JOIN FechasExcursion f ON r.id_fecha = f.id_fecha

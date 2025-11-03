@@ -31,10 +31,10 @@ export default function MainTuristas() {
       setError("");
       setMensaje("");
 
-      const res = await axios.delete(`http://localhost:8000/api/turistas/${id}`);
+      await axios.delete(`http://localhost:8000/api/turistas/${id}`);
       setMensaje("✅ Turista eliminado correctamente");
       setTuristas(turistas.filter((t) => t.id_turista !== id));
-      
+
       // Limpiar mensaje después de 2.5 segundos
       setTimeout(() => setMensaje(""), 2500);
     } catch (err) {
@@ -48,8 +48,8 @@ export default function MainTuristas() {
       <Card.Body>
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h5 className="fw-bold text-success mb-0">Gestión de Turistas</h5>
-          <Button 
-            variant="success" 
+          <Button
+            variant="success"
             size="sm"
             onClick={() => navigate("/dashboard-admin/turistas/create")}
           >
@@ -65,6 +65,7 @@ export default function MainTuristas() {
             <tr>
               <th>ID</th>
               <th>Nombre</th>
+              <th>DNI</th>
               <th>Email</th>
               <th>Teléfono</th>
               <th>Acciones</th>
@@ -75,7 +76,8 @@ export default function MainTuristas() {
               turistas.map((t) => (
                 <tr key={t.id_turista}>
                   <td>{t.id_turista}</td>
-                  <td>{t.nombre}</td>
+                  <td>{t.nombre} {t.apellido}</td>
+                  <td>{t.dni}</td>
                   <td>{t.email}</td>
                   <td>{t.telefono}</td>
                   <td>
@@ -109,7 +111,7 @@ export default function MainTuristas() {
               ))
             ) : (
               <tr>
-                <td colSpan="5" className="text-center text-muted py-3">
+                <td colSpan="6" className="text-center text-muted py-3">
                   No hay turistas registrados
                 </td>
               </tr>

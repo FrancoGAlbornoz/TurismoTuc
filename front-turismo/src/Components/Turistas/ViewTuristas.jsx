@@ -12,7 +12,6 @@ export default function ViewTurista() {
   useEffect(() => {
     const fetchTuristaYReservas = async () => {
       try {
-        // Obtener info del turista
         const [turistaRes, reservasRes] = await Promise.all([
           axios.get(`http://localhost:8000/api/turistas/${id}`),
           axios.get(`http://localhost:8000/api/turistas/${id}/reservas`),
@@ -40,15 +39,28 @@ export default function ViewTurista() {
         <h4 className="text-success fw-bold mb-3">Información del Turista</h4>
 
         <div className="row mb-2">
-          <div className="col-md-6"><strong>Nombre:</strong> {turista.nombre} {turista.apellido}</div>
-          <div className="col-md-6"><strong>Email:</strong> {turista.email}</div>
+          <div className="col-md-6">
+            <strong>Nombre:</strong> {turista.nombre} {turista.apellido}
+          </div>
+          <div className="col-md-6">
+            <strong>DNI:</strong> {turista.dni}
+          </div>
         </div>
         <div className="row mb-2">
-          <div className="col-md-6"><strong>Teléfono:</strong> {turista.telefono}</div>
-          <div className="col-md-6"><strong>Dirección:</strong> {turista.direccion || "—"}</div>
+          <div className="col-md-6">
+            <strong>Email:</strong> {turista.email}
+          </div>
+          <div className="col-md-6">
+            <strong>Teléfono:</strong> {turista.telefono}
+          </div>
         </div>
-        <div className="row mb-4">
-          <div className="col-md-6"><strong>Nacionalidad:</strong> {turista.nacionalidad || "—"}</div>
+        <div className="row mb-2">
+          <div className="col-md-6">
+            <strong>Dirección:</strong> {turista.direccion || "—"}
+          </div>
+          <div className="col-md-6">
+            <strong>Nacionalidad:</strong> {turista.nacionalidad || "—"}
+          </div>
         </div>
 
         <hr />
