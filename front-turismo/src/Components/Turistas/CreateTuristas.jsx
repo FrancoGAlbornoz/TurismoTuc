@@ -7,10 +7,11 @@ export default function CreateTurista() {
   const [turista, setTurista] = useState({
     nombre: "",
     apellido: "",
+    dni: "",
     email: "",
     telefono: "",
     direccion: "",
-    nacionalidad: ""
+    nacionalidad: "",
   });
   const [error, setError] = useState("");
   const [mensaje, setMensaje] = useState("");
@@ -25,7 +26,10 @@ export default function CreateTurista() {
     setMensaje("");
 
     try {
-      const res = await axios.post("http://localhost:8000/api/turistas", turista);
+      const res = await axios.post(
+        "http://localhost:8000/api/turistas",
+        turista
+      );
       setMensaje(res.data.message);
       setTimeout(() => navigate("/dashboard-admin/turistas"), 1500);
     } catch (err) {
@@ -68,6 +72,17 @@ export default function CreateTurista() {
             </div>
           </div>
 
+          <div className="mb-3">
+            <label className="form-label">Documento (DNI)</label>
+            <input
+              type="text"
+              name="dni"
+              className="form-control"
+              value={turista.dni}
+              onChange={handleChange}
+              required
+            />
+          </div>
           <div className="row mb-3">
             <div className="col-md-6">
               <label className="form-label">Email</label>
@@ -114,10 +129,15 @@ export default function CreateTurista() {
           </div>
 
           <div className="d-flex justify-content-between">
-            <Link to="/dashboard-admin/turistas" className="btn btn-outline-secondary">
+            <Link
+              to="/dashboard-admin/turistas"
+              className="btn btn-outline-secondary"
+            >
               ← Volver
             </Link>
-            <button type="submit" className="btn btn-success">Guardar Turista</button>
+            <button type="submit" className="btn btn-success">
+              Guardar Turista
+            </button>
           </div>
         </form>
       </div>
