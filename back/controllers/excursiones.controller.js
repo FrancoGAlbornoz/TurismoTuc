@@ -6,7 +6,7 @@ import { pool } from "../config/DB.js";
 // =============================
 // Obtener todas las excursiones
 export const getExcursiones = (req, res) => {
-  const { ubicacion, precio_min, precio_max, duracion, estado } = req.query;
+  const { ubicacion, precio_min, precio_max, duracion, estado, q } = req.query;
 
   let sql = `
     SELECT id_excursion, titulo, descripcion, precio_base, duracion, 
@@ -15,6 +15,12 @@ export const getExcursiones = (req, res) => {
     WHERE eliminado = 0
   `;
   const values = [];
+
+  // 🔍 Búsqueda textual por título o ubicación
+  if (q) {
+    sql += " AND (titulo LIKE ? OR ubicacion LIKE ?)";
+    values.push(`%${q}%`, `%${q}%`);
+  }
 
   if (ubicacion) {
     sql += " AND ubicacion LIKE ?";

@@ -19,6 +19,21 @@ export default function MainExcursiones() {
     }
   };
 
+  const handleEliminar = async (id) => {
+    if (!window.confirm("¿Estás seguro de que querés eliminar esta excursión?")) return;
+
+    try {
+      const res = await axios.delete(`http://localhost:8000/api/excursiones/${id}`);
+      setMensaje(res.data.message);
+      setError("");
+      fetchExcursiones(); // recarga la lista
+    } catch (err) {
+      console.error("Error al eliminar excursión:", err);
+      setError("No se pudo eliminar la excursión.");
+      setMensaje("");
+    }
+  };
+
   useEffect(() => {
     fetchExcursiones();
   }, []);
@@ -28,8 +43,8 @@ export default function MainExcursiones() {
       <Card.Body>
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h5 className="fw-bold text-success mb-0">Gestión de Excursiones</h5>
-          <Button 
-            variant="success" 
+          <Button
+            variant="success"
             size="sm"
             onClick={() => navigate("/dashboard-admin/excursiones/create")}
           >
@@ -80,6 +95,14 @@ export default function MainExcursiones() {
                         onClick={() => navigate(`/dashboard-admin/excursiones/edit/${e.id_excursion}`)}
                       >
                         <i className="bi bi-pencil"></i>
+                      </Button>
+
+                      <Button
+                        variant="outline-danger"
+                        size="sm"
+                        onClick={() => handleEliminar(e.id_excursion)}
+                      >
+                        <i className="bi bi-trash"></i>
                       </Button>
                     </div>
                   </td>

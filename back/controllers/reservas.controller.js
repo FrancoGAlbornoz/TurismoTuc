@@ -7,7 +7,7 @@ import { pool } from "../config/DB.js";
 
 // Obtener las reservas con información relacionada y filtro
 export const getReservas = (req, res) => {
-  console.log("Query recibida:", req.query);
+  //console.log("Query recibida:", req.query);
 
   const { filtro, estadoreserva, fechaDesde, fechaHasta } = req.query;
   const condiciones = [];
@@ -32,7 +32,7 @@ export const getReservas = (req, res) => {
     condiciones.push(`DATE(r.fecha_reserva) <= '${fechaHasta}'`);
   }
 
-  console.log("Condiciones generadas:", condiciones);
+  //console.log("Condiciones generadas:", condiciones);
 
   const whereClause =
     condiciones.length > 0 ? `WHERE ${condiciones.join(" AND ")}` : "";
@@ -56,7 +56,7 @@ export const getReservas = (req, res) => {
     ORDER BY r.fecha_reserva DESC;
   `;
 
-  console.log("SQL generada:", sql);
+  //console.log("SQL generada:", sql);
 
   pool.query(sql, (err, results) => {
     if (err) {
