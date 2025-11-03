@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
@@ -13,9 +13,11 @@ export default function CreateExcursion() {
     incluye: "",
     politicas: "",
     estado: "activa",
+    id_categoria_excursion: "",
   });
 
   const [imagen, setImagen] = useState(null);
+  const [categorias, setCategorias] = useState([]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -29,11 +31,9 @@ export default function CreateExcursion() {
     e.preventDefault();
 
     try {
-      // 1. Crear excursión
       const res = await axios.post("http://localhost:8000/api/excursiones", form);
       const id_excursion = res.data.id;
 
-      // 2. Subir imagen si hay
       if (imagen) {
         const formData = new FormData();
         formData.append("imagen", imagen);
@@ -50,6 +50,19 @@ export default function CreateExcursion() {
       console.error("Error al crear excursión:", err);
     }
   };
+
+  useEffect(() => {
+    const fetchCategorias = async () => {
+      try {
+        // ✅ Ruta corregida
+        const res = await axios.get("http://localhost:8000/api/excursiones/categorias-excursion");
+        setCategorias(res.data);
+      } catch (err) {
+        console.error("Error al obtener categorías:", err);
+      }
+    };
+    fetchCategorias();
+  }, []);
 
   return (
     <div className="container py-4">
@@ -88,6 +101,17 @@ export default function CreateExcursion() {
           <select name="estado" className="form-select" value={form.estado} onChange={handleChange}>
             <option value="activa">Activa</option>
             <option value="inactiva">Inactiva</option>
+          </select>
+        </div>
+        <div className="mb-3">
+          <label className="form-label">Categoría</label>
+          <select name="id_categoria_excursion" className="form-select" value={form.id_categoria_excursion} onChange={handleChange}>
+            <option value="">Seleccionar categoría</option>
+            {categorias.map((cat) => (
+              <option key={cat.id_categoria_excursion} value={cat.id_categoria_excursion}>
+                {cat.nombre_categoria}
+              </option>
+            ))}
           </select>
         </div>
         <div className="mb-3">

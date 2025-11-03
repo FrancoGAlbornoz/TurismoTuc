@@ -1,4 +1,3 @@
-// routes/excursiones.routes.js
 import express from "express";
 import {
   getExcursiones,
@@ -6,6 +5,8 @@ import {
   createExcursion,
   updateExcursion,
   deleteExcursion,
+  updateCategoriaExcursion,
+  getCategoriasExcursion,
   getFechasByExcursion,
   createFechaExcursion,
   updateFechaExcursion,
@@ -14,14 +15,24 @@ import {
 
 const router = express.Router();
 
-// ====== EXCURSIONES ======
+// =============================
+// Rutas de Excursiones
+// =============================
+
+// 🔹 Primero las rutas específicas
+router.get("/categorias-excursion", getCategoriasExcursion);
+router.post("/categoria", updateCategoriaExcursion);
+
+// 🔹 Luego las rutas dinámicas
 router.get("/", getExcursiones);
-router.get("/:id", getExcursionById);
 router.post("/", createExcursion);
 router.put("/:id", updateExcursion);
 router.delete("/:id", deleteExcursion);
+router.get("/:id", getExcursionById);
 
-// ====== FECHAS DE EXCURSIÓN ======
+// =============================
+// Rutas de Fechas de Excursión
+// =============================
 router.get("/:id_excursion/fechas", getFechasByExcursion);
 router.post("/fechas-excursion", createFechaExcursion);
 router.put("/fechas/:id", updateFechaExcursion);

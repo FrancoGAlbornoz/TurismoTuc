@@ -8,15 +8,23 @@ export default function EditExcursion() {
   const navigate = useNavigate();
   const [excursion, setExcursion] = useState(null);
   const [imagenes, setImagenes] = useState([]);
+  const [categorias, setCategorias] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const resExc = await axios.get(`http://localhost:8000/api/excursiones/${id}`);
-        setExcursion(resExc.data);
+        const data = resExc.data;
+
+        const id_categoria_excursion = data.categorias?.[0]?.id_categoria_excursion || "";
+        setExcursion({ ...data, id_categoria_excursion });
 
         const resImgs = await axios.get(`http://localhost:8000/api/multimedia/excursion/${id}`);
         setImagenes(resImgs.data);
+
+        // ✅ Endpoint corregido
+        const resCats = await axios.get("http://localhost:8000/api/excursiones/categorias-excursion");
+        setCategorias(resCats.data);
       } catch (err) {
         console.error("Error al cargar datos:", err);
       }
@@ -32,6 +40,14 @@ export default function EditExcursion() {
     e.preventDefault();
     try {
       await axios.put(`http://localhost:8000/api/excursiones/${id}`, excursion);
+
+      if (excursion.id_categoria_excursion) {
+        await axios.post("http://localhost:8000/api/excursiones/categoria", {
+          id_excursion: id,
+          id_categoria_excursion: excursion.id_categoria_excursion,
+        });
+      }
+
       navigate("/dashboard-admin/excursiones");
     } catch (err) {
       console.error("Error al actualizar excursión:", err);
@@ -86,6 +102,17 @@ export default function EditExcursion() {
         <div className="mb-3">
           <label className="form-label">Descripción</label>
           <textarea name="descripcion" className="form-control" rows={4} value={excursion.descripcion || ""} onChange={handleChange} />
+        </div>
+        <div className="mb-3">
+          <label className="form-label">Categoría</label>
+          <select name="id_categoria_excursion" className="form-select" value={excursion.id_categoria_excursion} onChange={handleChange}>
+            <option value="">Seleccionar categoría</option>
+            {categorias.map((cat) => (
+              <option key={cat.id_categoria_excursion} value={cat.id_categoria_excursion}>
+                {cat.nombre_categoria}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="mb-3">
           <label className="form-label">Subir imagen</label>

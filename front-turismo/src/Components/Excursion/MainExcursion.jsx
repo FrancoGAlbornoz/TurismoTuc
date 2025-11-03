@@ -63,6 +63,7 @@ export default function MainExcursiones() {
               <th>Ubicación</th>
               <th>Precio</th>
               <th>Estado</th>
+              <th>Categorías</th> {/* ✅ NUEVO */}
               <th>Acciones</th>
             </tr>
           </thead>
@@ -78,6 +79,17 @@ export default function MainExcursiones() {
                     <span className={`badge ${e.estado === 'Activa' ? 'bg-success' : 'bg-warning'}`}>
                       {e.estado}
                     </span>
+                  </td>
+                  <td>
+                    {e.categorias?.length > 0 ? (
+                      e.categorias.map((cat) => (
+                        <span key={cat.id_categoria_excursion} className="badge bg-info me-1">
+                          {cat.nombre_categoria}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-muted">Sin categoría</span>
+                    )}
                   </td>
                   <td>
                     <div className="btn-group" role="group">
@@ -110,7 +122,7 @@ export default function MainExcursiones() {
               ))
             ) : (
               <tr>
-                <td colSpan="6" className="text-center text-muted py-3">
+                <td colSpan="7" className="text-center text-muted py-3">
                   No hay excursiones registradas
                 </td>
               </tr>

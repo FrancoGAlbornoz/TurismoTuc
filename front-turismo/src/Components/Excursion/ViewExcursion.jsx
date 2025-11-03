@@ -41,15 +41,29 @@ export default function ViewExcursion() {
       <div className="mb-3"><strong>Estado:</strong> {excursion.estado}</div>
       <div className="mb-3"><strong>Descripción:</strong><p>{excursion.descripcion}</p></div>
 
+      {/* ✅ Mostrar categorías */}
+      <div className="mb-3">
+        <strong>Categorías:</strong>{" "}
+        {excursion.categorias?.length > 0 ? (
+          excursion.categorias.map((cat) => (
+            <span key={cat.id_categoria_excursion} className="badge bg-info me-1">
+              {cat.nombre_categoria}
+            </span>
+          ))
+        ) : (
+          <span className="text-muted">Sin categoría</span>
+        )}
+      </div>
+
       {imagenes.length > 0 && (
         <div className="mb-4">
           <h6 className="fw-bold">Imágenes</h6>
           <div className="d-flex flex-wrap gap-3">
-          {imagenes.map((img) => (
-                <div key={img.id_multimedia}>
-                    <img src={img.url} alt="Imagen" className="img-thumbnail" style={{ maxHeight: "200px" }} />
-                </div>
-                ))}
+            {imagenes.map((img) => (
+              <div key={img.id_multimedia}>
+                <img src={img.url} alt="Imagen" className="img-thumbnail" style={{ maxHeight: "200px" }} />
+              </div>
+            ))}
           </div>
         </div>
       )}
