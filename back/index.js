@@ -8,6 +8,8 @@ import excursionesRoutes from "./routes/excurisiones.routes.js";
 import reseniasRoutes from "./routes/resenia.routes.js";
 import personalizacionRoutes from "./routes/personalizacion.routes.js";
 import dashboardRoutes from "./routes/dashboard.routes.js";
+import categoriasRoutes from "./routes/categorias.routes.js";
+
 
 
 
@@ -23,6 +25,7 @@ app.use("/api/reservas", reservasRoutes);
 app.use("/api/turistas", turistasRoutes);
 app.use("/api/excursiones", excursionesRoutes);
 app.use("/api/resenias", reseniasRoutes);
+app.use("/api/categorias", categoriasRoutes);
 app.use("/api/personalizacion", personalizacionRoutes);
 
 app.use("/api/dashboard", dashboardRoutes);

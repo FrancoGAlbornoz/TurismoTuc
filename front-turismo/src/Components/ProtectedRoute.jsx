@@ -1,17 +1,24 @@
 import { Navigate } from "react-router-dom";
 import useUserStore from "../store/useUserStore";
 
-export default function ProtectedRoute({ children, allowedRoles }) {
-  const user = useUserStore((state) => state.user);
+export default function ProtectedRoute({ allowedRoles, children }) {
+  const { user } = useUserStore();
 
   if (!user) {
-    // No hay usuario logueado → redirigimos al login
-    return <Navigate to="/admin" replace />;
+    return <Navigate to="/admin" />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(user.rol)) {
-    // Usuario logueado pero sin permisos
-    return <Navigate to="/" replace />;
+  // ✅ Normaliza el rol del usuario
+  const normalizedUserRole = user.rol?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+  // ✅ Normaliza los roles permitidos
+  const normalizedAllowedRoles = allowedRoles.map((role) =>
+    role.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+  );
+
+  // ✅ Verifica si el rol del usuario está permitido
+  if (!normalizedAllowedRoles.includes(normalizedUserRole)) {
+    return <Navigate to="/" />;
   }
 
   return children;

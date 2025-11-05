@@ -379,3 +379,25 @@ export const deletePago = (req, res) => {
     res.json({ message: "Pago eliminado (baja lógica) correctamente" });
   });
 };
+
+
+export const getParticipantesPorExcursion = (req, res) => {
+  const { id_excursion } = req.params;
+
+  const sql = `
+    SELECT u.id_usuario, u.nombre, u.apellido, u.dni, u.email
+    FROM Reservas r
+    JOIN FechasExcursion f ON r.id_fecha = f.id_fecha
+    JOIN Usuarios u ON r.id_turista = u.id_usuario
+    WHERE f.id_excursion = ? AND r.eliminado = 0
+    ORDER BY u.apellido ASC
+  `;
+
+  pool.query(sql, [id_excursion], (err, results) => {
+    if (err) {
+      console.error("Error al obtener participantes:", err);
+      return res.status(500).json({ message: "Error al obtener participantes" });
+    }
+    res.json(results);
+  });
+};

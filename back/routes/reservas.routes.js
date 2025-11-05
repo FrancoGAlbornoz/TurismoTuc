@@ -7,6 +7,7 @@ import {
   updateReserva,
   deleteReserva,
   restoreReserva,
+  getParticipantesPorExcursion,
   getPagos,
   createPago,
   deletePago,
@@ -21,6 +22,7 @@ router.post("/", createReserva);
 router.put("/:id", updateReserva);
 router.delete("/:id", deleteReserva);
 router.put("/restore/:id", restoreReserva);
+router.get("/excursion/:id_excursion/participantes", getParticipantesPorExcursion);
 
 // Pagos
 router.get("/pagos/listar", getPagos);

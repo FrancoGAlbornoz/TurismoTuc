@@ -33,3 +33,64 @@
     background-color: #198754;
     color: white;
   }
+
+
+  .categoria-scroll-container {
+    display: flex;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    gap: 1rem;
+    padding: 1rem 2rem;
+  }
+  
+  .categoria-card {
+    flex: 0 0 auto;
+    width: 180px;
+    height: 140px;
+    border: 2px solid #ccc;
+    border-radius: 10px;
+    text-align: center;
+    padding: 1rem;
+    cursor: pointer;
+    background-color: white;
+    transition: all 0.3s ease;
+  }
+  
+  .categoria-card.active {
+    border-color: #198754;
+    background-color: #e6f4ea;
+    box-shadow: 0 0 10px rgba(25, 135, 84, 0.3);
+  }
+  
+  .carousel-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 2rem;
+    background: none;
+    border: none;
+    color: #198754;
+    z-index: 10;
+    cursor: pointer;
+  }
+  
+  .carousel-arrow.left {
+    left: 0;
+  }
+  
+  .carousel-arrow.right {
+    right: 0;
+  }
+
+  .categoria-scroll-container {
+    display: flex;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    gap: 1rem;
+    padding: 1rem 2rem;
+    scrollbar-width: none; /* Firefox */
+  }
+  
+  .categoria-scroll-container::-webkit-scrollbar {
+    display: none; /* Chrome, Safari */
+  }

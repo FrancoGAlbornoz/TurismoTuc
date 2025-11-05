@@ -54,13 +54,13 @@ export default function CreateExcursion() {
   useEffect(() => {
     const fetchCategorias = async () => {
       try {
-        const res = await axios.get("http://localhost:8000/api/excursiones/categorias-excursion");
+        const res = await axios.get("http://localhost:8000/api/categorias"); // ✅ nuevo endpoint
         setCategorias(res.data);
       } catch (err) {
         console.error("Error al obtener categorías:", err);
       }
     };
-
+  
     const fetchGuias = async () => {
       try {
         const res = await axios.get("http://localhost:8000/api/excursiones/guias");
@@ -69,7 +69,7 @@ export default function CreateExcursion() {
         console.error("Error al obtener guías:", err);
       }
     };
-
+  
     fetchCategorias();
     fetchGuias();
   }, []);
