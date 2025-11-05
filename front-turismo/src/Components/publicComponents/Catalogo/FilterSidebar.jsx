@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Form, Button } from "react-bootstrap";
 import axios from "axios";
 
@@ -7,21 +7,34 @@ export default function FilterSidebar({ onFilterChange }) {
   const [precioMin, setPrecioMin] = useState("");
   const [precioMax, setPrecioMax] = useState("");
   const [duracion, setDuracion] = useState("");
+  const [categoria, setCategoria] = useState("");
+  const [categorias, setCategorias] = useState([]);
+
+  // 🔄 Cargar categorías al montar
+  useEffect(() => {
+    const fetchCategorias = async () => {
+      try {
+        const res = await axios.get("http://localhost:8000/api/categorias");
+        setCategorias(res.data);
+      } catch (err) {
+        console.error("Error al obtener categorías:", err);
+      }
+    };
+    fetchCategorias();
+  }, []);
 
   const handleApplyFilters = async (e) => {
     e.preventDefault();
 
-    // Construcción dinámica de parámetros
     const params = {};
     if (ubicacion) params.ubicacion = ubicacion;
     if (precioMin) params.precio_min = precioMin;
     if (precioMax) params.precio_max = precioMax;
     if (duracion) params.duracion = duracion;
+    if (categoria) params.categoria = categoria;
 
     try {
-      console.log("📤 Enviando filtros:", params);
       const res = await axios.get("http://localhost:8000/api/excursiones", { params });
-      console.log("📥 Resultados:", res.data);
       onFilterChange(res.data);
     } catch (err) {
       console.error("Error al aplicar filtros:", err);
@@ -33,6 +46,7 @@ export default function FilterSidebar({ onFilterChange }) {
     setPrecioMin("");
     setPrecioMax("");
     setDuracion("");
+    setCategoria("");
     try {
       const res = await axios.get("http://localhost:8000/api/excursiones");
       onFilterChange(res.data);
@@ -83,6 +97,21 @@ export default function FilterSidebar({ onFilterChange }) {
             value={duracion}
             onChange={(e) => setDuracion(e.target.value)}
           />
+        </Form.Group>
+
+        <Form.Group className="mb-3">
+          <Form.Label>Categoría</Form.Label>
+          <Form.Select
+            value={categoria}
+            onChange={(e) => setCategoria(e.target.value)}
+          >
+            <option value="">Todas</option>
+            {categorias.map((cat) => (
+              <option key={cat.id_categoria_excursion} value={cat.nombre_categoria}>
+                {cat.nombre_categoria}
+              </option>
+            ))}
+          </Form.Select>
         </Form.Group>
 
         <div className="d-flex gap-2">
