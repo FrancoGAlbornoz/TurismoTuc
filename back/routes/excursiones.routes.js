@@ -9,12 +9,14 @@ import {
   createMultimedia,
   deleteMultimedia,
   getFechasByExcursion,
+  getExcursionesConFechas,
   createFechaExcursion,
   updateFechaExcursion,
   deleteFechaExcursion,
   getGuias,
   getExcursionesPorGuia,
   getParticipantesByExcursion,
+  getFechaById,
 } from "../controllers/excursiones.controller.js";
 
 const router = express.Router();
@@ -28,6 +30,8 @@ router.get("/guias", getGuias);
 
 // ✅ Esta ruta debe ir antes que cualquier "/:id"
 router.get("/:id/participantes", getParticipantesByExcursion);
+router.get("/con-fechas", getExcursionesConFechas);
+router.get("/fechas/:id", getFechaById);
 
 
 // 🔹 Rutas dinámicas

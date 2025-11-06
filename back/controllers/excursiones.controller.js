@@ -318,9 +318,26 @@ export const getFechasByExcursion = (req, res) => {
   });
 };
 
-// Crear una nueva fecha para una excursión
+export const getFechaById = (req, res) => {
+  const { id } = req.params;
+  const sql = "SELECT * FROM FechasExcursion WHERE id_fecha = ?";
+  pool.query(sql, [id], (err, result) => {
+    if (err) {
+      console.error("Error al obtener fecha:", err);
+      return res.status(500).json({ message: "Error al obtener la fecha" });
+    }
+    if (result.length === 0) {
+      return res.status(404).json({ message: "Fecha no encontrada" });
+    }
+    res.json(result[0]);
+  });
+};
+
+
 export const createFechaExcursion = (req, res) => {
   const { id_excursion, fecha, hora_salida, cupo_maximo } = req.body;
+
+  console.log("Datos recibidos:", req.body); // 👈 Agregá esto
 
   if (!id_excursion || !fecha || !cupo_maximo)
     return res.status(400).json({ message: "Faltan datos obligatorios" });
@@ -332,7 +349,7 @@ export const createFechaExcursion = (req, res) => {
 
   pool.query(sql, values, (err, result) => {
     if (err) {
-      console.error("Error al crear fecha:", err);
+      console.error("Error al crear fecha:", err); // 👈 Este log es clave
       return res.status(500).json({ message: "Error al crear fecha" });
     }
     res.status(201).json({ message: "Fecha agregada correctamente", id: result.insertId });
@@ -389,21 +406,19 @@ export const updateFechaExcursion = (req, res) => {
 // Eliminar (baja lógica) una fecha de excursión
 export const deleteFechaExcursion = (req, res) => {
   const { id } = req.params;
-
-  const sql = `UPDATE FechasExcursion
-               SET eliminado=1, fecha_eliminacion=NOW()
-               WHERE id_fecha=?`;
-
+  const sql = "DELETE FROM FechasExcursion WHERE id_fecha = ?";
   pool.query(sql, [id], (err, result) => {
     if (err) {
       console.error("Error al eliminar fecha:", err);
-      return res.status(500).json({ message: "Error al eliminar fecha" });
+      return res.status(500).json({ message: "Error al eliminar la fecha" });
     }
-    if (result.affectedRows === 0)
+    if (result.affectedRows === 0) {
       return res.status(404).json({ message: "Fecha no encontrada" });
-    res.json({ message: "Fecha eliminada (baja lógica) correctamente" });
+    }
+    res.json({ message: "Fecha eliminada correctamente" });
   });
 };
+
 
 export const getGuias = (req, res) => {
   const sql = `
@@ -423,7 +438,50 @@ export const getGuias = (req, res) => {
   });
 };
 
+export const getExcursionesConFechas = (req, res) => {
+  const sql = `
+    SELECT e.id_excursion, e.titulo, e.ubicacion, e.precio_base, e.estado,
+           f.id_fecha, f.fecha, f.hora_salida, f.cupo_maximo, f.cupo_disponible, f.estado AS estado_fecha
+    FROM Excursiones e
+    LEFT JOIN FechasExcursion f ON e.id_excursion = f.id_excursion AND f.eliminado = 0
+    WHERE e.eliminado = 0
+    ORDER BY e.fecha_creacion DESC, f.fecha ASC
+  `;
 
+  pool.query(sql, (err, results) => {
+    if (err) {
+      console.error("Error al obtener excursiones con fechas:", err);
+      return res.status(500).json({ message: "Error al obtener excursiones con fechas" });
+    }
+
+    const agrupadas = {};
+    results.forEach((row) => {
+      if (!agrupadas[row.id_excursion]) {
+        agrupadas[row.id_excursion] = {
+          id_excursion: row.id_excursion,
+          titulo: row.titulo,
+          ubicacion: row.ubicacion,
+          precio_base: row.precio_base,
+          estado: row.estado,
+          fechas: [],
+        };
+      }
+
+      if (row.id_fecha) {
+        agrupadas[row.id_excursion].fechas.push({
+          id_fecha: row.id_fecha,
+          fecha: row.fecha,
+          hora_salida: row.hora_salida,
+          cupo_maximo: row.cupo_maximo,
+          cupo_disponible: row.cupo_disponible,
+          estado: row.estado_fecha,
+        });
+      }
+    });
+
+    res.json(Object.values(agrupadas));
+  });
+};
 
 
 // =============================

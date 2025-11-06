@@ -11,6 +11,7 @@ export default function Sidebar() {
   const links = [
     { to: "/dashboard-admin/excursiones", label: "Excursiones", icon: <FaMapMarkedAlt /> },
     { to: "/dashboard-admin/turistas", label: "Turistas", icon: <FaUsers /> },
+    { to: "/dashboard-admin/fechas", label: "Fechas", icon: <FaUsers /> },
     { to: "/dashboard-admin/reservas", label: "Reservas", icon: <FaClipboardList /> },
     { to: "/dashboard-admin/reseñas", label: "Reseñas", icon: <FaComments /> },
     { to: "/dashboard-admin/usuarios", label: "Usuarios", icon: <FaUserTie /> },
