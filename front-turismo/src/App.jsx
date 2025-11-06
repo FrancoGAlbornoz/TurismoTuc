@@ -1,21 +1,39 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-
+import { useEffect } from "react";
+import useTuristaStore from "./store/useTuristaStore";
+// 🧩 Componentes comunes
 import Header from "./Components/common/Header";
 import Footer from "./Components/common/Footer";
+
+// 🌍 Páginas públicas
 import Home from "./pages/publicPages/Home";
-import Login from "./pages/Login";
-import Dashboard from "./pages/adminPages/Dashboard";
-import DashboardGuia from "./pages/adminPages/GuiaPanel/DashboardGuia";
 import Catalogo from "./pages/publicPages/Catalogo";
 import DetalleExcursion from "./pages/publicPages/DetalleExcursion";
+import LoginTurista from "./pages/publicPages/LoginTurista";
+import RegisterTurista from "./pages/publicPages/RegisterTurista";
+import PerfilTurista from "./pages/publicPages/PerfilTurista";
 import Error from "./pages/Error";
+
+// 🔒 Autenticación y paneles internos
+import Login from "./pages/Login";
 import ProtectedRoute from "./Components/ProtectedRoute";
+import Dashboard from "./pages/adminPages/Dashboard";
+import DashboardGuia from "./pages/adminPages/GuiaPanel/DashboardGuia";
 
 function App() {
+
+  /* Inicializar sesión guardada en localStorage */
+  const { initSession } = useTuristaStore();
+
+   useEffect(() => {
+    initSession();
+  }, []);
   return (
     <BrowserRouter>
       <Routes>
-        {/* Rutas públicas */}
+        {/* =========================
+             RUTAS PÚBLICAS
+        ========================== */}
         <Route
           path="/"
           element={
@@ -37,6 +55,17 @@ function App() {
           }
         />
         <Route
+          path="/perfil-turista"
+          element={
+            <>
+              <Header />
+              <PerfilTurista />
+              <Footer />
+            </>
+          }
+        />
+
+        <Route
           path="/excursion/:id"
           element={
             <>
@@ -46,6 +75,32 @@ function App() {
             </>
           }
         />
+
+        {/* Login y registro para turistas */}
+        <Route
+          path="/login-turista"
+          element={
+            <>
+              <Header />
+              <LoginTurista />
+              <Footer />
+            </>
+          }
+        />
+        <Route
+          path="/register-turista"
+          element={
+            <>
+              <Header />
+              <RegisterTurista />
+              <Footer />
+            </>
+          }
+        />
+
+        {/* =========================
+             RUTAS ADMINISTRATIVAS
+        ========================== */}
         <Route
           path="/admin"
           element={
@@ -77,7 +132,9 @@ function App() {
           }
         />
 
-        {/* Página de error */}
+        {/* =========================
+             PÁGINA DE ERROR
+        ========================== */}
         <Route
           path="*"
           element={

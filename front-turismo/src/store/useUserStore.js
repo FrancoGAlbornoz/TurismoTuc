@@ -9,7 +9,8 @@ const useUserStore = create(
       clearUser: () => set({ user: null }),
     }),
     {
-      name: "user-storage", // se guarda en localStorage
+      name: "user-storage", // Se guarda en localStorage
+      getStorage: () => localStorage, // 🔹 Asegura persistencia real
     }
   )
 );

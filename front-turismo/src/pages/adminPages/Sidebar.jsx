@@ -1,6 +1,15 @@
-import { NavLink, Link, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { Button } from "react-bootstrap";
-import {FaUsers, FaMapMarkedAlt, FaClipboardList, FaComments, FaUserTie, FaHome, FaSignOutAlt, FaGlobeAmericas} from "react-icons/fa";
+import {
+  FaUsers,
+  FaMapMarkedAlt,
+  FaClipboardList,
+  FaComments,
+  FaUserTie,
+  FaHome,
+  FaSignOutAlt,
+  FaGlobeAmericas,
+} from "react-icons/fa";
 import useUserStore from "../../store/useUserStore";
 import "../../styles/components/sidebar.css";
 
@@ -19,20 +28,25 @@ export default function Sidebar() {
   const handleLogout = () => {
     clearUser();
     localStorage.removeItem("token");
-    navigate("/");
+    navigate("/"); // Redirige al inicio
+  };
+
+  const handleGoToMain = () => {
+    navigate("/"); // ✅ navegación interna, sin recargar la SPA
   };
 
   return (
     <div className="sidebar bg-white shadow-sm d-flex flex-column">
       <hr />
       <br />
-      <Link
-        to="/dashboard-admin"
+      <div
+        onClick={() => navigate("/dashboard-admin")}
         className="sidebar-header fw-bold text-success mb-3 d-block text-decoration-none text-center"
+        style={{ cursor: "pointer" }}
       >
         <FaHome size={32} className="d-block mx-auto mb-2" />
         INICIO PANEL ADMIN
-      </Link>
+      </div>
 
       <nav>
         <ul className="nav flex-column">
@@ -52,21 +66,17 @@ export default function Sidebar() {
         </ul>
       </nav>
 
-      {/* 🔹 Nuevo botón: Ir al sitio principal */}
-      <Link
-        to="/"
-        className="text-decoration-none mt-auto mb-2 d-flex justify-content-center"
+      {/* 🔹 Botón para volver al sitio principal */}
+      <Button
+        variant="outline-success"
+        className="w-100 d-flex align-items-center justify-content-center gap-2 mt-auto mb-2"
+        onClick={handleGoToMain}
       >
-        <Button
-          variant="outline-success"
-          className="w-100 d-flex align-items-center justify-content-center gap-2"
-        >
-          <FaGlobeAmericas />
-          Ir al sitio principal
-        </Button>
-      </Link>
+        <FaGlobeAmericas />
+        Ir al sitio principal
+      </Button>
 
-      {/* 🔴 Botón de cerrar sesión */}
+      {/* 🔴 Cerrar sesión */}
       <Button
         variant="danger"
         onClick={handleLogout}

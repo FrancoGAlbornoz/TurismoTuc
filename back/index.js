@@ -9,6 +9,7 @@ import reseniasRoutes from "./routes/resenia.routes.js";
 import personalizacionRoutes from "./routes/personalizacion.routes.js";
 import dashboardRoutes from "./routes/dashboard.routes.js";
 import categoriasRoutes from "./routes/categorias.routes.js";
+import authTuristasRoutes from "./routes/authturistas.routes.js";
 
 
 
@@ -29,6 +30,9 @@ app.use("/api/categorias", categoriasRoutes);
 app.use("/api/personalizacion", personalizacionRoutes);
 
 app.use("/api/dashboard", dashboardRoutes);
+
+
+app.use("/api/auth/turistas", authTuristasRoutes);
 
 // Servir archivos estáticos (imágenes)
 

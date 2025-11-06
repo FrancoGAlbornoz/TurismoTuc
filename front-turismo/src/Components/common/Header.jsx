@@ -1,11 +1,14 @@
-import { Link, NavLink } from "react-router-dom";
-import { FaWhatsapp, FaShoppingCart, FaUserCog, FaUserShield } from "react-icons/fa";
+import { Link, NavLink, useNavigate } from "react-router-dom";
+import { FaWhatsapp, FaShoppingCart, FaUserCog, FaUserCircle } from "react-icons/fa";
+import useTuristaStore from "../../store/useTuristaStore";
 import "../../styles/components/common/header.css";
 
 export default function Header() {
+  const navigate = useNavigate();
+  const { turista, clearTurista } = useTuristaStore();
+
   return (
     <nav className="navbar navbar-expand-lg bg-white shadow-sm sticky-top">
-      {/* Cambié container → container-fluid para que ocupe todo el ancho */}
       <div className="container-fluid px-4">
         {/* Logo + nombre */}
         <Link
@@ -29,7 +32,7 @@ export default function Header() {
           <span className="navbar-toggler-icon"></span>
         </button>
 
-        {/* Enlaces principales */}
+        {/* Menú central */}
         <div
           className="collapse navbar-collapse justify-content-center"
           id="navbarNav"
@@ -42,7 +45,7 @@ export default function Header() {
             </li>
             <li className="nav-item">
               <NavLink className="nav-link" to="/catalogo">
-                CATALOGO
+                CATÁLOGO
               </NavLink>
             </li>
           </ul>
@@ -50,15 +53,47 @@ export default function Header() {
 
         {/* Botones derecha */}
         <div className="d-flex align-items-center gap-2">
-          <button className="btn btn-outline-secondary btn-sm">ES / EN</button>
+          {/* ====== LOGIN / REGISTRO ====== */}
+          {!turista ? (
+            <>
+              <button
+                className="btn btn-outline-success btn-sm"
+                onClick={() => navigate("/login-turista")}
+              >
+                Iniciar sesión
+              </button>
+              <button
+                className="btn btn-success btn-sm"
+                onClick={() => navigate("/register-turista")}
+              >
+                Registrate
+              </button>
+            </>
+          ) : (
+            <div className="d-flex align-items-center gap-2">
+              <span className="fw-semibold text-success small">
+                ¡Hola, {turista.nombre.split(" ")[0]}!
+              </span>
+              <button
+                className="btn btn-outline-danger btn-sm"
+                onClick={() => {
+                  clearTurista();
+                  navigate("/");
+                }}
+              >
+                Cerrar sesión
+              </button>
+              <FaUserCircle
+                size={22}
+                className="text-success ms-1"
+                style={{ cursor: "pointer" }}
+                onClick={() => navigate("/perfil-turista")}
+                title="Mi perfil"
+              />
+            </div>
+          )}
 
-          <Link
-            to="/carrito"
-            className="btn btn-outline-dark btn-sm d-flex align-items-center gap-1"
-          >
-            <FaShoppingCart /> Carrito
-          </Link>
-
+          {/* WhatsApp */}
           <a
             href="https://wa.me/5493810000000"
             target="_blank"
@@ -68,8 +103,21 @@ export default function Header() {
             <FaWhatsapp /> WhatsApp
           </a>
 
-          <NavLink className="nav-link ms-2 text-secondary opacity-75 small d-flex align-items-center gap-1" to="/admin">
-            <FaUserCog size={24} /> 
+          {/* Carrito */}
+          <Link
+            to="/carrito"
+            className="btn btn-outline-dark btn-sm d-flex align-items-center gap-1"
+          >
+            <FaShoppingCart /> Carrito
+          </Link>
+
+          {/* Admin */}
+          <NavLink
+            className="nav-link ms-2 text-secondary opacity-75 small d-flex align-items-center gap-1"
+            to="/admin"
+            title="Panel administrativo"
+          >
+            <FaUserCog size={22} />
           </NavLink>
         </div>
       </div>
