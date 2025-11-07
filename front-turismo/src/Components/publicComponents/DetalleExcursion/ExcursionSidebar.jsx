@@ -1,18 +1,41 @@
+// src/Components/publicComponents/DetalleExcursion/ExcursionSidebar.jsx
 import { Card, Button, Form } from "react-bootstrap";
 import { useState } from "react";
-import "../../../styles/publicComponents/detalleex.css"
+import useTuristaStore from "../../../store/useTuristaStore";
+import useCarritoStore from "../../../store/useCarritoStore";
+import "../../../styles/publicComponents/detalleex.css";
 
 export default function ExcursionSidebar({ excursion, fechas }) {
   const [personas, setPersonas] = useState(1);
+  const [fechaSeleccionada, setFechaSeleccionada] = useState(
+    fechas && fechas.length > 0 ? fechas[0].id_fecha : null
+  );
 
-  const handleReserva = () => {
-    alert(`Reservaste ${personas} persona(s) para ${excursion.titulo}`);
+  const { turista } = useTuristaStore();
+  const { addItem } = useCarritoStore();
+
+  const handleAgregar = async () => {
+    if (!turista) {
+      alert("Tenés que iniciar sesión para agregar al carrito");
+      return;
+    }
+    if (!fechaSeleccionada) {
+      alert("Seleccioná una fecha primero");
+      return;
+    }
+
+    // 👇 esto ahora va al backend del carrito
+    await addItem(
+      Number(fechaSeleccionada),
+      Number(personas)
+    );
+
+    alert("Excursión agregada al carrito ✅");
   };
 
   return (
     <Card className="excursion-sidebar shadow-sm border-0 sticky-md-top">
       <Card.Body>
-        {/* Precio */}
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h5 className="fw-bold text-teal mb-0">Desde</h5>
           <h4 className="fw-bold text-success mb-0">
@@ -20,13 +43,16 @@ export default function ExcursionSidebar({ excursion, fechas }) {
           </h4>
         </div>
 
-        {/* Fechas disponibles */}
+        {/* Fechas */}
         <Form.Group className="mb-3">
           <Form.Label className="fw-semibold">Fechas disponibles</Form.Label>
-          <Form.Select>
+          <Form.Select
+            value={fechaSeleccionada || ""}
+            onChange={(e) => setFechaSeleccionada(e.target.value)}
+          >
             {fechas && fechas.length > 0 ? (
               fechas.map((f) => (
-                <option key={f.id_fecha}>
+                <option key={f.id_fecha} value={f.id_fecha}>
                   {new Date(f.fecha).toLocaleDateString("es-AR", {
                     weekday: "long",
                     day: "numeric",
@@ -41,7 +67,7 @@ export default function ExcursionSidebar({ excursion, fechas }) {
           </Form.Select>
         </Form.Group>
 
-        {/* Cantidad de personas */}
+        {/* Personas */}
         <Form.Group className="mb-3">
           <Form.Label className="fw-semibold">Personas</Form.Label>
           <Form.Control
@@ -52,20 +78,15 @@ export default function ExcursionSidebar({ excursion, fechas }) {
           />
         </Form.Group>
 
-        {/* Botón de reservar */}
         <Button
           variant="warning"
           className="w-100 fw-semibold py-2 mb-2"
-          onClick={handleReserva}
+          onClick={handleAgregar}
         >
-          Reservar ahora
+          Agregar al carrito
         </Button>
 
-        {/* Descargar comprobante (opcional) */}
-        <Button
-          variant="outline-secondary"
-          className="w-100 fw-semibold py-2"
-        >
+        <Button variant="outline-secondary" className="w-100 fw-semibold py-2">
           Descargar comprobante
         </Button>
       </Card.Body>

@@ -12,6 +12,7 @@ import DetalleExcursion from "./pages/publicPages/DetalleExcursion";
 import LoginTurista from "./pages/publicPages/LoginTurista";
 import RegisterTurista from "./pages/publicPages/RegisterTurista";
 import PerfilTurista from "./pages/publicPages/PerfilTurista";
+import Carrito from "./pages/publicPages/Carrito";
 import Error from "./pages/Error";
 
 // 🔒 Autenticación y paneles internos
@@ -74,6 +75,16 @@ function App() {
               <Footer />
             </>
           }
+        />
+        <Route
+          path="/carrito"
+          element={
+          <>
+            <Header />
+            <Carrito />
+            <Footer />
+          </>
+        }
         />
 
         {/* Login y registro para turistas */}

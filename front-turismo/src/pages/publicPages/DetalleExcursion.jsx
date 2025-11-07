@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import { Container, Row, Col, Spinner, Alert } from "react-bootstrap";
+import useTuristaStore from "../../store/useTuristaStore";
 
 import ExcursionHero from "../../Components/publicComponents/DetalleExcursion/ExcursionHero";
 import ExcursionTabs from "../../Components/publicComponents/DetalleExcursion/ExcursionTabs";
@@ -14,21 +15,25 @@ import "../../styles/publicComponents/detalleex.css";
 export default function DetalleExcursion() {
   const { id } = useParams();
   const [excursion, setExcursion] = useState(null);
+  const [fechas, setFechas] = useState([]); // 👈 nuevo estado
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { turista } = useTuristaStore();
 
   useEffect(() => {
     const fetchExcursion = async () => {
       try {
-        // 1) datos principales
-        const res = await axios.get(`http://localhost:8000/api/excursiones/${id}`);
-        const excursionData = res.data;
+        // Datos principales
+        const resExc = await axios.get(`http://localhost:8000/api/excursiones/${id}`);
+        const excursionData = resExc.data;
 
-        // 2) imágenes asociadas (de la tabla Multimedia)
-        const resImgs = await axios.get(
-          `http://localhost:8000/api/excursiones/${id}/multimedia`
-        );
+        // Imágenes
+        const resImgs = await axios.get(`http://localhost:8000/api/excursiones/${id}/multimedia`);
         excursionData.imagenes = resImgs.data || [];
+
+        // Fechas disponibles 👇
+        const resFechas = await axios.get(`http://localhost:8000/api/excursiones/${id}/fechas`);
+        setFechas(resFechas.data || []);
 
         setExcursion(excursionData);
       } catch (err) {
@@ -71,22 +76,17 @@ export default function DetalleExcursion() {
   return (
     <div className="detalle-excursion-page bg-light py-4">
       <Container>
-        {/* Hero principal (imagen grande arriba) */}
         <ExcursionHero excursion={excursion} imagenes={excursion.imagenes} />
-
         <Row className="mt-4">
-          {/* Columna izquierda: texto, tabs, mapa, galería */}
           <Col xs={12} md={8} lg={9} className="mb-4">
             <ExcursionTabs excursion={excursion} />
             <ExcursionMap excursion={excursion} />
-
-            {/* Galería inferior con carrusel */}
             <ExcursionGallery excursion={excursion} />
           </Col>
 
-          {/* Columna derecha: precios, reserva, fechas */}
           <Col xs={12} md={4} lg={3}>
-            <ExcursionSidebar excursion={excursion} />
+            {/* 👇 ahora le pasamos las fechas también */}
+            <ExcursionSidebar excursion={excursion} fechas={fechas} turista={turista} />
           </Col>
         </Row>
       </Container>

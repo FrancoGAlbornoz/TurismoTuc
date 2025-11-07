@@ -10,7 +10,7 @@ import personalizacionRoutes from "./routes/personalizacion.routes.js";
 import dashboardRoutes from "./routes/dashboard.routes.js";
 import categoriasRoutes from "./routes/categorias.routes.js";
 import authTuristasRoutes from "./routes/authturistas.routes.js";
-
+import carritoRoutes from "./routes/carrito.routes.js";
 
 
 
@@ -28,7 +28,7 @@ app.use("/api/excursiones", excursionesRoutes);
 app.use("/api/resenias", reseniasRoutes);
 app.use("/api/categorias", categoriasRoutes);
 app.use("/api/personalizacion", personalizacionRoutes);
-
+app.use("/api/carrito", carritoRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 
 
