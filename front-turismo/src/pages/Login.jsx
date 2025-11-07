@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import useUserStore from "../store/useUserStore";
@@ -11,7 +11,23 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const { setUser, clearUser } = useUserStore();
+  const { user, setUser, clearUser } = useUserStore();
+
+  // ✅ Nuevo: si ya hay un usuario guardado, redirigir según su rol
+  useEffect(() => {
+    if (user) {
+      const rol = user.rol?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      if (rol === "administrador") {
+        navigate("/dashboard-admin", { replace: true });
+      } else if (rol === "guia turistico" || rol === "guía turístico") {
+        navigate("/dashboard-guia", { replace: true });
+      } else if (rol === "personal de ventas") {
+        navigate("/dashboard-empleados", { replace: true });
+      } else {
+        navigate("/", { replace: true });
+      }
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -28,12 +44,10 @@ export default function Login() {
         const userData = response.data.user;
         setUser(userData);
 
-        // ✅ Normaliza el rol para evitar errores por tildes y mayúsculas
         const rol = userData.rol?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-        // ✅ Redirige según el rol normalizado
         if (rol === "administrador") navigate("/dashboard-admin");
-        else if (rol === "guia turistico") navigate("/dashboard-guia");
+        else if (rol === "guia turistico" || rol === "guía turístico") navigate("/dashboard-guia");
         else if (rol === "personal de ventas") navigate("/dashboard-empleados");
         else {
           clearUser();

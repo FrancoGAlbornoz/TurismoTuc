@@ -1,14 +1,15 @@
-// controllers/turistasController.js
 import { pool } from "../config/DB.js";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
-// =============================
-// TURISTAS
-// =============================
+/* ============================================================
+   👥 GESTIÓN DE TURISTAS
+   ============================================================ */
 
 // Listar todos los turistas activos
 export const getTuristas = (req, res) => {
   const sql = `
-    SELECT id_turista, nombre, apellido,CONCAT(nombre, ' ', apellido) AS nombre_completo, dni, email, telefono, direccion, nacionalidad
+    SELECT id_turista, nombre, apellido, CONCAT(nombre, ' ', apellido) AS nombre_completo, dni, email, telefono, direccion, nacionalidad
     FROM Turistas
     WHERE eliminado = 0
     ORDER BY dni ASC
@@ -42,7 +43,7 @@ export const getTuristaById = (req, res) => {
   });
 };
 
-// Crear un nuevo turista
+// Crear un nuevo turista (uso interno del panel)
 export const createTurista = (req, res) => {
   const { nombre, apellido, dni, email, telefono, direccion, nacionalidad } = req.body;
 
@@ -112,9 +113,9 @@ export const deleteTurista = (req, res) => {
   });
 };
 
-// =============================
-// RESERVAS DE UN TURISTA
-// =============================
+/* ============================================================
+   📅 RESERVAS DE UN TURISTA
+   ============================================================ */
 export const getReservasByTurista = (req, res) => {
   const { id } = req.params;
 
@@ -144,4 +145,103 @@ export const getReservasByTurista = (req, res) => {
     }
     res.json(results);
   });
+};
+
+/* ============================================================
+   🔐 AUTENTICACIÓN (REGISTER / LOGIN)
+   ============================================================ */
+
+// Registro de turista (desde el portal público)
+export const registerTurista = async (req, res) => {
+  const { nombre, apellido, dni, email, telefono, direccion, nacionalidad, password } = req.body;
+
+  if (!nombre || !apellido || !dni || !email || !password) {
+    return res.status(400).json({ message: "Faltan datos obligatorios" });
+  }
+
+  try {
+    const [existe] = await pool.promise().query("SELECT id_turista FROM Turistas WHERE email = ?", [email]);
+    console.log("🟢 Nuevo turista registrado:", {
+  nombre,
+  apellido,
+  dni,
+  email,
+  telefono,
+  direccion,
+  nacionalidad,
+});
+
+    if (existe.length > 0) {
+      return res.status(400).json({ message: "El email ya está registrado" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const sql = `
+      INSERT INTO Turistas (nombre, apellido, dni, email, password, telefono, direccion, nacionalidad)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+    const values = [nombre, apellido, dni, email, hashedPassword, telefono, direccion, nacionalidad];
+    await pool.promise().query(sql, values);
+
+    res.status(201).json({ message: "Turista registrado correctamente" });
+  } catch (err) {
+    console.error("Error al registrar turista:", err);
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
+};
+
+// Login de turista
+export const loginTurista = async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password)
+    return res.status(400).json({ message: "Faltan datos" });
+
+  try {
+    const [rows] = await pool
+      .promise()
+      .query(
+        `SELECT id_turista, nombre, apellido, dni, email, telefono, direccion, nacionalidad, password 
+         FROM Turistas 
+         WHERE email = ? AND eliminado = 0`,
+        [email]
+      );
+
+    if (rows.length === 0)
+      return res.status(401).json({ message: "Turista no encontrado" });
+
+    // 👇 convertir RowDataPacket a objeto plano
+    const turista = JSON.parse(JSON.stringify(rows[0]));
+
+    const validPassword = await bcrypt.compare(password, turista.password);
+    if (!validPassword)
+      return res.status(401).json({ message: "Contraseña incorrecta" });
+
+    const token = jwt.sign(
+      { id: turista.id_turista, email: turista.email },
+      process.env.JWT_SECRET || "clave_supersecreta",
+      { expiresIn: "2h" }
+    );
+
+    console.log("🟢 Turista logueado:", turista);
+
+    res.json({
+      message: "Login exitoso",
+      token,
+      turista: {
+        id: turista.id_turista,
+        nombre: turista.nombre,
+        apellido: turista.apellido,
+        dni: turista.dni,
+        email: turista.email,
+        telefono: turista.telefono,
+        direccion: turista.direccion,
+        nacionalidad: turista.nacionalidad,
+      },
+    });
+  } catch (err) {
+    console.error("Error al iniciar sesión:", err);
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
 };
