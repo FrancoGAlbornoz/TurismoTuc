@@ -5,6 +5,7 @@ import ExcursionesCRUD from "./CRUDS/ExcursionesCRUD";
 import ReservasCRUD from "./CRUDS/ReservasCRUD";
 import UsuariosCRUD from "./CRUDS/UsuariosCRUD";
 import ReseñasCRUD from "./CRUDS/ReseniasCRUD";
+import FechasCRUD from "./CRUDS/FechasCRUD";
 import DashboardHome from "./DashboardHome";
 
 const Dashboard = () => {
@@ -16,6 +17,7 @@ const Dashboard = () => {
           <Routes>
             <Route path="/" element={<DashboardHome />} />
             <Route path="excursiones/*" element={<ExcursionesCRUD />} />
+            <Route path="fechas/*" element={<FechasCRUD />} />
             <Route path="turistas/*" element={<TuristasCRUD />} />
             <Route path="reservas/*" element={<ReservasCRUD />} />
             <Route path="reseñas/*" element={<ReseñasCRUD />} />

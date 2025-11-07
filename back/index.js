@@ -4,7 +4,7 @@ import cors from "cors";
 import usuariosRoutes from "./routes/usuarios.routes.js";
 import reservasRoutes from "./routes/reservas.routes.js";
 import turistasRoutes from "./routes/turistas.routes.js";
-import excursionesRoutes from "./routes/excurisiones.routes.js";
+import excursionesRoutes from "./routes/excursiones.routes.js";
 import reseniasRoutes from "./routes/resenia.routes.js";
 import personalizacionRoutes from "./routes/personalizacion.routes.js";
 import dashboardRoutes from "./routes/dashboard.routes.js";
