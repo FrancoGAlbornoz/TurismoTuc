@@ -401,3 +401,66 @@ export const getParticipantesPorExcursion = (req, res) => {
     res.json(results);
   });
 };
+
+// =============================
+// BUSCAR RESERVAS POR DNI
+// =============================
+// Buscar reservas por DNI
+export const buscarReservasPorDNI = (req, res) => {
+  const { dni } = req.query;
+
+  if (!dni || dni.trim() === "") {
+    return res.status(200).json([]);
+  }
+
+  const sql = `
+    SELECT
+      r.id_reserva,
+      r.id_turista,
+      r.id_fecha,
+      COALESCE(t.nombre, '') AS nombre,
+      COALESCE(t.apellido, '') AS apellido,
+      COALESCE(t.dni, '') AS dni,
+      -- obtenemos datos de la excursion desde la tabla relacionada
+      e.id_excursion,
+      COALESCE(e.titulo, '') AS excursion,
+      f.fecha AS fecha_excursion,
+      r.cantidad_personas,
+      r.monto_total,
+      r.estado_reserva,
+      r.fecha_reserva,
+      COALESCE(r.eliminado, 0) AS eliminado
+    FROM Reservas r
+    JOIN Turistas t ON r.id_turista = t.id_turista
+    JOIN FechasExcursion f ON r.id_fecha = f.id_fecha
+    JOIN Excursiones e ON f.id_excursion = e.id_excursion
+    WHERE t.dni LIKE ? AND (r.eliminado IS NULL OR r.eliminado = 0)
+    ORDER BY f.fecha DESC
+  `;
+
+  pool.query(sql, [`%${dni}%`], (err, results) => {
+    if (err) {
+      console.error("Error al buscar reservas por DNI:", err);
+      return res.status(500).json({ message: "Error al buscar reservas" });
+    }
+
+    const rows = results.map((r) => ({
+      id_reserva: r.id_reserva,
+      id_turista: r.id_turista,
+      id_fecha: r.id_fecha,
+      id_excursion: r.id_excursion,
+      cantidad_personas: r.cantidad_personas,
+      monto_total: r.monto_total,
+      estado_reserva: r.estado_reserva,
+      fecha_reserva: r.fecha_reserva,
+      excursion: r.excursion,
+      fecha_excursion: r.fecha_excursion,
+      turista: `${r.nombre ?? ""} ${r.apellido ?? ""}`.trim(),
+      dni_turista: r.dni,
+      eliminado: r.eliminado,
+    }));
+
+    // Devolvemos array (vacío si no encontró nada). Esto evita 404 en búsquedas.
+    return res.json(rows);
+  });
+};
