@@ -30,7 +30,7 @@ export default function ExcursionSidebar({ excursion, fechas }) {
       Number(personas)
     );
 
-    alert("Excursión agregada al carrito ✅");
+    
   };
 
   return (

@@ -6,6 +6,7 @@ import {
   addItemCarrito,
   getItemsCarrito,
   deleteItemCarrito,
+  updateCantidadItem
 } from "../controllers/carrito.controller.js";
 
 const router = express.Router();
@@ -26,5 +27,7 @@ router.get("/:id_carrito/items", getItemsCarrito);
 
 // DELETE /api/carrito/item/12        -> borrar item
 router.delete("/item/:id_item", deleteItemCarrito);
+// PUT    /api/carrito/item/15        -> actualizar cantidad item
+router.put("/item/:id_item", updateCantidadItem);
 
 export default router;

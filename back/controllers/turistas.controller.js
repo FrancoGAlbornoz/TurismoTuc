@@ -68,30 +68,57 @@ export const createTurista = (req, res) => {
   });
 };
 
-// Modificar un turista existente
-export const updateTurista = (req, res) => {
+// 🔹 Modificar un turista existente (versión actualizada)
+export const updateTurista = async (req, res) => {
   const { id } = req.params;
   const { nombre, apellido, dni, email, telefono, direccion, nacionalidad } = req.body;
 
-  const sql = `
-    UPDATE Turistas
-    SET nombre=?, apellido=?, dni=?, email=?, telefono=?, direccion=?, nacionalidad=?
-    WHERE id_turista=? AND eliminado=0
-  `;
-  const values = [nombre, apellido, dni, email, telefono, direccion, nacionalidad, id];
+  try {
+    const [result] = await pool
+      .promise()
+      .query(
+        `
+        UPDATE Turistas
+        SET nombre=?, apellido=?, dni=?, email=?, telefono=?, direccion=?, nacionalidad=?
+        WHERE id_turista=? AND eliminado=0
+      `,
+        [nombre, apellido, dni, email, telefono, direccion, nacionalidad, id]
+      );
 
-  pool.query(sql, values, (err, result) => {
-    if (err) {
-      console.error("Error al actualizar turista:", err);
-      if (err.code === "ER_DUP_ENTRY") {
-        return res.status(400).json({ message: "El DNI ingresado ya existe" });
-      }
-      return res.status(500).json({ message: "Error al actualizar turista" });
-    }
     if (result.affectedRows === 0)
       return res.status(404).json({ message: "Turista no encontrado" });
-    res.json({ message: "Turista actualizado correctamente" });
-  });
+
+    // 🔹 Obtener el turista actualizado y devolverlo al front
+    const [rows] = await pool
+      .promise()
+      .query(
+        `SELECT id_turista, nombre, apellido, dni, email, telefono, direccion, nacionalidad 
+         FROM Turistas WHERE id_turista = ?`,
+        [id]
+      );
+
+    if (rows.length === 0)
+      return res.status(404).json({ message: "Turista no encontrado tras actualizar" });
+
+    const turista = rows[0];
+
+    res.json({
+      id_turista: turista.id_turista,
+      nombre: turista.nombre,
+      apellido: turista.apellido,
+      dni: turista.dni,
+      email: turista.email,
+      telefono: turista.telefono,
+      direccion: turista.direccion,
+      nacionalidad: turista.nacionalidad,
+    });
+  } catch (err) {
+    console.error("Error al actualizar turista:", err);
+    if (err.code === "ER_DUP_ENTRY") {
+      return res.status(400).json({ message: "El DNI o Email ingresado ya existe" });
+    }
+    res.status(500).json({ message: "Error interno al actualizar turista" });
+  }
 };
 
 // Baja lógica
@@ -161,15 +188,7 @@ export const registerTurista = async (req, res) => {
 
   try {
     const [existe] = await pool.promise().query("SELECT id_turista FROM Turistas WHERE email = ?", [email]);
-    console.log("🟢 Nuevo turista registrado:", {
-  nombre,
-  apellido,
-  dni,
-  email,
-  telefono,
-  direccion,
-  nacionalidad,
-});
+    console.log("🟢 Nuevo turista registrado:", { nombre, apellido, dni, email, telefono, direccion, nacionalidad });
 
     if (existe.length > 0) {
       return res.status(400).json({ message: "El email ya está registrado" });
@@ -211,9 +230,7 @@ export const loginTurista = async (req, res) => {
     if (rows.length === 0)
       return res.status(401).json({ message: "Turista no encontrado" });
 
-    // 👇 convertir RowDataPacket a objeto plano
     const turista = JSON.parse(JSON.stringify(rows[0]));
-
     const validPassword = await bcrypt.compare(password, turista.password);
     if (!validPassword)
       return res.status(401).json({ message: "Contraseña incorrecta" });
@@ -230,7 +247,7 @@ export const loginTurista = async (req, res) => {
       message: "Login exitoso",
       token,
       turista: {
-        id: turista.id_turista,
+        id_turista: turista.id_turista,
         nombre: turista.nombre,
         apellido: turista.apellido,
         dni: turista.dni,

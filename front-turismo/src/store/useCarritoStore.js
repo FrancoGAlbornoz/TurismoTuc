@@ -8,7 +8,7 @@ const useCarritoStore = create((set, get) => ({
   items: [],
 
   // =============================
-  // 🔹 Obtener carrito del turista
+  // Obtener carrito del turista
   // =============================
   fetchCarrito: async () => {
     const { turista, initSession } = useTuristaStore.getState();
@@ -29,26 +29,23 @@ const useCarritoStore = create((set, get) => ({
     }
 
     try {
-      // 1️⃣ Traer o crear carrito activo
       const resCarrito = await axios.get(
         `http://localhost:8000/api/carrito/${idTurista}`
       );
       const carrito = resCarrito.data;
 
-      // 2️⃣ Traer items del carrito
       const resItems = await axios.get(
         `http://localhost:8000/api/carrito/${carrito.id_carrito}/items`
       );
 
       set({ carrito, items: resItems.data || [] });
-      console.log("🛒 Carrito cargado:", resItems.data);
     } catch (err) {
       console.error("Error al obtener carrito:", err);
     }
   },
 
   // =============================
-  // 🔹 Agregar item al carrito
+  // Agregar item
   // =============================
   addItem: async (id_fecha, cantidad_personas) => {
     const { turista } = useTuristaStore.getState();
@@ -69,16 +66,19 @@ const useCarritoStore = create((set, get) => ({
         cantidad_personas,
       });
 
-      // ✅ Recargar carrito actualizado
       await fetchCarrito();
+      alert("✅ Excursión agregada al carrito");
     } catch (err) {
       console.error("Error al agregar item:", err?.response?.data || err);
-      alert("No se pudo agregar al carrito.");
+      const msg =
+        err?.response?.data?.message ||
+        "No se pudo agregar al carrito.";
+      alert(msg);
     }
   },
 
   // =============================
-  // 🔹 Eliminar item del carrito
+  // Eliminar item
   // =============================
   removeItem: async (id_item) => {
     try {
@@ -92,24 +92,44 @@ const useCarritoStore = create((set, get) => ({
   },
 
   // =============================
-  // 🔹 Actualizar cantidad de personas
+  // Actualizar cantidad (usa el back nuevo)
   // =============================
-  updateCantidad: (id_item, nuevaCantidad) => {
-    set((state) => ({
-      items: state.items.map((i) =>
-        i.id_item === id_item
-          ? {
-              ...i,
-              cantidad_personas: nuevaCantidad,
-              subtotal: i.precio_unitario * nuevaCantidad,
-            }
-          : i
-      ),
-    }));
+  updateCantidad: async (id_item, nuevaCantidad) => {
+    try {
+      const res = await axios.put(
+        `http://localhost:8000/api/carrito/item/${id_item}`,
+        { cantidad_personas: nuevaCantidad }
+      );
+
+      const {
+        cantidad_personas,
+        subtotal,
+        precio_unitario,
+      } = res.data;
+
+      set((state) => ({
+        items: state.items.map((i) =>
+          i.id_item === id_item
+            ? {
+                ...i,
+                cantidad_personas,
+                subtotal,
+                precio_unitario: precio_unitario ?? i.precio_unitario,
+              }
+            : i
+        ),
+      }));
+    } catch (err) {
+      console.error("Error al actualizar cantidad:", err);
+      alert(
+        err?.response?.data?.message ||
+          "Ocurrió un error al actualizar la cantidad."
+      );
+    }
   },
 
   // =============================
-  // 🔹 Calcular total del carrito
+  // Calcular total
   // =============================
   calcularTotal: () => {
     const items = get().items;
@@ -117,7 +137,7 @@ const useCarritoStore = create((set, get) => ({
   },
 
   // =============================
-  // 🔹 Vaciar carrito completo
+  // Vaciar carrito
   // =============================
   clearCarrito: () => set({ carrito: null, items: [] }),
 }));

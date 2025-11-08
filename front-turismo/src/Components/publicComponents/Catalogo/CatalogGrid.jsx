@@ -1,11 +1,11 @@
 import { Card, Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-import useTuristaStore from "../../../store/useTuristaStore";
+
 import "../../../styles/publicComponents/catalogo.css";
 
 export default function CatalogGrid({ excursiones }) {
   const navigate = useNavigate();
-  const { turista } = useTuristaStore();
+
 
   return (
     <div className="row g-4">
@@ -65,18 +65,7 @@ export default function CatalogGrid({ excursiones }) {
                   Ver detalles
                 </Button>
 
-                {turista && (
-                  <Button
-                    variant="success"
-                    className="w-100"
-                    onClick={() => {
-                      console.log("🛒 Agregar al carrito:", exc.id_excursion);
-                      // ⚙️ Aquí luego haremos la funcionalidad real del carrito
-                    }}
-                  >
-                    🛒 Agregar al carrito
-                  </Button>
-                )}
+                
               </div>
             </Card.Body>
           </Card>

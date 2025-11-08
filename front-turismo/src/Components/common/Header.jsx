@@ -1,11 +1,27 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { FaWhatsapp, FaShoppingCart, FaUserCog, FaUserCircle } from "react-icons/fa";
+import {
+  FaWhatsapp,
+  FaShoppingCart,
+} from "react-icons/fa";
 import useTuristaStore from "../../store/useTuristaStore";
+import useCarritoStore from "../../store/useCarritoStore";
+import { useEffect } from "react";
 import "../../styles/components/common/header.css";
 
 export default function Header() {
   const navigate = useNavigate();
   const { turista, clearTurista } = useTuristaStore();
+  const { items, fetchCarrito } = useCarritoStore();
+
+  useEffect(() => {
+    if (turista) fetchCarrito();
+  }, [turista]);
+
+  // 🔹 Suma total de personas o ítems del carrito
+  const cantidadTotal = items.reduce(
+    (acc, i) => acc + Number(i.cantidad_personas || 0),
+    0
+  );
 
   return (
     <nav className="navbar navbar-expand-lg bg-white shadow-sm sticky-top">
@@ -51,9 +67,9 @@ export default function Header() {
           </ul>
         </div>
 
-        {/* Botones derecha */}
+        {/* Zona derecha */}
         <div className="d-flex align-items-center gap-2">
-          {/* ====== LOGIN / REGISTRO ====== */}
+          {/* 🔹 Si NO hay turista */}
           {!turista ? (
             <>
               <button
@@ -70,12 +86,54 @@ export default function Header() {
               </button>
             </>
           ) : (
-            <div className="d-flex align-items-center gap-2">
-              <span className="fw-semibold text-success small">
-                ¡Hola, {turista.nombre.split(" ")[0]}!
-              </span>
+            // 🔹 Si hay turista logueado
+            <div className="d-flex align-items-center gap-3">
+              {/* WhatsApp primero */}
+              <a
+                href="https://wa.me/5493810000000"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-success btn-sm d-flex align-items-center justify-content-center"
+                style={{ width: "38px", height: "38px", borderRadius: "50%" }}
+                title="Contactar por WhatsApp"
+              >
+                <FaWhatsapp size={18} />
+              </a>
+
+              {/* Carrito */}
+              <Link
+                to="/carrito"
+                className="btn btn-outline-dark btn-sm d-flex align-items-center gap-1 position-relative"
+                title="Ver carrito"
+              >
+                <FaShoppingCart /> Carrito
+                {cantidadTotal > 0 && (
+                  <span
+                    className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                    style={{
+                      fontSize: "0.65rem",
+                      padding: "0.3rem 0.45rem",
+                    }}
+                  >
+                    {cantidadTotal}
+                  </span>
+                )}
+              </Link>
+
+              {/* Saludo */}
+              <span className="fw-semibold text-success small mb-0">¡Hola, {turista?.nombre?.split(" ")[0] || "Turista"}!</span>
+
+              {/* Botón Mi perfil */}
               <button
-                className="btn btn-outline-danger btn-sm"
+                className="btn btn-outline-primary btn-sm fw-semibold"
+                onClick={() => navigate("/perfil-turista")}
+              >
+                Mi perfil
+              </button>
+
+              {/* Cerrar sesión */}
+              <button
+                className="btn btn-outline-danger btn-sm fw-semibold"
                 onClick={() => {
                   clearTurista();
                   navigate("/");
@@ -83,42 +141,8 @@ export default function Header() {
               >
                 Cerrar sesión
               </button>
-              <FaUserCircle
-                size={22}
-                className="text-success ms-1"
-                style={{ cursor: "pointer" }}
-                onClick={() => navigate("/perfil-turista")}
-                title="Mi perfil"
-              />
             </div>
           )}
-
-          {/* WhatsApp */}
-          <a
-            href="https://wa.me/5493810000000"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-teal btn-sm d-flex align-items-center gap-1"
-          >
-            <FaWhatsapp /> WhatsApp
-          </a>
-
-          {/* Carrito */}
-          <Link
-            to="/carrito"
-            className="btn btn-outline-dark btn-sm d-flex align-items-center gap-1"
-          >
-            <FaShoppingCart /> Carrito
-          </Link>
-
-          {/* Admin */}
-          <NavLink
-            className="nav-link ms-2 text-secondary opacity-75 small d-flex align-items-center gap-1"
-            to="/admin"
-            title="Panel administrativo"
-          >
-            <FaUserCog size={22} />
-          </NavLink>
         </div>
       </div>
     </nav>
