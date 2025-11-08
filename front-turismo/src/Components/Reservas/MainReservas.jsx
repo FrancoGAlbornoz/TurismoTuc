@@ -124,7 +124,6 @@ export default function ReservasMain() {
   useEffect(() => {
     if (debouncedDni.trim() === "") {
       getReservas(); // si el campo está vacío → mostrar todas
-      inputRef.current?.focus();
     } else {
       buscarPorDNI(debouncedDni); // si hay algo → buscar por DNI
     }
