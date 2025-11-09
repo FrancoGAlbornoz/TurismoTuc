@@ -9,11 +9,11 @@ export const iniciarPagoPayway = async (req, res) => {
   const { id_reserva } = req.body;
 
   try {
-    // Buscar la reserva
+    // 1️⃣ Buscar la reserva
     const [rows] = await pool.promise().query(
       `
       SELECT 
-        r.id_reserva, r.monto_total, r.id_turista,
+        r.id_reserva, r.monto_total, r.id_turista, r.cantidad_personas, r.id_fecha,
         t.email, t.nombre, t.apellido
       FROM Reservas r
       JOIN Turistas t ON r.id_turista = t.id_turista
@@ -27,7 +27,7 @@ export const iniciarPagoPayway = async (req, res) => {
 
     const reserva = rows[0];
 
-    // 🔹 Simulamos un pago exitoso (sandbox local)
+    // 2️⃣ Simulamos un pago exitoso (sandbox local)
     const fakePayment = {
       id: `sim-${Date.now()}`,
       status: "approved",
@@ -37,16 +37,22 @@ export const iniciarPagoPayway = async (req, res) => {
       message: "Pago simulado localmente (sin conexión a Payway)",
     };
 
-    // Registrar el pago en la DB
+    // 3️⃣ Registrar el pago en la DB
     await pool.promise().query(
       `
       INSERT INTO Pagos (id_reserva, id_medio_pago, monto, estado_pago, moneda)
-      VALUES (?, (SELECT id_medio_pago FROM MediosPago WHERE nombre_medio='Payway' LIMIT 1), ?, 'aprobado', 'ARS')
+      VALUES (
+        ?, 
+        (SELECT id_medio_pago FROM MediosPago WHERE nombre_medio='Payway' LIMIT 1), 
+        ?, 
+        'aprobado', 
+        'ARS'
+      )
       `,
       [id_reserva, reserva.monto_total]
     );
 
-    // También actualizamos el estado de la reserva a “confirmada”
+    // 4️⃣ Actualizar el estado de la reserva a “confirmada”
     await pool.promise().query(
       `
       UPDATE Reservas
@@ -56,11 +62,27 @@ export const iniciarPagoPayway = async (req, res) => {
       [id_reserva]
     );
 
+    // 5️⃣ 🔹 Descontar cupo solo al confirmar pago
+    await pool.promise().query(
+      `
+      UPDATE FechasExcursion f
+      JOIN Reservas r ON f.id_fecha = r.id_fecha
+      SET f.cupo_disponible = GREATEST(f.cupo_disponible - r.cantidad_personas, 0)
+      WHERE r.id_reserva = ? AND r.estado_reserva = 'confirmada'
+      `,
+      [id_reserva]
+    );
+
     console.log(`✅ Pago simulado con éxito para la reserva ${id_reserva}`);
 
+    // 6️⃣ Devolvemos la información que el frontend necesita
     res.status(200).json({
       message: "Pago simulado correctamente (modo local)",
-      data: fakePayment,
+      data: {
+        id_reserva: reserva.id_reserva,
+        monto_total: reserva.monto_total,
+        metodo: "Payway",
+      },
     });
   } catch (error) {
     console.error("❌ Error al simular pago:", error);
@@ -101,9 +123,6 @@ export const callbackPayway = async (req, res) => {
     res.sendStatus(500);
   }
 };
-
-
-
 
 // =============================
 // TRANSFERENCIA / DEPÓSITO
@@ -160,8 +179,8 @@ export const registrarTransferencia = async (req, res) => {
       message: "Transferencia registrada correctamente. Pendiente de verificación.",
       data: {
         id_reserva,
-        monto: reserva.monto_total,
-        estado: "pendiente",
+        monto_total: reserva.monto_total,
+        metodo: "Transferencia/Depósito",
       },
     });
   } catch (error) {

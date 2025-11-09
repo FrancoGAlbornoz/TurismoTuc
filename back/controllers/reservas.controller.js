@@ -120,18 +120,22 @@ export const getReservaById = (req, res) => {
   });
 };
 
-// Crear nueva reserva
+
+// Crear nueva reserva (versión corregida)
+// Crear nueva reserva (sin modificar cupos todavía)
 export const createReserva = (req, res) => {
   const { id_turista, id_fecha, cantidad_personas, estado_reserva } = req.body;
+
+  console.log("📦 Datos recibidos para crear reserva:", req.body);
 
   // Validar datos obligatorios
   if (!id_turista || !id_fecha || !cantidad_personas) {
     return res.status(400).json({ message: "Faltan datos obligatorios" });
   }
 
-  // Primero obtener el precio de la excursión asociada a esta fecha y el cupo disponible
+  // Obtener precio base de la excursión (sin restar cupos)
   const sqlPrecio = `
-    SELECT e.precio_base, f.cupo_disponible
+    SELECT e.precio_base
     FROM FechasExcursion f
     JOIN Excursiones e ON f.id_excursion = e.id_excursion
     WHERE f.id_fecha = ? AND f.eliminado = 0
@@ -150,20 +154,9 @@ export const createReserva = (req, res) => {
     }
 
     const precioBase = results[0].precio_base;
-    const cupoDisponible = results[0].cupo_disponible;
-
-    // Validar cupo disponible
-    if (cantidad_personas > cupoDisponible) {
-      return res
-        .status(400)
-        .json({ message: "No hay cupo suficiente para esta reserva" });
-    }
-
-    // Calcular el monto total y cupo nuevo
     const monto_total = precioBase * cantidad_personas;
-    const nuevoCupo = cupoDisponible - cantidad_personas;
 
-    // Insertar la reserva
+    // Insertar la reserva como pendiente (sin tocar cupos aún)
     const sqlInsert = `
       INSERT INTO Reservas
       (id_fecha, id_turista, cantidad_personas, monto_total, estado_reserva)
@@ -172,33 +165,25 @@ export const createReserva = (req, res) => {
 
     pool.query(
       sqlInsert,
-      [
-        id_fecha,
-        id_turista,
-        cantidad_personas,
-        monto_total,
-        estado_reserva || "pendiente",
-      ],
+      [id_fecha, id_turista, cantidad_personas, monto_total, estado_reserva || "pendiente"],
       (err2, result) => {
-        if (err2)
+        if (err2) {
+          console.error("Error al crear reserva:", err2);
           return res.status(500).json({ message: "Error al crear reserva" });
+        }
 
-        // Actualizar cupo disponible en FechasExcursion
-        const sqlUpdateCupo = `UPDATE FechasExcursion SET cupo_disponible = ? WHERE id_fecha = ?`;
-        pool.query(sqlUpdateCupo, [nuevoCupo, id_fecha], (err3) => {
-          if (err3) console.error("Error al actualizar cupo:", err3);
+        console.log(`✅ Reserva creada con ID ${result.insertId}`);
 
-          res.status(201).json({
-            message: "Reserva creada correctamente",
-            id_reserva: result.insertId,
-            monto_total,
-            nuevoCupo, // Devolvemos el nuevo cupo
-          });
+        res.status(201).json({
+          message: "Reserva creada correctamente (pendiente de pago)",
+          id_reserva: result.insertId,
+          monto_total,
         });
       }
     );
   });
 };
+
 
 // Actualizar estado o datos de una reserva
 export const updateReserva = (req, res) => {

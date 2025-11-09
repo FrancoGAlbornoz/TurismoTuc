@@ -74,14 +74,13 @@ export const addItemCarrito = async (req, res) => {
   const { id_turista, id_fecha, cantidad_personas } = req.body;
 
   try {
-    // 1. Traer la fecha + excursión con precio “real”
+    // 1. Traer la fecha + excursión con precio real
     const [fechaRes] = await pool.promise().query(
       `
       SELECT 
         f.id_excursion,
         f.cupo_maximo,
         f.cupo_disponible,
-        -- si la fecha tiene precio > 0 uso ese, si no uso el de la excursión
         CASE 
           WHEN f.precio IS NOT NULL AND f.precio > 0 THEN f.precio
           ELSE e.precio_base
@@ -100,7 +99,7 @@ export const addItemCarrito = async (req, res) => {
 
     const fecha = fechaRes[0];
 
-    // 2. cupos
+    // Validar que hay cupos disponibles
     if (cantidad_personas > fecha.cupo_disponible) {
       return res
         .status(400)
@@ -109,7 +108,7 @@ export const addItemCarrito = async (req, res) => {
         });
     }
 
-    // 3. asegurar carrito abierto del turista
+    // 2. Buscar o crear carrito abierto
     const [carritoRes] = await pool
       .promise()
       .query(
@@ -132,7 +131,7 @@ export const addItemCarrito = async (req, res) => {
 
     const subtotal = fecha.precio * cantidad_personas;
 
-    // 4. insertar ítem con precio ya calculado
+    // 3. Insertar ítem (sin tocar cupos todavía)
     await pool.promise().query(
       `
       INSERT INTO CarritoItems 
@@ -142,18 +141,8 @@ export const addItemCarrito = async (req, res) => {
       [id_carrito, id_fecha, cantidad_personas, fecha.precio, subtotal]
     );
 
-    // 5. bajar cupo
-    await pool.promise().query(
-      `
-      UPDATE FechasExcursion 
-      SET cupo_disponible = cupo_disponible - ?
-      WHERE id_fecha = ?
-      `,
-      [cantidad_personas, id_fecha]
-    );
-
     res.json({
-      message: "Excursión agregada al carrito",
+      message: "Excursión agregada al carrito (sin afectar cupos)",
       subtotal,
       precio_unitario: fecha.precio,
       titulo: fecha.titulo,
@@ -163,6 +152,7 @@ export const addItemCarrito = async (req, res) => {
     res.status(500).json({ message: "Error al agregar item al carrito" });
   }
 };
+
 
 // =============================
 // OBTENER ITEMS DEL CARRITO
@@ -231,18 +221,21 @@ export const deleteItemCarrito = (req, res) => {
   });
 };
 
+
 export const updateCantidadItem = async (req, res) => {
   const { id_item } = req.params;
   const { cantidad_personas } = req.body;
 
   try {
-    // 1) validar dato de entrada
+    // 1️⃣ Validar entrada correctamente
     const nuevaCantidad = Number(cantidad_personas);
-    if (!Number.isInteger(nuevaCantidad) || nuevaCantidad <= 0) {
+
+    // Si llega NaN o 0 o negativo, no permitimos continuar
+    if (!Number.isFinite(nuevaCantidad) || nuevaCantidad <= 0) {
       return res.status(400).json({ message: "Cantidad inválida." });
     }
 
-    // 2) traer el item con la info necesaria
+    // 2️⃣ Traer el item y su info
     const [rows] = await pool.promise().query(
       `
       SELECT 
@@ -273,22 +266,19 @@ export const updateCantidadItem = async (req, res) => {
       precio_unitario,
     } = rows[0];
 
-    // 3) calcular el cupo real disponible para este cambio
-    //    (lo que hay en la fecha + lo que ya estaba reservado por este ítem)
+    // 3️⃣ Calcular el cupo real disponible
     const cupoReal = (cupo_disponible ?? 0) + cantidad_actual;
 
     if (nuevaCantidad > cupoReal) {
       return res.status(400).json({
-        message: `No hay suficientes cupos disponibles (${cupoReal} máximo).`,
+        message: `Solo quedan ${cupoReal} lugares disponibles.`,
       });
     }
 
-    // 4) calcular diferencia para devolver o consumir cupos
-    const diferencia = nuevaCantidad - cantidad_actual; // puede ser + o -
+    // 4️⃣ Calcular subtotal
+    const nuevoSubtotal = nuevaCantidad * (precio_unitario ?? 0);
 
-    const nuevoSubtotal = nuevaCantidad * precio_unitario;
-
-    // 5) actualizar el item
+    // 5️⃣ Actualizar el item sin tocar los cupos todavía
     await pool.promise().query(
       `
       UPDATE CarritoItems
@@ -298,28 +288,14 @@ export const updateCantidadItem = async (req, res) => {
       [nuevaCantidad, nuevoSubtotal, id_item]
     );
 
-    // 6) si la diferencia no es 0, actualizar el cupo de la fecha
-    if (diferencia !== 0) {
-      await pool.promise().query(
-        `
-        UPDATE FechasExcursion
-        SET cupo_disponible = cupo_disponible - ?
-        WHERE id_fecha = ?
-        `,
-        [diferencia, id_fecha]
-      );
-      // ojo: si diferencia es negativa (bajaste de 8 a 7), queda "cupo_disponible - (-1)" = +1 ✔
-    }
-
-    // 7) responder al front con los valores nuevos
-    return res.json({
-      message: "Cantidad actualizada correctamente",
-      cantidad_personas: nuevaCantidad,
-      subtotal: nuevoSubtotal,
-      precio_unitario,
+    res.json({
+      message: "Cantidad actualizada correctamente (sin afectar cupos)",
+      id_item,
+      nuevaCantidad,
+      nuevoSubtotal,
     });
-  } catch (err) {
-    console.error("❌ Error al actualizar cantidad:", err);
-    return res.status(500).json({ message: "Error interno al actualizar cantidad" });
+  } catch (error) {
+    console.error("❌ Error al actualizar cantidad del item:", error);
+    res.status(500).json({ message: "Error al actualizar cantidad del item" });
   }
 };

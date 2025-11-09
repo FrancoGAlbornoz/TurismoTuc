@@ -120,9 +120,10 @@ export default function CheckoutPago({ turista, onNext }) {
 
       // 5) pasar al paso de confirmación
       onNext({
-        reserva,
-        pago,
-        metodo,
+      id_reserva: reserva.id_reserva,
+      monto_total: reserva.monto_total ?? pago.data?.amount ?? 0,
+      metodo,
+      estado_reserva: reserva.estado_reserva ?? "confirmada",
       });
     } catch (err) {
       console.error("Error en el proceso de pago:", err);

@@ -5,20 +5,29 @@ import useCarritoStore from "../../../store/useCarritoStore";
 export default function CarritoItem({ item }) {
   const { updateCantidad, removeItem } = useCarritoStore();
 
-  const handleActualizarCantidad = async (nuevaCantidad) => {
-    // si baja a 0, preguntar si lo saca
-    if (nuevaCantidad <= 0) {
-      if (window.confirm("¿Deseas quitar esta excursión del carrito?")) {
-        await removeItem(item.id_item);
+  // 🔹 Aseguramos valores numéricos válidos
+  const cantidad = Number(item.cantidad_personas) || 0;
+  const precioUnitario = Number(item.precio_unitario) || 0;
+  const subtotalCalc = Number(item.subtotal) || cantidad * precioUnitario;
+
+  // 🔹 Maneja actualización de cantidad
+  const handleActualizarCantidad = async (nuevaCantidadRaw) => {
+    const nuevaCantidad = Number(nuevaCantidadRaw);
+
+    if (!Number.isFinite(nuevaCantidad) || nuevaCantidad <= 0) {
+      if (nuevaCantidad <= 0) {
+        if (window.confirm("¿Deseas quitar esta excursión del carrito?")) {
+          await removeItem(item.id_item);
+        }
       }
       return;
     }
 
-    // dejamos que el backend valide el cupo real
     try {
       await updateCantidad(item.id_item, nuevaCantidad);
     } catch (err) {
-      // el store ya alerta, así que acá no hace falta
+      const msg = err?.response?.data?.message || "No se pudo actualizar la cantidad.";
+      alert(msg);
     }
   };
 
@@ -34,7 +43,6 @@ export default function CarritoItem({ item }) {
               : "A definir"}
           </p>
 
-          {/* Controles de cantidad */}
           <div className="d-flex align-items-center gap-3 small mt-2">
             <span className="fw-semibold">Personas:</span>
 
@@ -43,39 +51,30 @@ export default function CarritoItem({ item }) {
                 variant="outline-secondary"
                 size="sm"
                 className="px-2 py-0"
-                onClick={() =>
-                  handleActualizarCantidad(item.cantidad_personas - 1)
-                }
+                onClick={() => handleActualizarCantidad(cantidad - 1)}
               >
                 −
               </Button>
 
-              <span className="mx-3 fw-semibold">{item.cantidad_personas}</span>
+              <span className="mx-3 fw-semibold">{cantidad}</span>
 
               <Button
                 variant="outline-secondary"
                 size="sm"
                 className="px-2 py-0"
-                onClick={() =>
-                  handleActualizarCantidad(item.cantidad_personas + 1)
-                }
+                onClick={() => handleActualizarCantidad(cantidad + 1)}
               >
                 +
               </Button>
             </div>
 
             <span>
-              — Precio unitario: $
-              {Number(item.precio_unitario || 0).toLocaleString("es-AR")}
+              — Precio unitario: ${precioUnitario.toLocaleString("es-AR")}
             </span>
           </div>
 
           <p className="text-success fw-semibold mt-2 mb-0">
-            Subtotal: $
-            {Number(
-              item.subtotal ||
-                (item.precio_unitario || 0) * item.cantidad_personas
-            ).toLocaleString("es-AR")}
+            Subtotal: ${subtotalCalc.toLocaleString("es-AR")}
           </p>
         </div>
 
