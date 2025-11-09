@@ -69,6 +69,7 @@ export const createTurista = (req, res) => {
 };
 
 // 🔹 Modificar un turista existente (versión actualizada)
+// 🔹 Modificar un turista existente (versión consistente con login)
 export const updateTurista = async (req, res) => {
   const { id } = req.params;
   const { nombre, apellido, dni, email, telefono, direccion, nacionalidad } = req.body;
@@ -102,8 +103,9 @@ export const updateTurista = async (req, res) => {
 
     const turista = rows[0];
 
+    // 🔹 Normalizamos el formato igual que el login
     res.json({
-      id_turista: turista.id_turista,
+      id: turista.id_turista, // 👈 clave consistente
       nombre: turista.nombre,
       apellido: turista.apellido,
       dni: turista.dni,
