@@ -94,39 +94,37 @@ const useCarritoStore = create((set, get) => ({
   // =============================
   // Actualizar cantidad (usa el back nuevo)
   // =============================
-  updateCantidad: async (id_item, nuevaCantidad) => {
-    try {
-      const res = await axios.put(
-        `http://localhost:8000/api/carrito/item/${id_item}`,
-        { cantidad_personas: nuevaCantidad }
-      );
+  // ...dentro de updateCantidad...
+updateCantidad: async (id_item, nuevaCantidad) => {
+  if (!Number.isFinite(nuevaCantidad) || nuevaCantidad <= 0) {
+    alert("Cantidad inválida.");
+    return;
+  }
 
-      const {
-        cantidad_personas,
-        subtotal,
-        precio_unitario,
-      } = res.data;
+  try {
+    const res = await axios.put(
+      `http://localhost:8000/api/carrito/item/${id_item}`,
+      { cantidad_personas: nuevaCantidad }
+    );
 
-      set((state) => ({
-        items: state.items.map((i) =>
-          i.id_item === id_item
-            ? {
-                ...i,
-                cantidad_personas,
-                subtotal,
-                precio_unitario: precio_unitario ?? i.precio_unitario,
-              }
-            : i
-        ),
-      }));
-    } catch (err) {
-      console.error("Error al actualizar cantidad:", err);
-      alert(
-        err?.response?.data?.message ||
-          "Ocurrió un error al actualizar la cantidad."
-      );
-    }
-  },
+    const { nuevaCantidad: cant, nuevoSubtotal } = res.data;
+
+    set((state) => ({
+      items: state.items.map((i) =>
+        i.id_item === id_item
+          ? { ...i, cantidad_personas: cant, subtotal: nuevoSubtotal }
+          : i
+      ),
+    }));
+  } catch (err) {
+    console.error("Error al actualizar cantidad:", err);
+    alert(
+      err?.response?.data?.message ||
+        "Ocurrió un error al actualizar la cantidad."
+    );
+  }
+},
+
 
   // =============================
   // Calcular total

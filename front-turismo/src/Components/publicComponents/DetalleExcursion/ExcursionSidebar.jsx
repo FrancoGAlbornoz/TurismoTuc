@@ -19,23 +19,32 @@ export default function ExcursionSidebar({ excursion, fechas }) {
       alert("Tenés que iniciar sesión para agregar al carrito");
       return;
     }
+
+    if (!fechas || fechas.length === 0) {
+      alert("No hay fechas disponibles para esta excursión.");
+      return;
+    }
+
     if (!fechaSeleccionada) {
       alert("Seleccioná una fecha primero");
       return;
     }
 
-    // 👇 esto ahora va al backend del carrito
-    await addItem(
-      Number(fechaSeleccionada),
-      Number(personas)
-    );
+    // ✅ Buscar la fecha seleccionada para validar cupos
+    const fechaObj = fechas.find((f) => f.id_fecha === Number(fechaSeleccionada));
+    if (fechaObj && Number(personas) > fechaObj.cupo_disponible) {
+      alert(`Solo quedan ${fechaObj.cupo_disponible} lugares disponibles.`);
+      return;
+    }
 
-    
+    // 👇 Enviar al backend del carrito
+    await addItem(Number(fechaSeleccionada), Number(personas));
   };
 
   return (
     <Card className="excursion-sidebar shadow-sm border-0 sticky-md-top">
       <Card.Body>
+        {/* Precio */}
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h5 className="fw-bold text-teal mb-0">Desde</h5>
           <h4 className="fw-bold text-success mb-0">
@@ -43,28 +52,31 @@ export default function ExcursionSidebar({ excursion, fechas }) {
           </h4>
         </div>
 
-        {/* Fechas */}
+        {/* Fechas disponibles */}
         <Form.Group className="mb-3">
           <Form.Label className="fw-semibold">Fechas disponibles</Form.Label>
-          <Form.Select
-            value={fechaSeleccionada || ""}
-            onChange={(e) => setFechaSeleccionada(e.target.value)}
-          >
-            {fechas && fechas.length > 0 ? (
-              fechas.map((f) => (
+
+          {fechas && fechas.length > 0 ? (
+            <Form.Select
+              value={fechaSeleccionada || ""}
+              onChange={(e) => setFechaSeleccionada(e.target.value)}
+            >
+              {fechas.map((f) => (
                 <option key={f.id_fecha} value={f.id_fecha}>
                   {new Date(f.fecha).toLocaleDateString("es-AR", {
                     weekday: "long",
                     day: "numeric",
                     month: "long",
                   })}{" "}
-                  — {f.hora_salida?.slice(0, 5)} hs
+                  — {f.hora_salida?.slice(0, 5)} hs ({f.cupo_disponible} lugares)
                 </option>
-              ))
-            ) : (
-              <option disabled>No hay fechas disponibles</option>
-            )}
-          </Form.Select>
+              ))}
+            </Form.Select>
+          ) : (
+            <div className="text-muted small fst-italic px-2 py-2 border rounded bg-light">
+              🕒 Sin fechas disponibles
+            </div>
+          )}
         </Form.Group>
 
         {/* Personas */}
@@ -78,17 +90,24 @@ export default function ExcursionSidebar({ excursion, fechas }) {
           />
         </Form.Group>
 
-        <Button
-          variant="warning"
-          className="w-100 fw-semibold py-2 mb-2"
-          onClick={handleAgregar}
-        >
-          Agregar al carrito
-        </Button>
-
-        <Button variant="outline-secondary" className="w-100 fw-semibold py-2">
-          Descargar comprobante
-        </Button>
+        {/* Botón dinámico */}
+        {fechas && fechas.length > 0 ? (
+          <Button
+            variant="warning"
+            className="w-100 fw-semibold py-2 mb-2"
+            onClick={handleAgregar}
+          >
+            Agregar al carrito
+          </Button>
+        ) : (
+          <Button
+            variant="secondary"
+            className="w-100 fw-semibold py-2 mb-2"
+            disabled
+          >
+            No hay fechas disponibles
+          </Button>
+        )}
       </Card.Body>
     </Card>
   );
