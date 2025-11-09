@@ -1,7 +1,28 @@
 // src/Components/publicComponents/Carrito/CarritoResumen.jsx
 import { Card, Button } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
+import useTuristaStore from "../../../store/useTuristaStore";
 
 export default function CarritoResumen({ subtotal = 0, impuestos = 0, total = 0 }) {
+  const navigate = useNavigate();
+  const { turista } = useTuristaStore();
+
+  const handleIrAReservar = () => {
+    if (!turista) {
+      // Si no hay usuario logueado, lo mandamos al login
+      alert("Debes iniciar sesión antes de continuar con la reserva.");
+      navigate("/login-turista");
+      return;
+    }
+
+    // Si está logueado, lo redirigimos al checkout
+    navigate("/checkout");
+  };
+
+  const handleSeguirExplorando = () => {
+    navigate("/catalogo");
+  };
+
   return (
     <Card className="shadow-sm border-0 rounded-4">
       <Card.Body>
@@ -24,10 +45,20 @@ export default function CarritoResumen({ subtotal = 0, impuestos = 0, total = 0 
           <span className="fw-bold">${total.toLocaleString("es-AR")}</span>
         </div>
 
-        <Button variant="warning" className="w-100 mb-2 fw-semibold">
+        {/* 🔹 Botones */}
+        <Button
+          variant="warning"
+          className="w-100 mb-2 fw-semibold"
+          onClick={handleIrAReservar}
+        >
           Ir a reservar
         </Button>
-        <Button variant="outline-secondary" className="w-100 fw-semibold">
+
+        <Button
+          variant="outline-secondary"
+          className="w-100 fw-semibold"
+          onClick={handleSeguirExplorando}
+        >
           Seguir explorando
         </Button>
       </Card.Body>

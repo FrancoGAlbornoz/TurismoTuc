@@ -1,13 +1,16 @@
-// src/store/useTuristaStore.js
 import { create } from "zustand";
 
-const useTuristaStore = create((set) => ({
+const useTuristaStore = create((set, get) => ({
   turista: null,
   token: null,
+  hydrated: false, // 🔹 indica si ya se leyó el localStorage
 
-  // 🔹 Cargar sesión guardada desde localStorage (ahora asíncrona)
+  // 🧠 Inicializa la sesión guardada (solo una vez)
   initSession: async () => {
-    return new Promise((resolve) => {
+    // si ya está hidratado, no hace nada
+    if (get().hydrated) return;
+
+    try {
       const turistaData = localStorage.getItem("turista");
       const tokenData = localStorage.getItem("tokenTurista");
 
@@ -18,26 +21,36 @@ const useTuristaStore = create((set) => ({
       } else {
         console.warn("⚠️ No se encontró sesión guardada.");
       }
-
-      // pequeña pausa para asegurar que Zustand actualice el estado
-      setTimeout(resolve, 100);
-    });
+    } catch (error) {
+      console.error("💥 Error al cargar sesión desde localStorage:", error);
+    } finally {
+      // siempre marcar que ya se terminó el intento de carga
+      set({ hydrated: true });
+    }
   },
 
-  // 🔹 Guardar sesión después del login
+  // 🟢 Guardar sesión luego del login
   setTurista: (turista, token) => {
-    localStorage.setItem("turista", JSON.stringify(turista));
-    localStorage.setItem("tokenTurista", token);
-    set({ turista, token });
-    console.log("🟢 Sesión guardada en localStorage:", turista);
+    try {
+      localStorage.setItem("turista", JSON.stringify(turista));
+      localStorage.setItem("tokenTurista", token);
+      set({ turista, token });
+      console.log("🟢 Sesión guardada en localStorage:", turista);
+    } catch (error) {
+      console.error("💥 Error al guardar sesión:", error);
+    }
   },
 
-  // 🔹 Cerrar sesión
+  // 🔴 Cerrar sesión completamente
   clearTurista: () => {
-    localStorage.removeItem("turista");
-    localStorage.removeItem("tokenTurista");
-    set({ turista: null, token: null });
-    console.log("🔴 Sesión cerrada, turista limpiado.");
+    try {
+      localStorage.removeItem("turista");
+      localStorage.removeItem("tokenTurista");
+      set({ turista: null, token: null });
+      console.log("🔴 Sesión cerrada, turista limpiado.");
+    } catch (error) {
+      console.error("💥 Error al limpiar sesión:", error);
+    }
   },
 }));
 
