@@ -73,7 +73,7 @@ export default function MainFechasExcursion() {
                   {e.fechas.length > 0 ? (
                     e.fechas.map((f) => (
                       <tr key={f.id_fecha}>
-                        <td>{f.fecha}</td>
+                        <td>{new Date(f.fecha).toLocaleDateString()}</td>
                         <td>{f.hora_salida || "—"}</td>
                         <td>{f.cupo_maximo}</td>
                         <td>{f.cupo_disponible}</td>

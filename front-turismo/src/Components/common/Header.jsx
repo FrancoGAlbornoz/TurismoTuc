@@ -1,27 +1,30 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import {
-  FaWhatsapp,
-  FaShoppingCart,
-} from "react-icons/fa";
+import { FaWhatsapp, FaShoppingCart } from "react-icons/fa";
 import useTuristaStore from "../../store/useTuristaStore";
 import useCarritoStore from "../../store/useCarritoStore";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import "../../styles/components/common/header.css";
 
 export default function Header() {
   const navigate = useNavigate();
   const { turista, clearTurista } = useTuristaStore();
   const { items, fetchCarrito } = useCarritoStore();
+  const { t, i18n } = useTranslation();
 
   useEffect(() => {
     if (turista) fetchCarrito();
   }, [turista]);
 
-  // 🔹 Suma total de personas o ítems del carrito
+  // Suma total de personas o ítems del carrito
   const cantidadTotal = items.reduce(
     (acc, i) => acc + Number(i.cantidad_personas || 0),
     0
   );
+
+  const changeLanguage = (lng) => {
+    i18n.changeLanguage(lng);
+  };
 
   return (
     <nav className="navbar navbar-expand-lg bg-white shadow-sm sticky-top">
@@ -32,7 +35,7 @@ export default function Header() {
           to="/"
         >
           <div className="logo-circle"></div>
-          Turismo Tucumán
+          {t("brand")}
         </Link>
 
         {/* Botón hamburguesa móvil */}
@@ -56,12 +59,12 @@ export default function Header() {
           <ul className="navbar-nav gap-3">
             <li className="nav-item">
               <NavLink className="nav-link" to="/">
-                INICIO
+                {t("home")}
               </NavLink>
             </li>
             <li className="nav-item">
               <NavLink className="nav-link" to="/catalogo">
-                CATÁLOGO
+                {t("catalog")}
               </NavLink>
             </li>
           </ul>
@@ -69,24 +72,45 @@ export default function Header() {
 
         {/* Zona derecha */}
         <div className="d-flex align-items-center gap-2">
-          {/* 🔹 Si NO hay turista */}
+
+          {/* 🔹 Botón cambio idioma */}
+          <div className="btn-group me-2">
+            <button
+              className={`btn btn-sm ${
+                i18n.language === "es" ? "btn-primary" : "btn-outline-primary"
+              }`}
+              onClick={() => changeLanguage("es")}
+            >
+              ES
+            </button>
+            <button
+              className={`btn btn-sm ${
+                i18n.language === "en" ? "btn-primary" : "btn-outline-primary"
+              }`}
+              onClick={() => changeLanguage("en")}
+            >
+              EN
+            </button>
+          </div>
+
+          {/* Si NO hay turista */}
           {!turista ? (
             <>
               <button
                 className="btn btn-outline-success btn-sm"
                 onClick={() => navigate("/login-turista")}
               >
-                Iniciar sesión
+                {t("login")}
               </button>
               <button
                 className="btn btn-success btn-sm"
                 onClick={() => navigate("/register-turista")}
               >
-                Registrate
+                {t("register")}
               </button>
             </>
           ) : (
-            // 🔹 Si hay turista logueado
+            // Si hay turista logueado
             <div className="d-flex align-items-center gap-3">
               {/* WhatsApp primero */}
               <a
@@ -111,7 +135,7 @@ export default function Header() {
                 className="btn btn-outline-dark btn-sm d-flex align-items-center gap-1 position-relative"
                 title="Ver carrito"
               >
-                <FaShoppingCart /> 
+                <FaShoppingCart /> {t("cart")}
                 {cantidadTotal > 0 && (
                   <span
                     className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
@@ -124,6 +148,13 @@ export default function Header() {
                   </span>
                 )}
               </Link>
+
+              {/* Saludo */}
+              <span className="fw-semibold text-success small mb-0">
+                {t("hello", {
+                  name: turista?.nombre?.split(" ")[0] || "Turista",
+                })}
+              </span>
 
               {/* Botón Mi perfil */}
               <button
@@ -141,7 +172,7 @@ export default function Header() {
                   navigate("/");
                 }}
               >
-                Cerrar sesión
+                {t("logout")}
               </button>
             </div>
           )}

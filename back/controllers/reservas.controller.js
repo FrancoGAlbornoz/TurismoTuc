@@ -7,10 +7,16 @@ import { pool } from "../config/DB.js";
 
 // Obtener las reservas con información relacionada y filtro
 export const getReservas = (req, res) => {
-  //console.log("Query recibida:", req.query);
-
-  const { filtro, estadoreserva, fechaDesde, fechaHasta } = req.query;
+  const {
+    filtro,
+    estadoreserva,
+    fechaDesde,
+    fechaHasta,
+    page = 1,
+    limit = 10,
+  } = req.query;
   const condiciones = [];
+  const params = [];
 
   // Filtro por activas/eliminadas
   if (filtro === "activas") condiciones.push("r.eliminado = 0");
@@ -21,7 +27,7 @@ export const getReservas = (req, res) => {
     condiciones.push(`r.estado_reserva = '${estadoreserva}'`);
   }
 
-  // Filtro por fecha (maneja todas las combinaciones)
+    // Filtro por fechas
   if (fechaDesde && fechaHasta) {
     condiciones.push(
       `DATE(r.fecha_reserva) BETWEEN '${fechaDesde}' AND '${fechaHasta}'`
@@ -32,15 +38,25 @@ export const getReservas = (req, res) => {
     condiciones.push(`DATE(r.fecha_reserva) <= '${fechaHasta}'`);
   }
 
-  //console.log("Condiciones generadas:", condiciones);
-
   const whereClause =
     condiciones.length > 0 ? `WHERE ${condiciones.join(" AND ")}` : "";
 
-  const sql = `
+  // Paginación
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+
+  const baseQuery = `
+    FROM Reservas r
+    JOIN Turistas t ON r.id_turista = t.id_turista
+    JOIN FechasExcursion f ON r.id_fecha = f.id_fecha
+    JOIN Excursiones e ON f.id_excursion = e.id_excursion
+    ${whereClause}
+  `;
+
+  const sqlCount = `SELECT COUNT(*) AS total ${baseQuery}`;
+  const sqlData = `
     SELECT 
       r.id_reserva, 
-      t.dni as dni_turista,
+      t.dni AS dni_turista,
       CONCAT(t.nombre, ' ', t.apellido) AS turista,
       e.titulo AS excursion,
       f.fecha AS fecha_excursion,
@@ -49,22 +65,34 @@ export const getReservas = (req, res) => {
       r.estado_reserva,
       r.fecha_reserva,
       r.eliminado
-    FROM Reservas r
-    JOIN Turistas t ON r.id_turista = t.id_turista
-    JOIN FechasExcursion f ON r.id_fecha = f.id_fecha
-    JOIN Excursiones e ON f.id_excursion = e.id_excursion
-    ${whereClause}
-    ORDER BY r.fecha_reserva DESC;
+    ${baseQuery}
+    ORDER BY r.fecha_reserva DESC
+    LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)};
   `;
 
-  //console.log("SQL generada:", sql);
-
-  pool.query(sql, (err, results) => {
+  // Ejecutamos ambas consultas
+  pool.query(sqlCount, (err, countResult) => {
     if (err) {
-      console.error("Error al obtener reservas:", err);
-      return res.status(500).json({ message: "Error al obtener reservas" });
+      console.error("Error al contar reservas:", err);
+      return res.status(500).json({ message: "Error al contar reservas" });
     }
-    res.json(results);
+
+    const total = countResult[0].total;
+    const totalPages = Math.ceil(total / limit);
+
+    pool.query(sqlData, (err, dataResult) => {
+      if (err) {
+        console.error("Error al obtener reservas:", err);
+        return res.status(500).json({ message: "Error al obtener reservas" });
+      }
+
+      res.json({
+        data: dataResult,
+        total,
+        totalPages,
+        currentPage: parseInt(page),
+      });
+    });
   });
 };
 
@@ -120,13 +148,12 @@ export const getReservaById = (req, res) => {
   });
 };
 
-
 // Crear nueva reserva (versión corregida)
 // Crear nueva reserva (sin modificar cupos todavía)
 export const createReserva = (req, res) => {
   const { id_turista, id_fecha, cantidad_personas, estado_reserva } = req.body;
 
-  console.log("📦 Datos recibidos para crear reserva:", req.body);
+  console.log(" Datos recibidos para crear reserva:", req.body);
 
   // Validar datos obligatorios
   if (!id_turista || !id_fecha || !cantidad_personas) {
@@ -165,7 +192,13 @@ export const createReserva = (req, res) => {
 
     pool.query(
       sqlInsert,
-      [id_fecha, id_turista, cantidad_personas, monto_total, estado_reserva || "pendiente"],
+      [
+        id_fecha,
+        id_turista,
+        cantidad_personas,
+        monto_total,
+        estado_reserva || "pendiente",
+      ],
       (err2, result) => {
         if (err2) {
           console.error("Error al crear reserva:", err2);
@@ -183,7 +216,6 @@ export const createReserva = (req, res) => {
     );
   });
 };
-
 
 // Actualizar estado o datos de una reserva
 export const updateReserva = (req, res) => {
@@ -365,7 +397,6 @@ export const deletePago = (req, res) => {
   });
 };
 
-
 export const getParticipantesPorExcursion = (req, res) => {
   const { id_excursion } = req.params;
 
@@ -381,7 +412,9 @@ export const getParticipantesPorExcursion = (req, res) => {
   pool.query(sql, [id_excursion], (err, results) => {
     if (err) {
       console.error("Error al obtener participantes:", err);
-      return res.status(500).json({ message: "Error al obtener participantes" });
+      return res
+        .status(500)
+        .json({ message: "Error al obtener participantes" });
     }
     res.json(results);
   });
