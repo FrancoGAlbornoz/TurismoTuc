@@ -15,6 +15,7 @@ import categoriasRoutes from "./routes/categorias.routes.js";
 import authTuristasRoutes from "./routes/authturistas.routes.js";
 import carritoRoutes from "./routes/carrito.routes.js";
 import pagosRoutes from "./routes/pagos.routes.js";
+import contactoRoutes from "./routes/contacto.routes.js";
 
 const app = express()
 
@@ -33,6 +34,7 @@ app.use("/api/carrito", carritoRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/auth/turistas", authTuristasRoutes);
 app.use("/api/pagos", pagosRoutes);
+app.use("/api", contactoRoutes);
 
 // Servir archivos estáticos (imágenes)
 

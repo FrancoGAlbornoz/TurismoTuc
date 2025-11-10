@@ -1,6 +1,6 @@
-// src/Components/publicComponents/Carrito/CarritoResumen.jsx
 import { Card, Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
 import useTuristaStore from "../../../store/useTuristaStore";
 
 export default function CarritoResumen({
@@ -13,10 +13,17 @@ export default function CarritoResumen({
 
   const handleIrAReservar = () => {
     if (!turista) {
-      alert("Debes iniciar sesión antes de continuar con la reserva.");
-      navigate("/login-turista");
+      Swal.fire({
+        icon: "warning",
+        title: "Iniciá sesión",
+        text: "Debes iniciar sesión antes de continuar con la reserva.",
+        confirmButtonText: "Ir al login",
+      }).then(() => {
+        navigate("/login-turista");
+      });
       return;
     }
+
     navigate("/checkout");
   };
 

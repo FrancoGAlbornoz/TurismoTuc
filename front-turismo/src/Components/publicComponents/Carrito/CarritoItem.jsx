@@ -1,5 +1,5 @@
-// src/Components/publicComponents/Carrito/CarritoItem.jsx
 import { Card, Button } from "react-bootstrap";
+import Swal from "sweetalert2";
 import useCarritoStore from "../../../store/useCarritoStore";
 
 export default function CarritoItem({ item }) {
@@ -10,22 +10,31 @@ export default function CarritoItem({ item }) {
   const subtotalCalc = Number(item.subtotal) || cantidad * precioUnitario;
   const cupo = Number(item.cupo_disponible) || 0;
 
-  // 🔹 Actualiza la cantidad validando antes de mandar al backend
   const handleActualizarCantidad = async (nuevaCantidad) => {
     const cant = Number(nuevaCantidad);
 
-    // No permitir cantidades menores a 1
     if (cant <= 0) {
-      const confirmar = window.confirm(
-        "¿Querés quitar esta excursión del carrito?"
-      );
-      if (confirmar) await removeItem(item.id_item);
+      const confirmar = await Swal.fire({
+        icon: "question",
+        title: "¿Quitar excursión?",
+        text: "¿Querés quitar esta excursión del carrito?",
+        showCancelButton: true,
+        confirmButtonText: "Sí, quitar",
+        cancelButtonText: "Cancelar",
+      });
+
+      if (confirmar.isConfirmed) {
+        await removeItem(item.id_item);
+      }
       return;
     }
 
-    // No permitir superar el cupo disponible
     if (cant > cupo) {
-      alert(`Solo hay ${cupo} lugares disponibles para esta excursión.`);
+      Swal.fire({
+        icon: "warning",
+        title: "Cupo insuficiente",
+        text: `Solo hay ${cupo} lugares disponibles para esta excursión.`,
+      });
       return;
     }
 
@@ -35,7 +44,11 @@ export default function CarritoItem({ item }) {
       const msg =
         err?.response?.data?.message ||
         "Ocurrió un error al actualizar la cantidad.";
-      alert(msg);
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: msg,
+      });
     }
   };
 

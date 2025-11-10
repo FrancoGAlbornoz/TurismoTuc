@@ -1,6 +1,6 @@
-// src/store/useCarritoStore.js
 import { create } from "zustand";
 import axios from "axios";
+import Swal from "sweetalert2";
 import useTuristaStore from "./useTuristaStore";
 
 const useCarritoStore = create((set, get) => ({
@@ -52,7 +52,10 @@ const useCarritoStore = create((set, get) => ({
     const { fetchCarrito } = get();
 
     if (!turista) {
-      alert("Debes iniciar sesión para agregar al carrito");
+      Swal.fire({
+        icon: "warning",
+        title: "Debes iniciar sesión para agregar al carrito",
+      });
       return;
     }
 
@@ -67,13 +70,22 @@ const useCarritoStore = create((set, get) => ({
       });
 
       await fetchCarrito();
-      alert("✅ Excursión agregada al carrito");
+
+      Swal.fire({
+        icon: "success",
+        title: "Excursión agregada al carrito",
+        showConfirmButton: false,
+        timer: 2000,
+      });
     } catch (err) {
       console.error("Error al agregar item:", err?.response?.data || err);
       const msg =
-        err?.response?.data?.message ||
-        "No se pudo agregar al carrito.";
-      alert(msg);
+        err?.response?.data?.message || "No se pudo agregar al carrito.";
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: msg,
+      });
     }
   },
 
@@ -88,43 +100,53 @@ const useCarritoStore = create((set, get) => ({
       }));
     } catch (err) {
       console.error("Error al eliminar item:", err);
+      Swal.fire({
+        icon: "error",
+        title: "Error al eliminar",
+        text: "No se pudo eliminar el item del carrito.",
+      });
     }
   },
 
   // =============================
-  // Actualizar cantidad (usa el back nuevo)
+  // Actualizar cantidad
   // =============================
-  // ...dentro de updateCantidad...
-updateCantidad: async (id_item, nuevaCantidad) => {
-  if (!Number.isFinite(nuevaCantidad) || nuevaCantidad <= 0) {
-    alert("Cantidad inválida.");
-    return;
-  }
+  updateCantidad: async (id_item, nuevaCantidad) => {
+    if (!Number.isFinite(nuevaCantidad) || nuevaCantidad <= 0) {
+      Swal.fire({
+        icon: "warning",
+        title: "Cantidad inválida",
+        text: "La cantidad debe ser mayor a cero.",
+      });
+      return;
+    }
 
-  try {
-    const res = await axios.put(
-      `http://localhost:8000/api/carrito/item/${id_item}`,
-      { cantidad_personas: nuevaCantidad }
-    );
+    try {
+      const res = await axios.put(
+        `http://localhost:8000/api/carrito/item/${id_item}`,
+        { cantidad_personas: nuevaCantidad }
+      );
 
-    const { nuevaCantidad: cant, nuevoSubtotal } = res.data;
+      const { nuevaCantidad: cant, nuevoSubtotal } = res.data;
 
-    set((state) => ({
-      items: state.items.map((i) =>
-        i.id_item === id_item
-          ? { ...i, cantidad_personas: cant, subtotal: nuevoSubtotal }
-          : i
-      ),
-    }));
-  } catch (err) {
-    console.error("Error al actualizar cantidad:", err);
-    alert(
-      err?.response?.data?.message ||
-        "Ocurrió un error al actualizar la cantidad."
-    );
-  }
-},
-
+      set((state) => ({
+        items: state.items.map((i) =>
+          i.id_item === id_item
+            ? { ...i, cantidad_personas: cant, subtotal: nuevoSubtotal }
+            : i
+        ),
+      }));
+    } catch (err) {
+      console.error("Error al actualizar cantidad:", err);
+      Swal.fire({
+        icon: "error",
+        title: "Error al actualizar",
+        text:
+          err?.response?.data?.message ||
+          "Ocurrió un error al actualizar la cantidad.",
+      });
+    }
+  },
 
   // =============================
   // Calcular total

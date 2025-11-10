@@ -1,6 +1,6 @@
-// src/Components/publicComponents/DetalleExcursion/ExcursionSidebar.jsx
 import { Card, Button, Form } from "react-bootstrap";
 import { useState } from "react";
+import Swal from "sweetalert2";
 import useTuristaStore from "../../../store/useTuristaStore";
 import useCarritoStore from "../../../store/useCarritoStore";
 import "../../../styles/publicComponents/detalleex.css";
@@ -16,28 +16,42 @@ export default function ExcursionSidebar({ excursion, fechas }) {
 
   const handleAgregar = async () => {
     if (!turista) {
-      alert("Tenés que iniciar sesión para agregar al carrito");
+      Swal.fire({
+        icon: "warning",
+        title: "Tenés que iniciar sesión",
+        text: "Iniciá sesión para poder agregar al carrito.",
+      });
       return;
     }
 
     if (!fechas || fechas.length === 0) {
-      alert("No hay fechas disponibles para esta excursión.");
+      Swal.fire({
+        icon: "info",
+        title: "Sin fechas disponibles",
+        text: "No hay fechas disponibles para esta excursión.",
+      });
       return;
     }
 
     if (!fechaSeleccionada) {
-      alert("Seleccioná una fecha primero");
+      Swal.fire({
+        icon: "warning",
+        title: "Seleccioná una fecha",
+        text: "Elegí una fecha antes de continuar.",
+      });
       return;
     }
 
-    // ✅ Buscar la fecha seleccionada para validar cupos
     const fechaObj = fechas.find((f) => f.id_fecha === Number(fechaSeleccionada));
     if (fechaObj && Number(personas) > fechaObj.cupo_disponible) {
-      alert(`Solo quedan ${fechaObj.cupo_disponible} lugares disponibles.`);
+      Swal.fire({
+        icon: "error",
+        title: "Cupo insuficiente",
+        text: `Solo quedan ${fechaObj.cupo_disponible} lugares disponibles.`,
+      });
       return;
     }
 
-    // 👇 Enviar al backend del carrito
     await addItem(Number(fechaSeleccionada), Number(personas));
   };
 

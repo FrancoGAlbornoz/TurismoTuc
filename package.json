@@ -4,8 +4,10 @@
     "bootstrap": "^5.3.8",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
+    "nodemailer": "^7.0.10",
     "path": "^0.12.7",
     "react-bootstrap": "^2.10.10",
-    "save-dev": "^0.0.1-security"
+    "save-dev": "^0.0.1-security",
+    "sweetalert2": "^11.26.3"
   }
 }
