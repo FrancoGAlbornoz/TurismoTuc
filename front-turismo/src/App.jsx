@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import useTuristaStore from "./store/useTuristaStore";
+
 // 🧩 Componentes comunes
 import Header from "./Components/common/Header";
 import Footer from "./Components/common/Footer";
@@ -12,6 +13,8 @@ import DetalleExcursion from "./pages/publicPages/DetalleExcursion";
 import LoginTurista from "./pages/publicPages/LoginTurista";
 import RegisterTurista from "./pages/publicPages/RegisterTurista";
 import PerfilTurista from "./pages/publicPages/PerfilTurista";
+import Carrito from "./pages/publicPages/Carrito";
+import Checkout from "./pages/publicPages/Checkout";
 import Error from "./pages/Error";
 
 // 🔒 Autenticación y paneles internos
@@ -21,13 +24,28 @@ import Dashboard from "./pages/adminPages/Dashboard";
 import DashboardGuia from "./pages/adminPages/GuiaPanel/DashboardGuia";
 
 function App() {
+  // 🧠 Inicializar sesión guardada en localStorage
+  const { initSession, hydrated } = useTuristaStore();
+  const [sessionReady, setSessionReady] = useState(false);
 
-  /* Inicializar sesión guardada en localStorage */
-  const { initSession } = useTuristaStore();
+  useEffect(() => {
+    const iniciar = async () => {
+      await initSession();
+      setSessionReady(true);
+    };
+    iniciar();
+  }, [initSession]);
 
-   useEffect(() => {
-    initSession();
-  }, []);
+  // ⏳ Esperar a que Zustand haya terminado de hidratar el store
+  if (!hydrated || !sessionReady) {
+    return (
+      <div className="d-flex flex-column align-items-center justify-content-center vh-100">
+        <div className="spinner-border text-success" role="status"></div>
+        <p className="mt-3">Cargando sesión...</p>
+      </div>
+    );
+  }
+
   return (
     <BrowserRouter>
       <Routes>
@@ -64,13 +82,34 @@ function App() {
             </>
           }
         />
-
         <Route
           path="/excursion/:id"
           element={
             <>
               <Header />
               <DetalleExcursion />
+              <Footer />
+            </>
+          }
+        />
+        <Route
+          path="/carrito"
+          element={
+            <>
+              <Header />
+              <Carrito />
+              <Footer />
+            </>
+          }
+        />
+
+        {/* 🧾 CHECKOUT - nueva ruta */}
+        <Route
+          path="/checkout"
+          element={
+            <>
+              <Header />
+              <Checkout />
               <Footer />
             </>
           }

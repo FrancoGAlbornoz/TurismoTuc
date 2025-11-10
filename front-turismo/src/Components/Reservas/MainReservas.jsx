@@ -5,6 +5,7 @@ import Swal from "sweetalert2";
 import { Card, Button, Table, Dropdown, Spinner, Alert } from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { useDebounce } from "../../hooks/useDeBounce";
 
 export default function ReservasMain() {
   const [reservas, setReservas] = useState([]);
@@ -19,6 +20,9 @@ export default function ReservasMain() {
     fechaHasta ? new Date(fechaHasta) : null
   );
   const [openCalendar, setOpenCalendar] = useState(false); // para mostrar/ocultar el calendario
+
+  const [dniBuscar, setDniBuscar] = useState("");
+  const debouncedDni = useDebounce(dniBuscar, 500);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -97,6 +101,34 @@ export default function ReservasMain() {
     }
   };
 
+  // 🔎 Buscar reservas por DNI en el backend
+  const buscarPorDNI = async (dni) => {
+    if (!dni) {
+      // si el input queda vacío, mostrar todas las reservas otra vez
+      getReservas();
+      return;
+    }
+
+    try {
+      const res = await axios.get(
+        `http://localhost:8000/api/reservas/buscar?dni=${dni}`
+      );
+      setReservas(res.data);
+    } catch (err) {
+      console.error("Error al buscar por DNI:", err);
+      setReservas([]); // limpiar tabla si no hay resultados o error
+    }
+  };
+
+  // 🕒 Efecto de búsqueda en tiempo real con debounce
+  useEffect(() => {
+    if (debouncedDni.trim() === "") {
+      getReservas(); // si el campo está vacío → mostrar todas
+    } else {
+      buscarPorDNI(debouncedDni); // si hay algo → buscar por DNI
+    }
+  }, [debouncedDni]);
+
   if (loading)
     return <div className="text-center mt-3">Cargando reservas...</div>;
   if (error) return <div className="alert alert-danger mt-3">{error}</div>;
@@ -106,9 +138,22 @@ export default function ReservasMain() {
       <Card.Body className="p-3">
         {/* Encabezado */}
         <div className="d-flex justify-content-between align-items-center mb-3">
-          <h5 className="fw-bold text-success mb-0">
-            Gestión de Reservas <small className="text-muted">({estadoreserva})</small>
-          </h5>
+          <div>
+            <h5 className="fw-bold text-success mb-2">
+              Gestión de Reservas{" "}
+              <small className="text-muted">({estadoreserva})</small>
+            </h5>
+
+            {/* 🔍 Input de búsqueda en tiempo real */}
+            <input
+              type="text"
+              className="form-control form-control-sm"
+              placeholder="Buscar por DNI..."
+              value={dniBuscar}
+              onChange={(e) => setDniBuscar(e.target.value)}
+              style={{ maxWidth: "200px" }}
+            />
+          </div>
 
           <div className="d-flex align-items-center gap-2">
             {/* Botón Crear Reserva */}

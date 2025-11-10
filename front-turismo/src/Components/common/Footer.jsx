@@ -1,4 +1,5 @@
-import { FaWhatsapp, FaEnvelope, FaPhoneAlt, FaMapMarkerAlt } from "react-icons/fa";
+import { FaWhatsapp, FaEnvelope, FaPhoneAlt, FaMapMarkerAlt, FaUserCog } from "react-icons/fa";
+import { Link } from "react-router-dom";
 import "../../styles/components/common/footer.css";
 
 export default function Footer() {
@@ -34,13 +35,24 @@ export default function Footer() {
           </div>
         </div>
 
+        {/* Separador */}
         <hr className="my-3 border-light opacity-50" />
 
-        {/* Copyright */}
-        <div className="d-flex flex-column flex-md-row justify-content-between align-items-center small">
-          <p className="mb-2 mb-md-0 text-center text-md-start">
+        {/* Copyright + Admin */}
+        <div className="d-flex flex-column flex-md-row justify-content-between align-items-center small text-center text-md-start">
+          <p className="mb-2 mb-md-0">
             © 2025 MAAVYT — Todos los derechos reservados.
           </p>
+
+          {/* 🔹 Enlace al panel administrativo */}
+          <Link
+            to="/admin"
+            className="text-white-50 d-inline-flex align-items-center gap-2"
+            title="Acceder al panel administrativo"
+          >
+            <FaUserCog size={16} />
+            Panel administrativo
+          </Link>
         </div>
       </div>
     </footer>

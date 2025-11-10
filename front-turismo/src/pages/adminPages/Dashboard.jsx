@@ -6,6 +6,7 @@ import ReservasCRUD from "./CRUDS/ReservasCRUD";
 import UsuariosCRUD from "./CRUDS/UsuariosCRUD";
 import ReseñasCRUD from "./CRUDS/ReseniasCRUD";
 import FechasCRUD from "./CRUDS/FechasCRUD";
+import PagosCRUD from "./CRUDS/PagosCRUD"; // ✅ NUEVO
 import DashboardHome from "./DashboardHome";
 
 const Dashboard = () => {
@@ -22,6 +23,7 @@ const Dashboard = () => {
             <Route path="reservas/*" element={<ReservasCRUD />} />
             <Route path="reseñas/*" element={<ReseñasCRUD />} />
             <Route path="usuarios/*" element={<UsuariosCRUD />} />
+            <Route path="pagos/*" element={<PagosCRUD />} /> {/* ✅ NUEVO */}
           </Routes>
         </div>
       </div>
