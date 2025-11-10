@@ -1,0 +1,44 @@
+{
+  "brand": "Turismo Tucumán",
+  "home": "INICIO",
+  "catalog": "CATÁLOGO",
+  "login": "Iniciar sesión",
+  "register": "Registrate",
+  "cart": "Carrito",
+  "hello": "¡Hola, {{name}}!",
+  "profile": "Mi perfil",
+  "logout": "Cerrar sesión",
+  "contact_whatsapp": "Contactar por WhatsApp",
+  "explora_categoria": "Explorá por categoría",
+  "hero": {
+    "title": "Descubrí Tucumán",
+    "subtitle": "Excursiones exclusivas: naturaleza, cultura y sabores. Reservá fácil, sin crear cuenta.",
+    "placeholder": "Buscar destino o excursión",
+    "button": "Buscar",
+    "no_support": "Tu navegador no soporta video HTML5."
+  },
+  "promo": {
+    "titulo": "¿Por qué elegirnos?",
+    "descripcion": "Reservá sin crear cuenta, accedé a experiencias únicas y recibí atención personalizada.",
+    "card1": {
+      "titulo": "Sin registro",
+      "texto": "Reservá en segundos sin crear usuario."
+    },
+    "card2": {
+      "titulo": "Experiencias únicas",
+      "texto": "Excursiones seleccionadas por expertos locales."
+    },
+    "card3": {
+      "titulo": "Atención directa",
+      "texto": "Consultá por WhatsApp sin intermediarios."
+    }
+  },
+  "search": {
+    "titulo": "Resultados de búsqueda",
+    "boton": "Ver más"
+  }
+
+  
+
+}
+

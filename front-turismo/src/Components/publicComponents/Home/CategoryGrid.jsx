@@ -1,8 +1,12 @@
 import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import "../../../styles/publicComponents/home.css";
+import { useTranslation } from "react-i18next";
+
 
 export default function CategoryCarousel() {
+  const { t } = useTranslation();
+
   const [categorias, setCategorias] = useState([]);
   const [activeIndex, setActiveIndex] = useState(0);
   const containerRef = useRef(null);
@@ -39,7 +43,7 @@ export default function CategoryCarousel() {
 
   return (
     <section className="container py-5">
-      <h4 className="text-center fw-bold mb-4">Explorá por categoría</h4>
+      <h4 className="text-center fw-bold mb-4">{t("explora_categoria")}</h4>
       <div className="position-relative">
         <button className="carousel-arrow left" onClick={handlePrev}>‹</button>
         <div className="categoria-scroll-container" ref={containerRef}>

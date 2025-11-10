@@ -1,0 +1,42 @@
+{
+  "brand": "Tucumán Tourism",
+  "home": "HOME",
+  "catalog": "CATALOG",
+  "login": "Log in",
+  "register": "Sign up",
+  "cart": "Cart",
+  "hello": "Hi, {{name}}!",
+  "profile": "My profile",
+  "logout": "Log out",
+  "contact_whatsapp": "Contact via WhatsApp",
+   "explora_categoria": "Explore by category",
+  "hero": {
+    "title": "Discover Tucumán",
+    "subtitle": "Exclusive excursions: nature, culture and flavors. Book easily, no account needed.",
+    "placeholder": "Search destination or excursion",
+    "button": "Search",
+    "no_support": "Your browser does not support HTML5 video."
+  },
+  "promo": {
+    "titulo": "Why choose us?",
+    "descripcion": "Book without signing up, enjoy unique experiences, and get personalized service.",
+    "card1": {
+      "titulo": "No registration",
+      "texto": "Book in seconds without creating an account."
+    },
+    "card2": {
+      "titulo": "Unique experiences",
+      "texto": "Tours selected by local experts."
+    },
+    "card3": {
+      "titulo": "Direct support",
+      "texto": "Chat via WhatsApp with no middlemen."
+    }
+  },
+  "search": {
+    "titulo": "Search results",
+    "boton": "View more"
+  }
+
+}
+
