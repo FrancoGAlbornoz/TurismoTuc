@@ -24,27 +24,25 @@ export const getReservas = (req, res) => {
 
   // Filtro por estado de reserva
   if (estadoreserva && estadoreserva !== "todas") {
-    condiciones.push("r.estado_reserva = ?");
-    params.push(estadoreserva);
+    condiciones.push(`r.estado_reserva = '${estadoreserva}'`);
   }
 
-  // Filtro por fechas
+    // Filtro por fechas
   if (fechaDesde && fechaHasta) {
-    condiciones.push("DATE(r.fecha_reserva) BETWEEN ? AND ?");
-    params.push(fechaDesde, fechaHasta);
+    condiciones.push(
+      `DATE(r.fecha_reserva) BETWEEN '${fechaDesde}' AND '${fechaHasta}'`
+    );
   } else if (fechaDesde) {
-    condiciones.push("DATE(r.fecha_reserva) >= ?");
-    params.push(fechaDesde);
+    condiciones.push(`DATE(r.fecha_reserva) >= '${fechaDesde}'`);
   } else if (fechaHasta) {
-    condiciones.push("DATE(r.fecha_reserva) <= ?");
-    params.push(fechaHasta);
+    condiciones.push(`DATE(r.fecha_reserva) <= '${fechaHasta}'`);
   }
 
   const whereClause =
     condiciones.length > 0 ? `WHERE ${condiciones.join(" AND ")}` : "";
 
   // Paginación
-  const offset = (Number(page) - 1) * Number(limit);
+  const offset = (parseInt(page) - 1) * parseInt(limit);
 
   const baseQuery = `
     FROM Reservas r
@@ -69,7 +67,7 @@ export const getReservas = (req, res) => {
       r.eliminado
     ${baseQuery}
     ORDER BY r.fecha_reserva DESC
-    LIMIT ${limit} OFFSET ${offset};
+    LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)};
   `;
 
   // Ejecutamos ambas consultas

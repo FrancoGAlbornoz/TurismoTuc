@@ -84,8 +84,13 @@ export default function ReservasMain() {
     }
   };
 
+  // Efecto 1: reinicia la paginación cuando cambian los filtros o fechas
   useEffect(() => {
     setPaginaActual(1);
+  }, [filtro, estadoreserva, fechaDesde, fechaHasta]);
+
+  // Efecto 2: carga las reservas cuando cambia la página o filtros
+  useEffect(() => {
     getReservas();
   }, [filtro, estadoreserva, fechaDesde, fechaHasta, paginaActual]);
 
