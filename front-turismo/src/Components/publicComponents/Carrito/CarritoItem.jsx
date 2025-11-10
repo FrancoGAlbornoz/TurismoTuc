@@ -5,28 +5,36 @@ import useCarritoStore from "../../../store/useCarritoStore";
 export default function CarritoItem({ item }) {
   const { updateCantidad, removeItem } = useCarritoStore();
 
-  // 🔹 Aseguramos valores numéricos válidos
   const cantidad = Number(item.cantidad_personas) || 0;
   const precioUnitario = Number(item.precio_unitario) || 0;
   const subtotalCalc = Number(item.subtotal) || cantidad * precioUnitario;
+  const cupo = Number(item.cupo_disponible) || 0;
 
-  // 🔹 Maneja actualización de cantidad
-  const handleActualizarCantidad = async (nuevaCantidadRaw) => {
-    const nuevaCantidad = Number(nuevaCantidadRaw);
+  // 🔹 Actualiza la cantidad validando antes de mandar al backend
+  const handleActualizarCantidad = async (nuevaCantidad) => {
+    const cant = Number(nuevaCantidad);
 
-    if (!Number.isFinite(nuevaCantidad) || nuevaCantidad <= 0) {
-      if (nuevaCantidad <= 0) {
-        if (window.confirm("¿Deseas quitar esta excursión del carrito?")) {
-          await removeItem(item.id_item);
-        }
-      }
+    // No permitir cantidades menores a 1
+    if (cant <= 0) {
+      const confirmar = window.confirm(
+        "¿Querés quitar esta excursión del carrito?"
+      );
+      if (confirmar) await removeItem(item.id_item);
+      return;
+    }
+
+    // No permitir superar el cupo disponible
+    if (cant > cupo) {
+      alert(`Solo hay ${cupo} lugares disponibles para esta excursión.`);
       return;
     }
 
     try {
-      await updateCantidad(item.id_item, nuevaCantidad);
+      await updateCantidad(item.id_item, cant);
     } catch (err) {
-      const msg = err?.response?.data?.message || "No se pudo actualizar la cantidad.";
+      const msg =
+        err?.response?.data?.message ||
+        "Ocurrió un error al actualizar la cantidad.";
       alert(msg);
     }
   };

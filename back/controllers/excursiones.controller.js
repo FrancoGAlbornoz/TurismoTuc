@@ -304,10 +304,14 @@ export const deleteExcursion = (req, res) => {
 export const getFechasByExcursion = (req, res) => {
   const { id_excursion } = req.params;
 
-  const sql = `SELECT id_fecha, fecha, hora_salida, cupo_maximo, cupo_disponible, estado
-               FROM FechasExcursion
-               WHERE id_excursion = ? AND eliminado = 0
-               ORDER BY fecha ASC`;
+  const sql = `
+    SELECT id_fecha, fecha, hora_salida, cupo_maximo, cupo_disponible, estado
+    FROM FechasExcursion
+    WHERE id_excursion = ? 
+      AND eliminado = 0
+      AND cupo_disponible > 0   -- 👈 solo fechas con lugares
+    ORDER BY fecha ASC
+  `;
 
   pool.query(sql, [id_excursion], (err, results) => {
     if (err) {
@@ -317,6 +321,7 @@ export const getFechasByExcursion = (req, res) => {
     res.json(results);
   });
 };
+
 
 export const getFechaById = (req, res) => {
   const { id } = req.params;

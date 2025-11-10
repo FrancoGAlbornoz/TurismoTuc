@@ -7,7 +7,6 @@ const useTuristaStore = create((set, get) => ({
 
   // 🧠 Inicializa la sesión guardada (solo una vez)
   initSession: async () => {
-    // si ya está hidratado, no hace nada
     if (get().hydrated) return;
 
     try {
@@ -16,26 +15,35 @@ const useTuristaStore = create((set, get) => ({
 
       if (turistaData && tokenData) {
         const parsedTurista = JSON.parse(turistaData);
-        set({ turista: parsedTurista, token: tokenData });
-        console.log("✅ Sesión cargada desde localStorage:", parsedTurista);
+        // 🔹 Normaliza el id si viene como id_turista
+        const normalizedTurista = {
+          ...parsedTurista,
+          id: parsedTurista.id ?? parsedTurista.id_turista,
+        };
+        set({ turista: normalizedTurista, token: tokenData });
+        console.log("✅ Sesión cargada desde localStorage:", normalizedTurista);
       } else {
         console.warn("⚠️ No se encontró sesión guardada.");
       }
     } catch (error) {
       console.error("💥 Error al cargar sesión desde localStorage:", error);
     } finally {
-      // siempre marcar que ya se terminó el intento de carga
       set({ hydrated: true });
     }
   },
 
-  // 🟢 Guardar sesión luego del login
-  setTurista: (turista, token) => {
+  // 🟢 Guardar sesión luego del login o update
+  setTurista: (turista, token = get().token) => {
     try {
-      localStorage.setItem("turista", JSON.stringify(turista));
+      // 🔹 Asegura consistencia en la clave del ID
+      const normalizedTurista = {
+        ...turista,
+        id: turista.id ?? turista.id_turista,
+      };
+      localStorage.setItem("turista", JSON.stringify(normalizedTurista));
       localStorage.setItem("tokenTurista", token);
-      set({ turista, token });
-      console.log("🟢 Sesión guardada en localStorage:", turista);
+      set({ turista: normalizedTurista, token });
+      console.log("🟢 Sesión guardada en localStorage:", normalizedTurista);
     } catch (error) {
       console.error("💥 Error al guardar sesión:", error);
     }

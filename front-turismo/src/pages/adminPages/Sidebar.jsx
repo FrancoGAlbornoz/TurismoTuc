@@ -9,6 +9,7 @@ import {
   FaHome,
   FaSignOutAlt,
   FaGlobeAmericas,
+  FaMoneyBillWave, // 💰 Nuevo ícono para Pagos
 } from "react-icons/fa";
 import useUserStore from "../../store/useUserStore";
 import "../../styles/components/sidebar.css";
@@ -22,6 +23,10 @@ export default function Sidebar() {
     { to: "/dashboard-admin/turistas", label: "Turistas", icon: <FaUsers /> },
     { to: "/dashboard-admin/fechas", label: "Fechas", icon: <FaUsers /> },
     { to: "/dashboard-admin/reservas", label: "Reservas", icon: <FaClipboardList /> },
+
+    // 💰 Nuevo enlace al CRUD de Pagos
+    { to: "/dashboard-admin/pagos", label: "Pagos", icon: <FaMoneyBillWave /> },
+
     { to: "/dashboard-admin/reseñas", label: "Reseñas", icon: <FaComments /> },
     { to: "/dashboard-admin/usuarios", label: "Usuarios", icon: <FaUserTie /> },
   ];

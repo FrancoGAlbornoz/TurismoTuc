@@ -1,10 +1,9 @@
-// controllers/payway.controller.js
 import { pool } from "../config/DB.js";
 import "dotenv/config.js";
 
-// =============================
-// SIMULACIÓN LOCAL DE PAYWAY
-// =============================
+/* ============================================================
+   💳 SIMULACIÓN LOCAL DE PAYWAY
+   ============================================================ */
 export const iniciarPagoPayway = async (req, res) => {
   const { id_reserva } = req.body;
 
@@ -37,7 +36,7 @@ export const iniciarPagoPayway = async (req, res) => {
       message: "Pago simulado localmente (sin conexión a Payway)",
     };
 
-    // 3️⃣ Registrar el pago en la DB
+    // 3️⃣ Registrar el pago
     await pool.promise().query(
       `
       INSERT INTO Pagos (id_reserva, id_medio_pago, monto, estado_pago, moneda)
@@ -52,7 +51,7 @@ export const iniciarPagoPayway = async (req, res) => {
       [id_reserva, reserva.monto_total]
     );
 
-    // 4️⃣ Actualizar el estado de la reserva a “confirmada”
+    // 4️⃣ Actualizar reserva a confirmada
     await pool.promise().query(
       `
       UPDATE Reservas
@@ -75,7 +74,7 @@ export const iniciarPagoPayway = async (req, res) => {
 
     console.log(`✅ Pago simulado con éxito para la reserva ${id_reserva}`);
 
-    // 6️⃣ Devolvemos la información que el frontend necesita
+    // 6️⃣ Devolver al frontend
     res.status(200).json({
       message: "Pago simulado correctamente (modo local)",
       data: {
@@ -90,9 +89,9 @@ export const iniciarPagoPayway = async (req, res) => {
   }
 };
 
-// =============================
-// CALLBACK SIMULADO
-// =============================
+/* ============================================================
+   📦 CALLBACK SIMULADO PAYWAY
+   ============================================================ */
 export const callbackPayway = async (req, res) => {
   const { site_transaction_id, status } = req.body;
 
@@ -116,22 +115,34 @@ export const callbackPayway = async (req, res) => {
       [estadoPago, estadoReserva, id_reserva]
     );
 
-    console.log(`✅ Callback simulado Payway: reserva ${id_reserva} → ${estadoPago}`);
+    // 🔹 Si se aprueba → descontar cupo
+    if (estadoPago === "aprobado") {
+      await pool.promise().query(
+        `
+        UPDATE FechasExcursion f
+        JOIN Reservas r ON f.id_fecha = r.id_fecha
+        SET f.cupo_disponible = GREATEST(f.cupo_disponible - r.cantidad_personas, 0)
+        WHERE r.id_reserva = ?
+        `,
+        [id_reserva]
+      );
+    }
+
+    console.log(`✅ Callback Payway: reserva ${id_reserva} → ${estadoPago}`);
     res.sendStatus(200);
   } catch (error) {
-    console.error("❌ Error en callback simulado:", error);
+    console.error("❌ Error en callback Payway:", error);
     res.sendStatus(500);
   }
 };
 
-// =============================
-// TRANSFERENCIA / DEPÓSITO
-// =============================
+/* ============================================================
+   💰 TRANSFERENCIA / DEPÓSITO
+   ============================================================ */
 export const registrarTransferencia = async (req, res) => {
   const { id_reserva, referencia } = req.body;
 
   try {
-    // 1️⃣ Verificar que la reserva exista
     const [rows] = await pool.promise().query(
       `
       SELECT id_reserva, monto_total, id_turista
@@ -146,7 +157,6 @@ export const registrarTransferencia = async (req, res) => {
 
     const reserva = rows[0];
 
-    // 2️⃣ Insertar el pago como "pendiente" con medio Transferencia
     await pool.promise().query(
       `
       INSERT INTO Pagos (id_reserva, id_medio_pago, monto, estado_pago, moneda, referencia)
@@ -162,7 +172,6 @@ export const registrarTransferencia = async (req, res) => {
       [id_reserva, reserva.monto_total, referencia || null]
     );
 
-    // 3️⃣ Actualizar el estado de la reserva a "pendiente de pago"
     await pool.promise().query(
       `
       UPDATE Reservas
@@ -174,7 +183,6 @@ export const registrarTransferencia = async (req, res) => {
 
     console.log(`✅ Transferencia registrada para reserva ${id_reserva}`);
 
-    // 4️⃣ Responder al front
     res.status(201).json({
       message: "Transferencia registrada correctamente. Pendiente de verificación.",
       data: {
@@ -186,5 +194,131 @@ export const registrarTransferencia = async (req, res) => {
   } catch (error) {
     console.error("❌ Error al registrar transferencia:", error);
     res.status(500).json({ message: "Error al registrar transferencia" });
+  }
+};
+
+/* ============================================================
+   🧾 CRUD ADMIN DE PAGOS
+   ============================================================ */
+
+// 🟢 Obtener todos los pagos (con info del turista y método)
+export const getPagos = async (req, res) => {
+  try {
+    const [rows] = await pool.promise().query(`
+      SELECT 
+        p.id_pago,
+        p.id_reserva,
+        p.monto,
+        p.estado_pago,
+        p.moneda,
+        p.referencia,
+        p.fecha_pago,
+        mp.nombre_medio AS metodo,
+        t.nombre AS turista_nombre,
+        t.apellido AS turista_apellido,
+        r.estado_reserva
+      FROM Pagos p
+      LEFT JOIN MediosPago mp ON p.id_medio_pago = mp.id_medio_pago
+      LEFT JOIN Reservas r ON p.id_reserva = r.id_reserva
+      LEFT JOIN Turistas t ON r.id_turista = t.id_turista
+      ORDER BY p.fecha_pago DESC;
+    `);
+    res.json(rows);
+  } catch (err) {
+    console.error("❌ Error al obtener pagos:", err);
+    res.status(500).json({ message: "Error al obtener pagos" });
+  }
+};
+
+// 🟡 Actualizar estado del pago (confirmar/rechazar)
+export const updatePagoEstado = async (req, res) => {
+  const { id_pago } = req.params;
+  const { nuevo_estado, referencia } = req.body;
+
+  if (!["pendiente", "aprobado", "rechazado"].includes(nuevo_estado)) {
+    return res.status(400).json({ message: "Estado inválido." });
+  }
+
+  try {
+    const [rows] = await pool.promise().query(
+      `
+      SELECT 
+        p.id_pago,
+        p.estado_pago AS estado_actual,
+        p.id_reserva,
+        r.id_fecha,
+        r.cantidad_personas
+      FROM Pagos p
+      INNER JOIN Reservas r ON p.id_reserva = r.id_reserva
+      WHERE p.id_pago = ?
+      `,
+      [id_pago]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ message: "Pago no encontrado" });
+    }
+
+    const pago = rows[0];
+
+    // 🔹 Actualizar pago
+    await pool.promise().query(
+      `
+      UPDATE Pagos
+      SET estado_pago = ?, referencia = COALESCE(?, referencia)
+      WHERE id_pago = ?
+      `,
+      [nuevo_estado, referencia, id_pago]
+    );
+
+    // 🔸 Si se aprueba → descontar cupo y confirmar reserva
+    if (nuevo_estado === "aprobado" && pago.estado_actual !== "aprobado") {
+      await pool.promise().query(
+        `
+        UPDATE FechasExcursion
+        SET cupo_disponible = GREATEST(cupo_disponible - ?, 0)
+        WHERE id_fecha = ? AND cupo_disponible >= ?
+        `,
+        [pago.cantidad_personas, pago.id_fecha, pago.cantidad_personas]
+      );
+
+      await pool.promise().query(
+        `
+        UPDATE Reservas
+        SET estado_reserva = 'confirmada'
+        WHERE id_reserva = ?
+        `,
+        [pago.id_reserva]
+      );
+    }
+
+    // 🔻 Si se rechaza → cancelar reserva
+    if (nuevo_estado === "rechazado") {
+      await pool.promise().query(
+        `
+        UPDATE Reservas
+        SET estado_reserva = 'cancelada'
+        WHERE id_reserva = ?
+        `,
+        [pago.id_reserva]
+      );
+    }
+
+    res.json({ message: "Pago actualizado correctamente." });
+  } catch (err) {
+    console.error("❌ Error al actualizar pago:", err);
+    res.status(500).json({ message: "Error al actualizar el pago" });
+  }
+};
+
+// 🔴 Eliminar pago
+export const deletePago = async (req, res) => {
+  const { id_pago } = req.params;
+  try {
+    await pool.promise().query(`DELETE FROM Pagos WHERE id_pago = ?`, [id_pago]);
+    res.json({ message: "Pago eliminado correctamente." });
+  } catch (err) {
+    console.error("❌ Error al eliminar pago:", err);
+    res.status(500).json({ message: "Error al eliminar pago" });
   }
 };
