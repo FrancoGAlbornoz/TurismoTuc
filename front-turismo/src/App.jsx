@@ -15,6 +15,7 @@ import RegisterTurista from "./pages/publicPages/RegisterTurista";
 import PerfilTurista from "./pages/publicPages/PerfilTurista";
 import Carrito from "./pages/publicPages/Carrito";
 import Checkout from "./pages/publicPages/Checkout";
+import Contacto from "./pages/publicPages/Contacto";
 import Error from "./pages/Error";
 
 // 🔒 Autenticación y paneles internos
@@ -24,7 +25,6 @@ import Dashboard from "./pages/adminPages/Dashboard";
 import DashboardGuia from "./pages/adminPages/GuiaPanel/DashboardGuia";
 
 function App() {
-  // 🧠 Inicializar sesión guardada en localStorage
   const { initSession, hydrated } = useTuristaStore();
   const [sessionReady, setSessionReady] = useState(false);
 
@@ -36,7 +36,6 @@ function App() {
     iniciar();
   }, [initSession]);
 
-  // ⏳ Esperar a que Zustand haya terminado de hidratar el store
   if (!hydrated || !sessionReady) {
     return (
       <div className="d-flex flex-column align-items-center justify-content-center vh-100">
@@ -102,8 +101,6 @@ function App() {
             </>
           }
         />
-
-        {/* 🧾 CHECKOUT - nueva ruta */}
         <Route
           path="/checkout"
           element={
@@ -114,8 +111,16 @@ function App() {
             </>
           }
         />
-
-        {/* Login y registro para turistas */}
+        <Route
+          path="/contacto"
+          element={
+            <>
+              <Header />
+              <Contacto />
+              <Footer />
+            </>
+          }
+        />
         <Route
           path="/login-turista"
           element={
@@ -150,8 +155,6 @@ function App() {
             </>
           }
         />
-
-        {/* Panel administrador */}
         <Route
           path="/dashboard-admin/*"
           element={
@@ -160,8 +163,6 @@ function App() {
             </ProtectedRoute>
           }
         />
-
-        {/* Panel guía turístico */}
         <Route
           path="/dashboard-guia/*"
           element={
