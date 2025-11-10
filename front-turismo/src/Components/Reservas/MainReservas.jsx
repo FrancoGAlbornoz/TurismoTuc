@@ -24,6 +24,11 @@ export default function ReservasMain() {
   const [dniBuscar, setDniBuscar] = useState("");
   const debouncedDni = useDebounce(dniBuscar, 500);
 
+  //Paginación
+  const [paginaActual, setPaginaActual] = useState(1);
+  const [totalPaginas, setTotalPaginas] = useState(1);
+  const porPagina = 10;
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -35,6 +40,8 @@ export default function ReservasMain() {
       estadoreserva,
       fechaDesde,
       fechaHasta,
+      page: paginaActual,
+      limit: porPagina,
     };
     try {
       const res = await axios.get("http://localhost:8000/api/reservas", {
@@ -44,6 +51,30 @@ export default function ReservasMain() {
       console.log("Actual filtro:", filtro);
       console.log("Actual estado:", estadoreserva);
       //console.log("reponse:", res.data);
+      setReservas(res.data.data);
+      setTotalPaginas(res.data.totalPages);
+    } catch (err) {
+      console.error("Error al obtener reservas:", err);
+      setError("No se pudieron cargar las reservas.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getReservasConFechas = async (desde, hasta) => {
+    setLoading(true);
+    setError(null);
+    const params = {
+      filtro,
+      estadoreserva,
+      fechaDesde: desde,
+      fechaHasta: hasta,
+    };
+
+    try {
+      const res = await axios.get("http://localhost:8000/api/reservas", {
+        params,
+      });
       setReservas(res.data);
     } catch (err) {
       console.error("Error al obtener reservas:", err);
@@ -53,9 +84,15 @@ export default function ReservasMain() {
     }
   };
 
+  // Efecto 1: reinicia la paginación cuando cambian los filtros o fechas
+  useEffect(() => {
+    setPaginaActual(1);
+  }, [filtro, estadoreserva, fechaDesde, fechaHasta]);
+
+  // Efecto 2: carga las reservas cuando cambia la página o filtros
   useEffect(() => {
     getReservas();
-  }, [filtro, estadoreserva]);
+  }, [filtro, estadoreserva, fechaDesde, fechaHasta, paginaActual]);
 
   const handleDelete = async (id) => {
     const confirm = await Swal.fire({
@@ -221,6 +258,7 @@ export default function ReservasMain() {
               </Dropdown.Toggle>
 
               <Dropdown.Menu className="p-3" style={{ minWidth: "280px" }}>
+                {/* Este mes */}
                 <Dropdown.Item
                   onClick={() => {
                     const hoy = new Date();
@@ -238,23 +276,30 @@ export default function ReservasMain() {
                     )
                       .toISOString()
                       .split("T")[0];
+
                     setFechaDesde(primerDia);
                     setFechaHasta(ultimoDia);
-                    getReservas();
+                    getReservasConFechas(primerDia, ultimoDia);
                   }}
                 >
                   <i className="bi bi-calendar-month text-primary me-2"></i>{" "}
                   Este mes
                 </Dropdown.Item>
 
+                {/* Este año */}
                 <Dropdown.Item
                   onClick={() => {
                     const hoy = new Date();
-                    const primerDia = `${hoy.getFullYear()}-01-01`;
-                    const ultimoDia = `${hoy.getFullYear()}-12-31`;
+                    const primerDia = new Date(hoy.getFullYear(), 0, 1)
+                      .toISOString()
+                      .split("T")[0];
+                    const ultimoDia = new Date(hoy.getFullYear(), 11, 31)
+                      .toISOString()
+                      .split("T")[0];
+
                     setFechaDesde(primerDia);
                     setFechaHasta(ultimoDia);
-                    getReservas();
+                    getReservasConFechas(primerDia, ultimoDia);
                   }}
                 >
                   <i className="bi bi-calendar3 text-success me-2"></i> Este año
@@ -425,6 +470,67 @@ export default function ReservasMain() {
             )}
           </tbody>
         </Table>
+        {/* Paginación con Bootstrap */}
+        {totalPaginas > 1 && (
+          <div className="d-flex justify-content-center mt-3">
+            <nav>
+              <ul className="pagination pagination-sm mb-0">
+                {/* Flecha izquierda */}
+                <li
+                  className={`page-item ${
+                    paginaActual === 1 ? "disabled" : ""
+                  }`}
+                >
+                  <button
+                    className="page-link"
+                    onClick={() =>
+                      setPaginaActual((prev) => Math.max(prev - 1, 1))
+                    }
+                  >
+                    &laquo;
+                  </button>
+                </li>
+
+                {/* Números de página */}
+                {Array.from({ length: totalPaginas }, (_, i) => i + 1).map(
+                  (num) => (
+                    <li
+                      key={num}
+                      className={`page-item ${
+                        paginaActual === num ? "active" : ""
+                      }`}
+                    >
+                      <button
+                        className="page-link"
+                        onClick={() => setPaginaActual(num)}
+                      >
+                        {num}
+                      </button>
+                    </li>
+                  )
+                )}
+
+                {/* Flecha derecha */}
+                <li
+                  className={`page-item ${
+                    paginaActual === totalPaginas ? "disabled" : ""
+                  }`}
+                >
+                  <button
+                    className="page-link"
+                    onClick={() =>
+                      setPaginaActual((prev) =>
+                        Math.min(prev + 1, totalPaginas)
+                      )
+                    }
+                  >
+                    &raquo;
+                  </button>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        )}
       </Card.Body>
     </Card>
   );

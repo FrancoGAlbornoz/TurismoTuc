@@ -1,33 +1,37 @@
+import { useTranslation } from "react-i18next";
+
 export default function PromoSection() {
-    return (
-      <section className="bg-light py-5">
-        <div className="container text-center">
-          <h4 className="fw-bold mb-3">¿Por qué elegirnos?</h4>
-          <p className="lead mb-4">Reservá sin crear cuenta, accedé a experiencias únicas y recibí atención personalizada.</p>
-          <div className="row justify-content-center">
-            <div className="col-md-4 mb-3">
-              <div className="p-3 border rounded shadow-sm">
-                <i className="bi bi-person-check fs-2 text-success mb-2"></i>
-                <h6 className="fw-bold">Sin registro</h6>
-                <p className="text-muted">Reservá en segundos sin crear usuario.</p>
-              </div>
+  const { t } = useTranslation();
+
+  return (
+    <section className="bg-light py-5">
+      <div className="container text-center">
+        <h4 className="fw-bold mb-3">{t("promo.titulo")}</h4>
+        <p className="lead mb-4">{t("promo.descripcion")}</p>
+        <div className="row justify-content-center">
+          <div className="col-md-4 mb-3">
+            <div className="p-3 border rounded shadow-sm">
+              <i className="bi bi-person-check fs-2 text-success mb-2"></i>
+              <h6 className="fw-bold">{t("promo.card1.titulo")}</h6>
+              <p className="text-muted">{t("promo.card1.texto")}</p>
             </div>
-            <div className="col-md-4 mb-3">
-              <div className="p-3 border rounded shadow-sm">
-                <i className="bi bi-compass fs-2 text-success mb-2"></i>
-                <h6 className="fw-bold">Experiencias únicas</h6>
-                <p className="text-muted">Excursiones seleccionadas por expertos locales.</p>
-              </div>
+          </div>
+          <div className="col-md-4 mb-3">
+            <div className="p-3 border rounded shadow-sm">
+              <i className="bi bi-compass fs-2 text-success mb-2"></i>
+              <h6 className="fw-bold">{t("promo.card2.titulo")}</h6>
+              <p className="text-muted">{t("promo.card2.texto")}</p>
             </div>
-            <div className="col-md-4 mb-3">
-              <div className="p-3 border rounded shadow-sm">
-                <i className="bi bi-whatsapp fs-2 text-success mb-2"></i>
-                <h6 className="fw-bold">Atención directa</h6>
-                <p className="text-muted">Consultá por WhatsApp sin intermediarios.</p>
-              </div>
+          </div>
+          <div className="col-md-4 mb-3">
+            <div className="p-3 border rounded shadow-sm">
+              <i className="bi bi-whatsapp fs-2 text-success mb-2"></i>
+              <h6 className="fw-bold">{t("promo.card3.titulo")}</h6>
+              <p className="text-muted">{t("promo.card3.texto")}</p>
             </div>
           </div>
         </div>
-      </section>
-    );
-  }
+      </div>
+    </section>
+  );
+}
