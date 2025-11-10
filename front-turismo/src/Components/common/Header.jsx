@@ -124,11 +124,6 @@ export default function Header() {
                 <FaWhatsapp size={18} />
               </a>
 
-            
-              {/* Saludo */}
-              <span className="fw-semibold text-success small mb-0">¡Hola, {turista?.nombre?.split(" ")[0] || "Turista"}!</span>
-
-
               {/* Carrito */}
               <Link
                 to="/carrito"
