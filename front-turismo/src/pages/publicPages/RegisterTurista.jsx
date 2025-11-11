@@ -15,6 +15,7 @@ export default function RegisterTurista() {
     direccion: "",
     nacionalidad: "",
   });
+
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -22,7 +23,28 @@ export default function RegisterTurista() {
   const navigate = useNavigate();
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+
+    // 🧠 Validar el campo DNI
+    if (name === "dni") {
+      // Solo permitir números
+      const numericValue = value.replace(/\D/g, "");
+
+      // Limitar a 8 caracteres
+      if (numericValue.length > 8) return;
+
+      setFormData({ ...formData, dni: numericValue });
+      return;
+    }
+
+    // 🧠 Validar teléfono solo números (opcional)
+    if (name === "telefono") {
+      const numericValue = value.replace(/\D/g, "");
+      setFormData({ ...formData, telefono: numericValue });
+      return;
+    }
+
+    setFormData({ ...formData, [name]: value });
   };
 
   const handleSubmit = async (e) => {
@@ -31,12 +53,19 @@ export default function RegisterTurista() {
     setSuccess("");
     setIsLoading(true);
 
+    // Validación extra del DNI antes de enviar
+    if (formData.dni.length < 7 || formData.dni.length > 9) {
+      setError("El DNI debe tener entre 7 y 8 dígitos.");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const res = await axios.post("http://localhost:8000/api/auth/turistas/register", formData);
-        if (res.status === 201) {
-            setSuccess("Cuenta creada correctamente. Ya podés iniciar sesión.");
-            setTimeout(() => navigate("/login-turista"), 2000);
-        }
+      if (res.status === 201) {
+        setSuccess("Cuenta creada correctamente. Ya podés iniciar sesión.");
+        setTimeout(() => navigate("/login-turista"), 2000);
+      }
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || "Error al registrarse.");
@@ -66,13 +95,23 @@ export default function RegisterTurista() {
                     <Col md={6}>
                       <Form.Group className="mb-3">
                         <Form.Label>Nombre</Form.Label>
-                        <Form.Control name="nombre" value={formData.nombre} onChange={handleChange} required />
+                        <Form.Control
+                          name="nombre"
+                          value={formData.nombre}
+                          onChange={handleChange}
+                          required
+                        />
                       </Form.Group>
                     </Col>
                     <Col md={6}>
                       <Form.Group className="mb-3">
                         <Form.Label>Apellido</Form.Label>
-                        <Form.Control name="apellido" value={formData.apellido} onChange={handleChange} required />
+                        <Form.Control
+                          name="apellido"
+                          value={formData.apellido}
+                          onChange={handleChange}
+                          required
+                        />
                       </Form.Group>
                     </Col>
                   </Row>
@@ -81,20 +120,39 @@ export default function RegisterTurista() {
                     <Col md={6}>
                       <Form.Group className="mb-3">
                         <Form.Label>DNI</Form.Label>
-                        <Form.Control name="dni" value={formData.dni} onChange={handleChange} required />
+                        <Form.Control
+                          name="dni"
+                          value={formData.dni}
+                          onChange={handleChange}
+                          maxLength={8}
+                          inputMode="numeric"
+                          placeholder="Solo números"
+                          required
+                        />
                       </Form.Group>
                     </Col>
                     <Col md={6}>
                       <Form.Group className="mb-3">
                         <Form.Label>Nacionalidad</Form.Label>
-                        <Form.Control name="nacionalidad" value={formData.nacionalidad} onChange={handleChange} required/>
+                        <Form.Control
+                          name="nacionalidad"
+                          value={formData.nacionalidad}
+                          onChange={handleChange}
+                          required
+                        />
                       </Form.Group>
                     </Col>
                   </Row>
 
                   <Form.Group className="mb-3">
                     <Form.Label>Email</Form.Label>
-                    <Form.Control type="email" name="email" value={formData.email} onChange={handleChange} required />
+                    <Form.Control
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      required
+                    />
                   </Form.Group>
 
                   <Form.Group className="mb-3">
@@ -110,12 +168,23 @@ export default function RegisterTurista() {
 
                   <Form.Group className="mb-3">
                     <Form.Label>Teléfono</Form.Label>
-                    <Form.Control name="telefono" value={formData.telefono} onChange={handleChange} required/>
+                    <Form.Control
+                      name="telefono"
+                      value={formData.telefono}
+                      onChange={handleChange}
+                      placeholder="Solo números"
+                      required
+                    />
                   </Form.Group>
 
                   <Form.Group className="mb-3">
                     <Form.Label>Dirección</Form.Label>
-                    <Form.Control name="direccion" value={formData.direccion} onChange={handleChange} required/>
+                    <Form.Control
+                      name="direccion"
+                      value={formData.direccion}
+                      onChange={handleChange}
+                      required
+                    />
                   </Form.Group>
 
                   <Button type="submit" variant="success" className="w-100" disabled={isLoading}>

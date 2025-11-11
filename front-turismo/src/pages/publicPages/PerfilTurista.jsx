@@ -1,5 +1,15 @@
 import { useEffect, useState } from "react";
-import { Container, Row, Col, Card, Spinner, Alert, Button, Form } from "react-bootstrap";
+import {
+  Container,
+  Row,
+  Col,
+  Card,
+  Spinner,
+  Alert,
+  Button,
+  Form,
+} from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import useTuristaStore from "../../store/useTuristaStore";
 
@@ -18,7 +28,7 @@ export default function PerfilTurista() {
     direccion: "",
     nacionalidad: "",
   });
-
+    const navigate = useNavigate();
   // 🔹 Cargar reservas
   useEffect(() => {
     const fetchReservas = async () => {
@@ -203,14 +213,27 @@ export default function PerfilTurista() {
                 <>
                   <Row>
                     <Col md={6}>
-                      <p><strong>Nombre:</strong> {turista.nombre} {turista.apellido}</p>
-                      <p><strong>DNI:</strong> {turista.dni}</p>
-                      <p><strong>Email:</strong> {turista.email}</p>
+                      <p>
+                        <strong>Nombre:</strong> {turista.nombre}{" "}
+                        {turista.apellido}
+                      </p>
+                      <p>
+                        <strong>DNI:</strong> {turista.dni}
+                      </p>
+                      <p>
+                        <strong>Email:</strong> {turista.email}
+                      </p>
                     </Col>
                     <Col md={6}>
-                      <p><strong>Teléfono:</strong> {turista.telefono}</p>
-                      <p><strong>Dirección:</strong> {turista.direccion}</p>
-                      <p><strong>Nacionalidad:</strong> {turista.nacionalidad}</p>
+                      <p>
+                        <strong>Teléfono:</strong> {turista.telefono}
+                      </p>
+                      <p>
+                        <strong>Dirección:</strong> {turista.direccion}
+                      </p>
+                      <p>
+                        <strong>Nacionalidad:</strong> {turista.nacionalidad}
+                      </p>
                     </Col>
                   </Row>
                   <Button
@@ -240,11 +263,22 @@ export default function PerfilTurista() {
                 reservas.map((r) => (
                   <div key={r.id_reserva} className="border rounded p-3 mb-3">
                     <h6 className="fw-bold">{r.excursion}</h6>
-                    <p className="mb-1"><strong>Ubicación:</strong> {r.ubicacion}</p>
-                    <p className="mb-1"><strong>Fecha de salida:</strong> {r.fecha_salida} - {r.hora_salida}</p>
-                    <p className="mb-1"><strong>Cantidad de personas:</strong> {r.cantidad_personas}</p>
-                    <p className="mb-1"><strong>Monto total:</strong> ${r.monto_total}</p>
-                    <p>
+                    <p className="mb-1">
+                      <strong>Ubicación:</strong> {r.ubicacion}
+                    </p>
+                    <p className="mb-1">
+                      <strong>Fecha de salida:</strong> {r.fecha_salida} -{" "}
+                      {r.hora_salida}
+                    </p>
+                    <p className="mb-1">
+                      <strong>Cantidad de personas:</strong>{" "}
+                      {r.cantidad_personas}
+                    </p>
+                    <p className="mb-1">
+                      <strong>Monto total:</strong> ${r.monto_total}
+                    </p>
+
+                    <p className="mb-2">
                       <strong>Estado:</strong>{" "}
                       <span
                         className={
@@ -252,12 +286,30 @@ export default function PerfilTurista() {
                             ? "text-success fw-semibold"
                             : r.estado_reserva === "pendiente"
                             ? "text-warning fw-semibold"
-                            : "text-danger fw-semibold"
+                            : r.estado_reserva === "finalizada"
+                            ? "text-danger fw-semibold"
+                            : "text-secondary fw-semibold"
                         }
                       >
                         {r.estado_reserva}
                       </span>
                     </p>
+
+                    {/* 🔹 Mostrar mensaje y botón solo si está finalizada */}
+                    {r.estado_reserva === "finalizada" && (
+                      <div className="mt-2 text-center">
+                        <p className="fw-semibold text-success mb-2">
+                          ¡Ya podés calificar tu experiencia! ⭐
+                        </p>
+                        <Button
+                          variant="outline-success"
+                          size="sm"
+                          onClick={() => navigate(`/calificar/${r.id_reserva}`)}
+                        >
+                          Calificar excursión
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 ))
               )}

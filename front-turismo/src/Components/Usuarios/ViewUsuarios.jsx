@@ -31,46 +31,49 @@ export default function ViewUsuario() {
   }, [id]);
 
   useEffect(() => {
-    if (usuario?.nombre_rol?.toLowerCase().includes("guía")) {
-      const fetchExcursionesYFechas = async () => {
-        try {
-          const resExc = await axios.get(`http://localhost:8000/api/excursiones/guia/${id}`);
-          const excursiones = resExc.data;
+    if (!usuario) return;
 
-          const detalles = await Promise.all(
-            excursiones.map(async (exc) => {
-              const resFechas = await axios.get(`http://localhost:8000/api/excursiones/${exc.id_excursion}/fechas`);
-              return resFechas.data.map((fecha) => ({
-                id_excursion: exc.id_excursion,
-                titulo: exc.titulo,
-                ubicacion: exc.ubicacion,
-                estado: exc.estado,
-                notificado: exc.notificado,
-                id_fecha: fecha.id_fecha,
-                fecha: fecha.fecha,
-              }));
-            })
-          );
+    const fetchExcursionesYFechas = async () => {
+      try {
+        const resExc = await axios.get(`http://localhost:8000/api/excursiones/guia/${id}`);
+        const excursiones = resExc.data;
 
-          setExcursionesConFechas(detalles.flat());
-        } catch (err) {
-          console.error("Error al obtener excursiones y fechas:", err);
-        }
-      };
+        const detalles = await Promise.all(
+          excursiones.map(async (exc) => {
+            const resFechas = await axios.get(`http://localhost:8000/api/excursiones/${exc.id_excursion}/fechas`);
+            return resFechas.data.map((fecha) => ({
+              id_excursion: exc.id_excursion,
+              titulo: exc.titulo,
+              ubicacion: exc.ubicacion,
+              estado: exc.estado,
+              id_fecha: fecha.id_fecha,
+              fecha: fecha.fecha,
+            }));
+          })
+        );
 
+        setExcursionesConFechas(detalles.flat());
+      } catch (err) {
+        console.error("Error al obtener excursiones y fechas:", err);
+      }
+    };
+
+    if (usuario.nombre_rol?.toLowerCase().includes("guía")) {
       fetchExcursionesYFechas();
     }
-  }, [usuario]);
+  }, [usuario, id]);
 
   const handleNotificar = async (item) => {
     setNotificando(item.id_fecha);
     try {
       await axios.post(`http://localhost:8000/api/excursiones/notificar/${item.id_excursion}`, {
         fecha: item.fecha,
+        id_fecha: item.id_fecha,
       });
 
       Swal.fire("Correo enviado", "El guía fue notificado correctamente.", "success");
 
+      // Recargar fechas
       const resExc = await axios.get(`http://localhost:8000/api/excursiones/guia/${id}`);
       const excursiones = resExc.data;
 
@@ -152,7 +155,7 @@ export default function ViewUsuario() {
 
         {usuario.nombre_rol?.toLowerCase().includes("guía") && (
           <div className="mt-4">
-            <h5 className="fw-bold text-primary mb-3">Excursiones asignadas</h5>
+            <h5 className="fw-bold text-primary mb-3">Fechas de excursiones asignadas</h5>
             <Table striped bordered hover>
               <thead>
                 <tr>
@@ -174,7 +177,7 @@ export default function ViewUsuario() {
                       <Button
                         variant="primary"
                         size="sm"
-                        disabled={item.notificado || notificando === item.id_fecha}
+                        disabled={notificando === item.id_fecha}
                         onClick={() => handleNotificar(item)}
                       >
                         {notificando === item.id_fecha ? (

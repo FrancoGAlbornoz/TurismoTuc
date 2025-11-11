@@ -19,6 +19,7 @@ import Contacto from "./pages/publicPages/Contacto";
 import ForgotPassword from "./pages/publicPages/ForgotPassword";
 import ResetPassword from "./pages/publicPages/ResetPassword";
 import Error from "./pages/Error";
+import CalificarExcursion from "./pages/publicPages/CalificarExcursion";
 
 // 🔒 Autenticación y paneles internos
 import Login from "./pages/Login";
@@ -59,6 +60,16 @@ function App() {
             <>
               <Header />
               <Home />
+              <Footer />
+            </>
+          }
+        />
+        <Route
+          path="/calificar/:id_reserva"
+          element={
+            <>
+              <Header />
+              <CalificarExcursion />
               <Footer />
             </>
           }
