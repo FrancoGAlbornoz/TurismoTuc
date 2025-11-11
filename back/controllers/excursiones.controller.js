@@ -1,4 +1,5 @@
 import { pool } from "../config/DB.js";
+import nodemailer from "nodemailer";
 
 // =============================
 // EXCURSIONES
@@ -556,24 +557,31 @@ export const deleteMultimedia = (req, res) => {
   });
 };
 
-
-export const getExcursionesPorGuia = (req, res) => {
+export const getExcursionesPorGuia = async (req, res) => {
   const { id_guia } = req.params;
 
-  const sql = `
-    SELECT e.id_excursion, e.titulo, e.ubicacion, e.precio_base, e.estado, e.fecha_creacion
-    FROM Excursiones e
-    WHERE e.id_guia = ? AND e.eliminado = 0
-    ORDER BY e.fecha_creacion DESC
-  `;
+  try {
+    const [rows] = await pool.promise().query(
+      `SELECT 
+         e.id_excursion,
+         e.titulo,
+         e.ubicacion,
+         e.estado,
+         (
+           SELECT MIN(fecha)
+           FROM FechasExcursion f
+           WHERE f.id_excursion = e.id_excursion AND f.estado = 'activa'
+         ) AS proxima_fecha
+       FROM Excursiones e
+       WHERE e.id_guia = ? AND e.eliminado = 0`,
+      [id_guia]
+    );
 
-  pool.query(sql, [id_guia], (err, results) => {
-    if (err) {
-      console.error("Error al obtener excursiones del guía:", err);
-      return res.status(500).json({ message: "Error al obtener excursiones del guía" });
-    }
-    res.json(results);
-  });
+    res.json(rows);
+  } catch (err) {
+    console.error("❌ Error al obtener excursiones del guía:", err);
+    res.status(500).json({ message: "Error interno al obtener excursiones" });
+  }
 };
 
 export const getParticipantesByExcursion = (req, res) => {
@@ -605,3 +613,79 @@ export const getParticipantesByExcursion = (req, res) => {
     res.json(results);
   });
 };
+
+export const notificarGuia = async (req, res) => {
+  const { id_excursion } = req.params;
+  const { fecha, id_fecha } = req.body;
+
+  try {
+    // Obtener datos de la excursión y del guía
+    const [rows] = await pool.promise().query(
+      `SELECT e.titulo, e.ubicacion, u.email, u.nombre
+       FROM Excursiones e
+       JOIN Usuarios u ON e.id_guia = u.id_usuario
+       WHERE e.id_excursion = ?`,
+      [id_excursion]
+    );
+
+    if (rows.length === 0 || !rows[0].email) {
+      return res.status(404).json({ message: "No se encontró el email del guía" });
+    }
+
+    const { titulo, ubicacion, email, nombre } = rows[0];
+    const fechaFormateada = new Date(fecha).toLocaleDateString("es-AR");
+
+    // Configurar transporte de correo
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    // Enviar correo con diseño HTML
+    await transporter.sendMail({
+      from: `"MAAVYT Panel" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: "Nueva excursión asignada",
+      html: `
+        <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9;">
+          <h2 style="color: #2c3e50;">📌 Nueva excursión asignada</h2>
+          <p>Hola <strong>${nombre}</strong>,</p>
+          <p>Se te ha asignado una nueva excursión. Aquí están los detalles:</p>
+          <table style="border-collapse: collapse; width: 100%; margin-top: 10px;">
+            <tr>
+              <td style="padding: 8px; border: 1px solid #ccc;"><strong>Título</strong></td>
+              <td style="padding: 8px; border: 1px solid #ccc;">${titulo}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; border: 1px solid #ccc;"><strong>Ubicación</strong></td>
+              <td style="padding: 8px; border: 1px solid #ccc;">${ubicacion}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; border: 1px solid #ccc;"><strong>Fecha</strong></td>
+              <td style="padding: 8px; border: 1px solid #ccc;">${fechaFormateada}</td>
+            </tr>
+          </table>
+          <p style="margin-top: 20px;">Por favor, ingresá al panel para ver más detalles o confirmar tu disponibilidad.</p>
+          <a href="https://maavyt.com/panel" style="display: inline-block; margin-top: 10px; padding: 10px 15px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px;">Ir al panel</a>
+          <p style="margin-top: 30px; font-size: 12px; color: #888;">Este mensaje fue generado automáticamente por el sistema MAAVYT.</p>
+        </div>
+      `,
+    });
+
+    // Marcar la fecha como notificada (opcional si querés permitir múltiples envíos)
+    await pool.promise().query(
+      `UPDATE FechasExcursion SET notificado = 1 WHERE id_fecha = ?`,
+      [id_fecha]
+    );
+
+    res.json({ message: "Correo enviado y fecha marcada como notificada" });
+  } catch (err) {
+    console.error("❌ Error al notificar guía:", err);
+    res.status(500).json({ message: "Error al enviar correo" });
+  }
+};
+
+
