@@ -36,6 +36,49 @@
   "search": {
     "titulo": "Resultados de búsqueda",
     "boton": "Ver más"
+  },
+  "footer": {
+    "brand": {
+      "titulo": "Turismo Tucumán",
+      "descripcion": "Explora las maravillas naturales y culturales de nuestra provincia."
+    },
+    "enlaces": {
+      "titulo": "Enlaces útiles",
+      "catalogo": "Catálogo",
+      "contacto": "Contacto",
+      "politicas": "Políticas de privacidad"
+    },
+    "contacto": {
+      "titulo": "Contáctanos",
+      "direccion": "San Miguel de Tucumán, Argentina",
+      "email": "info@turismotucuman.com",
+      "telefono": "+54 381 555 1234"
+    },
+    "copyright": "© 2025 Turismo Tucumán. Todos los derechos reservados.",
+    "admin": {
+      "titulo": "Panel de administración",
+      "link": "Administrar"
+    }
+  },
+  "catalogo": {
+    "loading": "Cargando excursiones...",
+    "empty": "No hay excursiones en esta categoría.",
+    "error": "No se pudieron cargar las excursiones."
+  },
+  "filterSidebar": {
+    "filter": "Filtrar excursiones",
+     "location": "Ubicación",
+    "locationPlaceholder": "Ej: Tafí del Valle",
+    "minPrice": "Precio mínimo",
+    "maxPrice": "Precio máximo",
+    "from": "Desde...",
+    "to": "Hasta...",
+    "duration": "Duración",
+    "durationPlaceholder": "Ej: Día completo",
+    "category": "Categoría",
+    "all": "Todas",
+    "apply": "Aplicar",
+    "clear": "Limpiar"
   }
 
   
