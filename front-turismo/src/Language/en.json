@@ -66,7 +66,19 @@
     "error": "Failed to load tours."
   },
   "filterSidebar": {
-    "filter": "Filter tours"
+    "filter": "Filter tours",
+    "location": "Location",
+    "locationPlaceholder": "E.g. Tafí del Valle",
+    "minPrice": "Minimum price",
+    "maxPrice": "Maximum price",
+    "from": "From...",
+    "to": "To...",
+    "duration": "Duration",
+    "durationPlaceholder": "E.g. Full day",
+    "category": "Category",
+    "all": "All",
+    "apply": "Apply",
+    "clear": "Clear"
   }
 
 }
