@@ -2,18 +2,21 @@ import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import axios from "axios";
 import { Container, Row, Col } from "react-bootstrap";
+import { useTranslation } from "react-i18next";
 
 import CatalogGrid from "../../Components/publicComponents/Catalogo/CatalogGrid";
 import FilterSidebar from "../../Components/publicComponents/Catalogo/FilterSidebar";
 import SortBar from "../../Components/publicComponents/Catalogo/SortBar";
 import "../../styles/publicComponents/catalogo.css";
 
-// 🔹 Hook para leer parámetros de la URL
+// Hook para leer parámetros de la URL
 function useQuery() {
   return new URLSearchParams(useLocation().search);
 }
 
 export default function Catalogo() {
+  const { t } = useTranslation();
+
   const [excursiones, setExcursiones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -43,13 +46,13 @@ export default function Catalogo() {
     fetchExcursiones();
   }, [categoriaSeleccionada]);
 
-  // 🔹 Filtrado desde el sidebar
+  // Filtrado desde el sidebar
   const handleFilterChange = (data) => {
     if (data) setExcursiones(data);
     else fetchExcursiones();
   };
 
-  // 🔹 Ordenamiento desde el sort bar
+  // Ordenamiento desde el sort bar
   const handleSortChange = (order) => {
     const sorted = [...excursiones];
     switch (order) {
@@ -74,23 +77,25 @@ export default function Catalogo() {
   return (
     <Container fluid className="catalogo-page py-4">
       <Row>
-        {/* 🔹 Sidebar con ordenar + filtros */}
+        {/* Sidebar con ordenar + filtros */}
         <Col md={3} lg={2}>
           <div className="sidebar-container">
-            <h5 className="fw-bold mb-2 text-secondary">Filtros</h5>
+            <h5 className="fw-bold mb-2 text-secondary">
+              {t("filterSidebar.filter")}
+            </h5>
             <SortBar onSortChange={handleSortChange} />
             <FilterSidebar onFilterChange={handleFilterChange} />
           </div>
         </Col>
 
-        {/* 🔹 Grilla principal */}
+        {/* Grilla principal */}
         <Col xs={12} md={9} lg={10}>
           {loading ? (
-            <p>Cargando excursiones...</p>
+            <p>{t("catalogo.loading")}</p>
           ) : error ? (
             <p className="text-danger">{error}</p>
           ) : excursiones.length === 0 ? (
-            <p className="text-muted">No hay excursiones en esta categoría.</p>
+            <p className="text-muted">{t("catalogo.empty")}</p>
           ) : (
             <CatalogGrid excursiones={excursiones} />
           )}

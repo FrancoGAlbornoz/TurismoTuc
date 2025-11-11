@@ -59,6 +59,14 @@
       "titulo": "Panel de administración",
       "link": "Administrar"
     }
+  },
+  "catalogo": {
+    "loading": "Cargando excursiones...",
+    "empty": "No hay excursiones en esta categoría.",
+    "error": "No se pudieron cargar las excursiones."
+  },
+  "filterSidebar": {
+    "filter": "Filtrar excursiones"
   }
 
   

@@ -59,6 +59,14 @@
       "titulo": "Access the admin panel",
       "link": "Admin panel"
     }
+  },
+  "catalogo": {
+    "loading": "Loading tours...",
+    "empty": "No tours found in this category.",
+    "error": "Failed to load tours."
+  },
+  "filterSidebar": {
+    "filter": "Filter tours"
   }
 
 }

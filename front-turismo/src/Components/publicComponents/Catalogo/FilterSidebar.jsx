@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
 import { Form, Button } from "react-bootstrap";
+import { useTranslation } from "react-i18next";
 import axios from "axios";
 
 export default function FilterSidebar({ onFilterChange }) {
+  const { t } = useTranslation();
+  
   const [ubicacion, setUbicacion] = useState("");
   const [precioMin, setPrecioMin] = useState("");
   const [precioMax, setPrecioMax] = useState("");
@@ -10,7 +13,7 @@ export default function FilterSidebar({ onFilterChange }) {
   const [categoria, setCategoria] = useState("");
   const [categorias, setCategorias] = useState([]);
 
-  // 🔄 Cargar categorías al montar
+  // Cargar categorías al montar
   useEffect(() => {
     const fetchCategorias = async () => {
       try {
@@ -57,7 +60,7 @@ export default function FilterSidebar({ onFilterChange }) {
 
   return (
     <div className="filter-sidebar bg-white rounded shadow-sm p-3 mb-3">
-      <h6 className="fw-bold mb-3">Filtros</h6>
+      <h6 className="fw-bold mb-3">{t("filterSidebar.filter")}</h6>
       <Form onSubmit={handleApplyFilters}>
         <Form.Group className="mb-3">
           <Form.Label>Ubicación</Form.Label>
