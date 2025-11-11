@@ -1,10 +1,17 @@
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { FaWhatsapp, FaShoppingCart } from "react-icons/fa";
+import {
+  FaWhatsapp,
+  FaShoppingCart,
+  FaUserCircle,
+  FaSignOutAlt,
+  FaGlobe,
+} from "react-icons/fa";
 import useTuristaStore from "../../store/useTuristaStore";
 import useCarritoStore from "../../store/useCarritoStore";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import "../../styles/components/common/header.css";
+import { Dropdown, Button } from "react-bootstrap";
 
 export default function Header() {
   const navigate = useNavigate();
@@ -16,163 +23,160 @@ export default function Header() {
     if (turista) fetchCarrito();
   }, [turista]);
 
-  // Suma total de personas o ítems del carrito
   const cantidadTotal = items.reduce(
     (acc, i) => acc + Number(i.cantidad_personas || 0),
     0
   );
 
-  const changeLanguage = (lng) => {
-    i18n.changeLanguage(lng);
+  const toggleLanguage = () => {
+    const newLang = i18n.language === "es" ? "en" : "es";
+    i18n.changeLanguage(newLang);
   };
 
   return (
-    <nav className="navbar navbar-expand-lg bg-white shadow-sm sticky-top">
-      <div className="container-fluid px-4">
-        {/* Logo + nombre */}
-        <Link
-          className="navbar-brand fw-bold text-teal d-flex align-items-center gap-2"
-          to="/"
-        >
-          <div className="logo-circle"></div>
-          {t("brand")}
-        </Link>
+    <>
+      {/* HEADER */}
+      <nav className="navbar navbar-expand-lg bg-white shadow-sm sticky-top py-3">
+        <div className="container-fluid px-4">
+          {/* Marca */}
+          <Link
+            className="navbar-brand fw-bold text-teal d-flex align-items-center gap-2"
+            to="/"
+          >
+            <div className="logo-circle"></div>
+            {t("brand")}
+          </Link>
 
-        {/* Botón hamburguesa móvil */}
-        <button
-          className="navbar-toggler"
-          type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#navbarNav"
-          aria-controls="navbarNav"
-          aria-expanded="false"
-          aria-label="Toggle navigation"
-        >
-          <span className="navbar-toggler-icon"></span>
-        </button>
+          {/* Botón hamburguesa móvil */}
+          <button
+            className="navbar-toggler"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#navbarNav"
+            aria-controls="navbarNav"
+            aria-expanded="false"
+            aria-label="Toggle navigation"
+          >
+            <span className="navbar-toggler-icon"></span>
+          </button>
 
-        {/* Menú central */}
-        <div
-          className="collapse navbar-collapse justify-content-center"
-          id="navbarNav"
-        >
-          <ul className="navbar-nav gap-3">
-            <li className="nav-item">
-              <NavLink className="nav-link" to="/">
-                {t("home")}
-              </NavLink>
-            </li>
-            <li className="nav-item">
-              <NavLink className="nav-link" to="/catalogo">
-                {t("catalog")}
-              </NavLink>
-            </li>
-          </ul>
-        </div>
-
-        {/* Zona derecha */}
-        <div className="d-flex align-items-center gap-2">
-
-          {/* 🔹 Botón cambio idioma */}
-          <div className="btn-group me-2">
-            <button
-              className={`btn btn-sm ${
-                i18n.language === "es" ? "btn-primary" : "btn-outline-primary"
-              }`}
-              onClick={() => changeLanguage("es")}
-            >
-              ES
-            </button>
-            <button
-              className={`btn btn-sm ${
-                i18n.language === "en" ? "btn-primary" : "btn-outline-primary"
-              }`}
-              onClick={() => changeLanguage("en")}
-            >
-              EN
-            </button>
-          </div>
-
-          {/* Si NO hay turista */}
-          {!turista ? (
-            <>
-              <button
-                className="btn btn-outline-success btn-sm"
-                onClick={() => navigate("/login-turista")}
-              >
-                {t("login")}
-              </button>
-              <button
-                className="btn btn-success btn-sm"
-                onClick={() => navigate("/register-turista")}
-              >
-                {t("register")}
-              </button>
-            </>
-          ) : (
-            // Si hay turista logueado
-            <div className="d-flex align-items-center gap-3">
-              {/* WhatsApp primero */}
-              <a
-                href="https://wa.me/5493810000000"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn btn-success btn-sm d-flex align-items-center justify-content-center"
-                style={{ width: "38px", height: "38px", borderRadius: "50%" }}
-                title="Contactar por WhatsApp"
-              >
-                <FaWhatsapp size={18} />
-              </a>
-
-              {/* Carrito */}
-              <Link
-                to="/carrito"
-                className="btn btn-outline-dark btn-sm d-flex align-items-center gap-1 position-relative"
-                title="Ver carrito"
-              >
-                <FaShoppingCart /> {t("cart")}
-                {cantidadTotal > 0 && (
-                  <span
-                    className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                    style={{
-                      fontSize: "0.65rem",
-                      padding: "0.3rem 0.45rem",
-                    }}
-                  >
-                    {cantidadTotal}
-                  </span>
-                )}
-              </Link>
-
-              {/* Saludo */}
-              <span className="fw-semibold text-success small mb-0">
-                {t("hello", {
-                  name: turista?.nombre?.split(" ")[0] || "Turista",
-                })}
+          {/* Contenido colapsable */}
+          <div
+            className="collapse navbar-collapse justify-content-between"
+            id="navbarNav"
+          >
+            {/* 🔹 Izquierda: saludo */}
+            {turista && (
+              <span className="fw-semibold text-success small me-3">
+                👋 {t("hello", { name: turista?.nombre?.split(" ")[0] || "Turista" })}
               </span>
+            )}
 
-              {/* Botón Mi perfil */}
-              <button
-                className="btn btn-outline-primary btn-sm fw-semibold"
-                onClick={() => navigate("/perfil-turista")}
-              >
-                Mi perfil
-              </button>
+            {/* 🔹 Centro: menú de navegación */}
+            <ul className="navbar-nav mx-auto gap-3">
+              <li className="nav-item">
+                <NavLink className="nav-link fw-semibold" to="/">
+                  {t("home")}
+                </NavLink>
+              </li>
+              <li className="nav-item">
+                <NavLink className="nav-link fw-semibold" to="/catalogo">
+                  {t("catalog")}
+                </NavLink>
+              </li>
+            </ul>
 
-              {/* Cerrar sesión */}
-              <button
-                className="btn btn-outline-danger btn-sm fw-semibold"
-                onClick={() => {
-                  clearTurista();
-                  navigate("/");
-                }}
-              >
-                {t("logout")}
-              </button>
+            {/* 🔹 Derecha */}
+            <div className="d-flex align-items-center gap-3">
+              {turista ? (
+                <>
+                  {/* 🌐 Botón idioma toggle */}
+                  <Button
+                    variant="outline-primary"
+                    size="sm"
+                    className="d-flex align-items-center gap-2 px-3 py-2"
+                    onClick={toggleLanguage}
+                    title="Cambiar idioma"
+                  >
+                    <FaGlobe />
+                    {i18n.language === "es" ? "ES" : "EN"}
+                  </Button>
+
+                  {/* 🛒 Carrito */}
+                  <Link
+                    to="/carrito"
+                    className="btn btn-outline-dark d-flex align-items-center gap-2 position-relative px-3 py-2"
+                    title="Ver carrito"
+                  >
+                    <FaShoppingCart size={20} />
+                    <span className="fw-semibold">{t("cart")}</span>
+                    {cantidadTotal > 0 && (
+                      <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                        {cantidadTotal}
+                      </span>
+                    )}
+                  </Link>
+
+                  {/* 👤 Dropdown usuario */}
+                  <Dropdown align="end">
+                    <Dropdown.Toggle
+                      variant="outline-secondary"
+                      className="d-flex align-items-center gap-2 px-3 py-2"
+                      id="dropdown-user"
+                    >
+                      <FaUserCircle size={22} />
+                    </Dropdown.Toggle>
+
+                    <Dropdown.Menu>
+                      <Dropdown.Item onClick={() => navigate("/perfil-turista")}>
+                        <FaUserCircle className="me-2 text-primary" />
+                        {t("profile") || "Mi perfil"}
+                      </Dropdown.Item>
+                      <Dropdown.Divider />
+                      <Dropdown.Item
+                        onClick={() => {
+                          clearTurista();
+                          navigate("/");
+                        }}
+                        className="text-danger"
+                      >
+                        <FaSignOutAlt className="me-2" />
+                        {t("logout")}
+                      </Dropdown.Item>
+                    </Dropdown.Menu>
+                  </Dropdown>
+                </>
+              ) : (
+                <>
+                  <button
+                    className="btn btn-outline-success btn-sm"
+                    onClick={() => navigate("/login-turista")}
+                  >
+                    {t("login")}
+                  </button>
+                  <button
+                    className="btn btn-success btn-sm"
+                    onClick={() => navigate("/register-turista")}
+                  >
+                    {t("register")}
+                  </button>
+                </>
+              )}
             </div>
-          )}
+          </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+
+      {/* 🔹 Botón flotante de WhatsApp */}
+      <a
+        href="https://wa.me/5493810000000"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="whatsapp-float"
+        title="Contactar por WhatsApp"
+      >
+        <FaWhatsapp size={28} />
+      </a>
+    </>
   );
 }
