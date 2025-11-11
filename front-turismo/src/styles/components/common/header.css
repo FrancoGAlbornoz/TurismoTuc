@@ -99,3 +99,36 @@
   padding-left: 2rem;
   padding-right: 2rem;
 }
+
+/* Aumentar tamaño del carrito y del dropdown */
+.navbar .nav-link svg,
+.navbar .dropdown-toggle svg {
+  transform: scale(1.2);
+}
+
+.navbar .dropdown-toggle {
+  font-size: 0.95rem;
+}
+
+/* Botón flotante de WhatsApp */
+.whatsapp-float {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  background-color: #25d366;
+  color: white;
+  border-radius: 50%;
+  width: 55px;
+  height: 55px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  z-index: 1000;
+}
+
+.whatsapp-float:hover {
+  background-color: #1ebe5d;
+  transform: scale(1.1);
+}
