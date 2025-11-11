@@ -218,6 +218,7 @@ export const createReserva = (req, res) => {
 };
 
 // Actualizar estado o datos de una reserva
+// Actualizar estado o datos de una reserva
 export const updateReserva = (req, res) => {
   const { id } = req.params;
   const {
@@ -231,6 +232,12 @@ export const updateReserva = (req, res) => {
   // Validaciones simples
   if (!id_fecha || !cantidad_personas || !estado_reserva) {
     return res.status(400).json({ message: "Faltan datos obligatorios" });
+  }
+
+  // 🔹 Validar que el estado sea uno permitido
+  const estadosValidos = ["pendiente", "confirmada", "finalizada", "cancelada"];
+  if (!estadosValidos.includes(estado_reserva)) {
+    return res.status(400).json({ message: "Estado de reserva inválido" });
   }
 
   // Actualizar los datos principales de la reserva
@@ -255,8 +262,6 @@ export const updateReserva = (req, res) => {
         return res.status(404).json({ message: "Reserva no encontrada" });
       }
 
-      //  Si también viene id_excursion, actualizamos la relación en FechasExcursion
-      // (esto es opcional; la relación excursión-fecha normalmente se define por id_fecha)
       if (id_excursion) {
         const sqlExcursion = `
           UPDATE FechasExcursion 
@@ -278,6 +283,7 @@ export const updateReserva = (req, res) => {
     }
   );
 };
+
 
 // Baja lógica de reserva
 export const deleteReserva = (req, res) => {

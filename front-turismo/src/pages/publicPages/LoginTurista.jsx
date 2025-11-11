@@ -1,7 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Container, Row, Col, Card, Form, Button, Alert, Spinner } from "react-bootstrap";
+import {
+  Container,
+  Row,
+  Col,
+  Card,
+  Form,
+  Button,
+  Alert,
+  Spinner,
+} from "react-bootstrap";
 import useTuristaStore from "../../store/useTuristaStore";
 import "../../styles/components/login.css";
 
@@ -23,15 +32,10 @@ export default function LoginTurista() {
       const res = await axios.post("http://localhost:8000/api/auth/turistas/login", {
         email,
         password,
-        
       });
-      console.log("🟢 Datos del turista recibidos:", res.data.turista);
       const { token, turista } = res.data;
-
-      // Guardar sesión global y en localStorage
       setTurista(turista, token);
-
-      navigate("/"); // Redirigir al home
+      navigate("/");
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || "Email o contraseña incorrectos.");
@@ -53,7 +57,11 @@ export default function LoginTurista() {
                 </div>
                 <h4 className="text-center text-success fw-bold mb-4">Inicio de sesión</h4>
 
-                {error && <Alert variant="danger" className="py-2 text-center">{error}</Alert>}
+                {error && (
+                  <Alert variant="danger" className="py-2 text-center">
+                    {error}
+                  </Alert>
+                )}
 
                 <Form onSubmit={handleSubmit}>
                   <Form.Group className="mb-3">
@@ -95,6 +103,16 @@ export default function LoginTurista() {
                       onClick={() => navigate("/register-turista")}
                     >
                       Crear una cuenta
+                    </Button>
+                  </div>
+
+                  <div className="text-center mt-2">
+                    <Button
+                      variant="link"
+                      className="text-secondary fw-semibold p-0"
+                      onClick={() => navigate("/forgot-password")}
+                    >
+                      ¿Olvidaste tu contraseña?
                     </Button>
                   </div>
                 </Form>

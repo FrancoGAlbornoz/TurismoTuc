@@ -87,35 +87,86 @@ export const getResenas = (req, res) => {
 };
 
 // Crear nueva reseña (usando token)
+// Crear nueva reseña (solo si la reserva está finalizada y no existe otra)
 export const createResena = (req, res) => {
-  const { id_excursion, id_reserva, calificacion, comentario, id_token } = req.body;
+  const { id_reserva, id_turista, puntuacion, comentario } = req.body;
 
-  if (!id_excursion || !id_reserva || !calificacion)
-    return res.status(400).json({ message: "Faltan datos obligatorios" });
+  if (!id_reserva || !id_turista || !puntuacion) {
+    return res.status(400).json({ message: "Faltan datos obligatorios." });
+  }
 
-  const sql = `
-    INSERT INTO Reseñas (id_excursion, id_reserva, calificacion, comentario, estado)
-    VALUES (?, ?, ?, ?, 'publicada')
+  // 1️⃣ Verificar si la reserva existe y está finalizada
+  const sqlReserva = `
+    SELECT r.id_reserva, r.estado_reserva, e.id_excursion
+    FROM Reservas r
+    JOIN FechasExcursion f ON r.id_fecha = f.id_fecha
+    JOIN Excursiones e ON f.id_excursion = e.id_excursion
+    WHERE r.id_reserva = ? AND r.eliminado = 0
   `;
-  const values = [id_excursion, id_reserva, calificacion, comentario];
 
-  pool.query(sql, values, (err, result) => {
+  pool.query(sqlReserva, [id_reserva], (err, resultReserva) => {
     if (err) {
-      console.error("Error al crear reseña:", err);
-      return res.status(500).json({ message: "Error al crear reseña" });
+      console.error("Error al verificar reserva:", err);
+      return res.status(500).json({ message: "Error interno al validar la reserva." });
     }
 
-    // Marcar token como usado
-    if (id_token) {
-      pool.query(
-        `UPDATE TokensReseña SET usado=1, fecha_eliminacion=NOW() WHERE id_token=?`,
-        [id_token]
-      );
+    if (resultReserva.length === 0) {
+      return res.status(404).json({ message: "Reserva no encontrada." });
     }
 
-    res.status(201).json({ message: "Reseña creada correctamente", id: result.insertId });
+    const reserva = resultReserva[0];
+    if (reserva.estado_reserva !== "finalizada") {
+      return res.status(400).json({
+        message: "Solo podés calificar excursiones finalizadas.",
+      });
+    }
+
+    // 2️⃣ Verificar si ya existe una reseña para esta reserva
+    const sqlCheck = `
+      SELECT id_resena FROM Reseñas 
+      WHERE id_reserva = ? AND eliminado = 0
+    `;
+    pool.query(sqlCheck, [id_reserva], (err2, resultCheck) => {
+      if (err2) {
+        console.error("Error al verificar reseña existente:", err2);
+        return res.status(500).json({ message: "Error al validar reseña existente." });
+      }
+
+      if (resultCheck.length > 0) {
+        return res.status(400).json({
+          message: "Ya realizaste una reseña para esta excursión.",
+        });
+      }
+
+      // 3️⃣ Crear la reseña
+      const sqlInsert = `
+        INSERT INTO Reseñas (id_excursion, id_reserva, id_turista, calificacion, comentario, estado)
+        VALUES (?, ?, ?, ?, ?, 'publicada')
+      `;
+      const values = [
+        reserva.id_excursion,
+        id_reserva,
+        id_turista,
+        puntuacion,
+        comentario || "",
+      ];
+
+      pool.query(sqlInsert, values, (err3, resultInsert) => {
+        if (err3) {
+          console.error("Error al crear reseña:", err3);
+          return res.status(500).json({ message: "Error al crear reseña." });
+        }
+
+        console.log(`✅ Nueva reseña creada para la reserva #${id_reserva}`);
+        res.status(201).json({
+          message: "Reseña creada correctamente.",
+          id: resultInsert.insertId,
+        });
+      });
+    });
   });
 };
+
 
 // Eliminar reseña (baja lógica)
 export const deleteResena = (req, res) => {

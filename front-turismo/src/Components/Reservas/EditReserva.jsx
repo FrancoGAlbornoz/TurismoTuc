@@ -221,6 +221,7 @@ export default function EditReserva() {
           >
             <option value="pendiente">Pendiente</option>
             <option value="confirmada">Confirmada</option>
+            <option value="finalizada">Finalizada</option>
             <option value="cancelada">Cancelada</option>
           </select>
         </div>
