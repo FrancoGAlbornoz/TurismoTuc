@@ -86,9 +86,9 @@ export default function Login() {
                   <Alert variant="danger" className="py-2">
                     {error}
                     <div className="mt-2 text-center">
-                      <Button variant="outline-secondary" size="sm" onClick={() => clearUser()}>
+                      {/* <Button variant="outline-secondary" size="sm" onClick={() => clearUser()}></Button>
                         Reintentar
-                      </Button>
+                      </Button> */}
                     </div>
                   </Alert>
                 )}
