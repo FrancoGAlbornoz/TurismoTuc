@@ -36,6 +36,29 @@
   "search": {
     "titulo": "Resultados de búsqueda",
     "boton": "Ver más"
+  },
+  "footer": {
+    "brand": {
+      "titulo": "Tucumán Tourism",
+      "descripcion": "Authentic excursions, culture, history, and nature. Discover Tucumán in a different way."
+    },
+    "enlaces": {
+      "titulo": "Useful links",
+      "catalogo": "Catalog",
+      "contacto": "Contact",
+      "politicas": "Privacy policy"
+    },
+    "contacto": {
+      "titulo": "Contact",
+      "direccion": "San Miguel de Tucumán, Argentina",
+      "email": "contact@maavyt.com",
+      "telefono": "+54 381 000 0000"
+    },
+    "copyright": "© 2025 MAAVYT — All rights reserved.",
+    "admin": {
+      "titulo": "Access the admin panel",
+      "link": "Admin panel"
+    }
   }
 
   
