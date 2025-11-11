@@ -16,6 +16,8 @@ import PerfilTurista from "./pages/publicPages/PerfilTurista";
 import Carrito from "./pages/publicPages/Carrito";
 import Checkout from "./pages/publicPages/Checkout";
 import Contacto from "./pages/publicPages/Contacto";
+import ForgotPassword from "./pages/publicPages/ForgotPassword";
+import ResetPassword from "./pages/publicPages/ResetPassword";
 import Error from "./pages/Error";
 
 // 🔒 Autenticación y paneles internos
@@ -137,6 +139,26 @@ function App() {
             <>
               <Header />
               <RegisterTurista />
+              <Footer />
+            </>
+          }
+        />
+        <Route
+          path="/forgot-password"
+          element={
+            <>
+              <Header />
+              <ForgotPassword />
+              <Footer />
+            </>
+          }
+        />
+        <Route
+          path="/reset-password/:token"
+          element={
+            <>
+              <Header />
+              <ResetPassword />
               <Footer />
             </>
           }

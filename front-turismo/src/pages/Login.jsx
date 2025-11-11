@@ -2,7 +2,16 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import useUserStore from "../store/useUserStore";
-import { Container, Row, Col, Card, Form, Button, Alert, Spinner } from "react-bootstrap";
+import {
+  Container,
+  Row,
+  Col,
+  Card,
+  Form,
+  Button,
+  Alert,
+  Spinner,
+} from "react-bootstrap";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -13,7 +22,6 @@ export default function Login() {
 
   const { user, setUser, clearUser } = useUserStore();
 
-  // ✅ Nuevo: si ya hay un usuario guardado, redirigir según su rol
   useEffect(() => {
     if (user) {
       const rol = user.rol?.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -117,6 +125,16 @@ export default function Login() {
                     )}
                   </Button>
                 </Form>
+
+                <div className="text-center mt-3">
+                  <Button
+                    variant="link"
+                    className="text-secondary fw-semibold p-0"
+                    onClick={() => navigate("/forgot-password")}
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </Button>
+                </div>
               </Card.Body>
             </Card>
           </Col>
