@@ -6,7 +6,9 @@ import {
   createUsuario,
   updateUsuario,
   deleteUsuario,
-  loginUsuario, // importamos
+  loginUsuario,
+  forgotPassword,     // ✅ nuevo
+  resetPassword       // ✅ nuevo
 } from "../controllers/usuarios.controller.js";
 
 const router = express.Router();
@@ -18,7 +20,11 @@ router.post("/", createUsuario);
 router.put("/:id", updateUsuario);
 router.delete("/:id", deleteUsuario);
 
-// 🔹 Nuevo endpoint de login
+// 🔹 Endpoint de login
 router.post("/login", loginUsuario);
+
+// 🔹 Endpoints de recuperación de contraseña
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password/:token", resetPassword);
 
 export default router;
