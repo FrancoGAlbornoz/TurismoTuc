@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import axios from "axios";
 import Swal from "sweetalert2";
 import { Spinner, Table, Card, Button } from "react-bootstrap";
 
 export default function ViewTurista() {
+  const navigate = useNavigate();
   const { id } = useParams();
   const [turista, setTurista] = useState(null);
   const [reservas, setReservas] = useState([]);
@@ -54,15 +55,20 @@ export default function ViewTurista() {
 
   return (
     <div className="container py-4">
-      <Card className="shadow-sm">
-        <Card.Body>
-          <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap">
-            <h4 className="fw-bold text-success mb-2 mb-md-0">Información del Turista</h4>
-            <Link to="/dashboard-admin/turistas" className="btn btn-outline-secondary btn-sm">
-              ← Volver
-            </Link>
-          </div>
+              <div className="col-12 col-md-6 mb-2 mb-md-0">
+          <Button variant="outline-secondary" size="sm" onClick={() => navigate(-1)}>
+            ← Volver
+          </Button>
+          <br />
+        </div>
+        <br />
 
+      <Card className="shadow-sm">
+      <div className="col-12 col-md-6 text-md-end">
+              <h4 className="fw-bold text-success mb-0">Información del Turista</h4>
+            </div>
+
+        <Card.Body>
           <div className="row mb-2">
             <div className="col-md-6"><strong>Nombre:</strong> {turista.nombre} {turista.apellido}</div>
             <div className="col-md-6"><strong>DNI:</strong> {turista.dni}</div>

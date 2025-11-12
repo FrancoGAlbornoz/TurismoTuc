@@ -47,14 +47,18 @@ export default function CreateTurista() {
 
   return (
     <div className="container py-4">
+      <div className="col-12 col-md-6 mb-2 mb-md-0">
+          <Button variant="outline-secondary" size="sm" onClick={() => navigate(-1)}>
+            ← Volver
+          </Button>
+          <br />
+      </div>
+      <br />
       <Card className="shadow-sm">
         <Card.Body>
-          <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap">
-            <h4 className="fw-bold text-success mb-2 mb-md-0">Agregar nuevo Turista</h4>
-            <Link to="/dashboard-admin/turistas" className="btn btn-outline-secondary btn-sm">
-              ← Volver
-            </Link>
-          </div>
+        <div className="col-12 col-md-6 text-md-end">
+              <h4 className="fw-bold text-success mb-0">Nuevo Turista</h4>
+            </div>
 
           <Form onSubmit={handleSubmit}>
             <Row className="mb-3">
