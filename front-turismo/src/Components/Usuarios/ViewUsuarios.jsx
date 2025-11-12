@@ -13,50 +13,23 @@ export default function ViewUsuario() {
   const [excursionesConFechas, setExcursionesConFechas] = useState([]);
   const [notificando, setNotificando] = useState(null);
 
-  console.log(setError);
-  console.log(setUsuario);
-  console.log(setLoading);
   useEffect(() => {
-    if (usuario?.nombre_rol?.toLowerCase().includes("guía")) {
-      const fetchExcursionesYFechas = async () => {
-        try {
-          const resExc = await axios.get(`http://localhost:8000/api/excursiones/guia/${id}`);
-          const excursiones = resExc.data;
+    const fetchUsuario = async () => {
+      try {
+        const res = await axios.get(`http://localhost:8000/api/usuarios/${id}`);
+        setUsuario(res.data);
+      } catch (err) {
+        console.error("Error al obtener usuario:", err);
+        setError("No se pudo cargar el usuario.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUsuario();
+  }, [id]);
 
-          const detalles = await Promise.all(
-            excursiones.map(async (exc) => {
-              const resFechas = await axios.get(`http://localhost:8000/api/excursiones/${exc.id_excursion}/fechas`);
-              return resFechas.data.map((fecha) => ({
-                id_excursion: exc.id_excursion,
-                titulo: exc.titulo,
-                ubicacion: exc.ubicacion,
-                estado: exc.estado,
-                notificado: exc.notificado,
-                id_fecha: fecha.id_fecha,
-                fecha: fecha.fecha,
-              }));
-            })
-          );
-
-          setExcursionesConFechas(detalles.flat());
-        } catch (err) {
-          console.error("Error al obtener excursiones y fechas:", err);
-        }
-      };
-
-      fetchExcursionesYFechas();
-    }
-  }, [usuario]);
-
-  const handleNotificar = async (item) => {
-    setNotificando(item.id_fecha);
+  const fetchExcursionesYFechas = async () => {
     try {
-      await axios.post(`http://localhost:8000/api/excursiones/notificar/${item.id_excursion}`, {
-        fecha: item.fecha,
-      });
-
-      Swal.fire("Correo enviado", "El guía fue notificado correctamente.", "success");
-
       const resExc = await axios.get(`http://localhost:8000/api/excursiones/guia/${id}`);
       const excursiones = resExc.data;
 
@@ -68,6 +41,7 @@ export default function ViewUsuario() {
             titulo: exc.titulo,
             ubicacion: exc.ubicacion,
             estado: exc.estado,
+            notificado: exc.notificado,
             id_fecha: fecha.id_fecha,
             fecha: fecha.fecha,
           }));
@@ -76,27 +50,38 @@ export default function ViewUsuario() {
 
       setExcursionesConFechas(detalles.flat());
     } catch (err) {
-      Swal.fire("Error", "No se pudo enviar el correo.", err);
+      console.error("Error al obtener excursiones y fechas:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (usuario?.nombre_rol?.toLowerCase().includes("guía")) {
+      fetchExcursionesYFechas();
+    }
+  }, [usuario]);
+
+  // ✅ Notificar guía
+  const handleNotificar = async (item) => {
+    setNotificando(item.id_fecha);
+    try {
+      await axios.post(`http://localhost:8000/api/excursiones/notificar/${item.id_excursion}`, {
+        fecha: item.fecha,
+      });
+
+      Swal.fire("Correo enviado", "El guía fue notificado correctamente.", "success");
+
+      await fetchExcursionesYFechas();
+    } catch (err) {
+      Swal.fire("Error", "No se pudo enviar el correo.", "error");
+      console.error(err);
     } finally {
       setNotificando(null);
     }
   };
 
-  if (loading) {
-    return <div className="text-center mt-5">Cargando datos del usuario...</div>;
-  }
-
-  if (error) {
-    return <div className="alert alert-danger text-center mt-4">{error}</div>;
-  }
-
-  if (!usuario) {
-    return (
-      <div className="alert alert-warning text-center mt-4">
-        Usuario no encontrado.
-      </div>
-    );
-  }
+  if (loading) return <div className="text-center mt-5">Cargando datos del usuario...</div>;
+  if (error) return <div className="alert alert-danger text-center mt-4">{error}</div>;
+  if (!usuario) return <div className="alert alert-warning text-center mt-4">Usuario no encontrado.</div>;
 
   return (
     <div className="container mt-4">
@@ -104,38 +89,26 @@ export default function ViewUsuario() {
         <h5 className="fw-bold text-success mb-3">Información del Usuario</h5>
 
         <div className="row mb-2">
-          <div className="col-md-6">
-            <strong>Nombre:</strong> {usuario.nombre} {usuario.apellido}
-          </div>
-          <div className="col-md-6">
-            <strong>Email:</strong> {usuario.email}
-          </div>
+          <div className="col-md-6"><strong>Nombre:</strong> {usuario.nombre} {usuario.apellido}</div>
+          <div className="col-md-6"><strong>Email:</strong> {usuario.email}</div>
         </div>
 
         <div className="row mb-2">
-          <div className="col-md-6">
-            <strong>Teléfono:</strong> {usuario.telefono || "—"}
-          </div>
-          <div className="col-md-6">
-            <strong>Rol:</strong> {usuario.nombre_rol}
-          </div>
+          <div className="col-md-6"><strong>Teléfono:</strong> {usuario.telefono || "—"}</div>
+          <div className="col-md-6"><strong>Rol:</strong> {usuario.nombre_rol}</div>
         </div>
 
         <div className="row mb-3">
           <div className="col-md-6">
             <strong>Estado:</strong>{" "}
-            <span
-              className={`badge ${
-                usuario.estado === "activo" ? "bg-success" : "bg-secondary"
-              }`}
-            >
+            <span className={`badge ${usuario.estado === "activo" ? "bg-success" : "bg-secondary"}`}>
               {usuario.estado}
             </span>
           </div>
         </div>
 
         <hr />
-        
+
         {usuario.nombre_rol?.toLowerCase().includes("guía") && (
           <div className="mt-4">
             <h5 className="fw-bold text-primary mb-3">Excursiones asignadas</h5>
@@ -163,11 +136,7 @@ export default function ViewUsuario() {
                         disabled={item.notificado || notificando === item.id_fecha}
                         onClick={() => handleNotificar(item)}
                       >
-                        {notificando === item.id_fecha ? (
-                          <Spinner size="sm" />
-                        ) : (
-                          "Enviar correo"
-                        )}
+                        {notificando === item.id_fecha ? <Spinner size="sm" /> : "Enviar correo"}
                       </Button>
                     </td>
                   </tr>
@@ -178,10 +147,7 @@ export default function ViewUsuario() {
         )}
 
         <div className="mt-3">
-          <button
-            className="btn btn-outline-success"
-            onClick={() => navigate("/dashboard-admin/usuarios")}
-          >
+          <button className="btn btn-outline-success" onClick={() => navigate("/dashboard-admin/usuarios")}>
             ← Volver al listado
           </button>
         </div>
