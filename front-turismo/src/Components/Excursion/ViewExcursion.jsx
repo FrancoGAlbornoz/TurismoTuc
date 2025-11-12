@@ -43,13 +43,19 @@ export default function ViewExcursion() {
 
   return (
     <div className="container py-4">
+        <div className="col-12 col-md-6 mb-2 mb-md-0">
+          <Button variant="outline-secondary" size="sm" onClick={() => navigate(-1)}>
+            ← Volver
+          </Button>
+        </div>
       <Card className="shadow-sm mb-4">
+        
         <Card.Body>
-          <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
-            <h4 className="fw-bold text-success mb-2 mb-md-0">{excursion.titulo}</h4>
-            <Button variant="outline-secondary" size="sm" onClick={() => navigate(-1)}>
-              ← Volver
-            </Button>
+          <div className="row mb-3 align-items-center">
+
+            <div className="col-12 col-md-6 text-md-end">
+              <h4 className="fw-bold text-success mb-0">{excursion.titulo}</h4>
+            </div>
           </div>
 
           <div className="row mb-3">
