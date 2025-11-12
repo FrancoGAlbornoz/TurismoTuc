@@ -18,7 +18,7 @@ export default function ExcursionGallery({ excursion }) {
           className="shadow-sm rounded overflow-hidden"
         >
           {imagenes.map((img, index) => (
-            <Carousel.Item key={img.id_multimedia || index}>
+            <Carousel.Item key={img.id_multimedia || index} interval={6000} pause="hover" indicators={img.length > 1} controls={img.length > 1}>
               <img
                 src={img.url}
                 alt={img.descripcion || `Imagen ${index + 1}`}

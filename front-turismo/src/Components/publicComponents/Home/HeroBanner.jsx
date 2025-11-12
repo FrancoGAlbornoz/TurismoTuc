@@ -3,23 +3,35 @@ import axios from "axios";
 import "../../../styles/publicComponents/home.css";
 import { useTranslation } from "react-i18next";
 
-
-export default function HeroBanner({ setResultados }) {
+export default function HeroBanner({ setResultados, setBusquedaRealizada }) {
   const { t } = useTranslation();
-
   const [query, setQuery] = useState("");
 
   const handleBuscar = async () => {
-    if (!query.trim()) return;
+    // Si está vacío, limpiar resultados y salir
+    if (!query.trim()) {
+      setResultados([]);
+      setBusquedaRealizada(false);
+      return;
+    }
+
     try {
-      const res = await axios.get(`http://localhost:8000/api/excursiones?q=${query}`);
+      setBusquedaRealizada(true); // 👈 marcar que se realizó búsqueda
+
+      // Ajustá el endpoint según tu backend
+      const res = await axios.get(
+        `http://localhost:8000/api/excursiones?q=${query}`
+      );
+
       setResultados(res.data);
     } catch (err) {
       console.error("Error al buscar excursiones:", err);
+      setResultados([]); // si hay error, no romper el render
+      setBusquedaRealizada(true);
     }
   };
 
-   return (
+  return (
     <section className="hero-section position-relative">
       {/* 🎥 Video de fondo */}
       <video className="hero-video" autoPlay muted loop playsInline>

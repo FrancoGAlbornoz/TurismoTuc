@@ -13,6 +13,9 @@ export default function ViewUsuario() {
   const [excursionesConFechas, setExcursionesConFechas] = useState([]);
   const [notificando, setNotificando] = useState(null);
 
+  console.log(setError);
+  console.log(setUsuario);
+  console.log(setLoading);
   useEffect(() => {
     if (usuario?.nombre_rol?.toLowerCase().includes("guía")) {
       const fetchExcursionesYFechas = async () => {
@@ -73,7 +76,7 @@ export default function ViewUsuario() {
 
       setExcursionesConFechas(detalles.flat());
     } catch (err) {
-      Swal.fire("Error", "No se pudo enviar el correo.", "error");
+      Swal.fire("Error", "No se pudo enviar el correo.", err);
     } finally {
       setNotificando(null);
     }
