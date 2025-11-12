@@ -183,6 +183,9 @@ function enviarCorreo(email, token) {
   });
 }
 
+// =========================
+// RESET PASSWORD
+// =========================
 export const resetPassword = (req, res) => {
   const { token } = req.params;
   const { nuevaPassword } = req.body;
@@ -191,7 +194,6 @@ export const resetPassword = (req, res) => {
     return res.status(400).json({ message: "Datos incompletos" });
   }
 
-  // Buscar en Turistas
   pool.query(
     "SELECT id_turista, reset_token_expiration FROM Turistas WHERE reset_token=? AND eliminado=0",
     [token],
@@ -214,7 +216,6 @@ export const resetPassword = (req, res) => {
           }
         );
       } else {
-        // Buscar en Usuarios
         pool.query(
           "SELECT id_usuario, reset_token_expiration FROM Usuarios WHERE reset_token=? AND eliminado=0",
           [token],

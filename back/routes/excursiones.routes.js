@@ -6,6 +6,7 @@ import {
   createExcursion,
   updateExcursion,
   deleteExcursion,
+  notificarGuia,
   getMultimediaByExcursion,
   createMultimedia,
   deleteMultimedia,
@@ -15,7 +16,6 @@ import {
   updateFechaExcursion,
   deleteFechaExcursion,
   getGuias,
-  notificarGuia,
   getExcursionesPorGuia,
   getParticipantesByExcursion,
   getFechaById,
@@ -34,6 +34,8 @@ router.get("/guias", getGuias);
 router.get("/:id/participantes", getParticipantesByExcursion);
 router.get("/con-fechas", getExcursionesConFechas);
 router.get("/fechas/:id", getFechaById);
+router.post("/notificar/:id_excursion", notificarGuia);
+
 
 
 // 🔹 Rutas dinámicas
