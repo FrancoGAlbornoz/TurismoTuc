@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
 import { pool } from "../config/DB.js";
+<<<<<<< HEAD
 
 const migrarPasswords = async () => {
   try {
@@ -32,6 +33,8 @@ migrarPasswords();
 import bcrypt from 'bcrypt';
 import { pool } from "../config/DB.js";
  // tu conexión MySQL
+=======
+>>>>>>> 5c515858a9d769e1039a69eae8934b36bc117e85
 
 const migrarPasswords = async () => {
   try {
@@ -54,9 +57,14 @@ const migrarPasswords = async () => {
       console.log(` Usuario ${id_usuario} migrado`);
     }
 
+<<<<<<< HEAD
     console.log("🎉 Migración completada");
+=======
+    console.log("Migración completada");
+>>>>>>> 5c515858a9d769e1039a69eae8934b36bc117e85
   } catch (error) {
     console.error(" Error en la migración:", error);
   }
 };
+
 migrarPasswords();
