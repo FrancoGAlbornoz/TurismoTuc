@@ -51,10 +51,10 @@
     "contacto": {
       "titulo": "Contact",
       "direccion": "San Miguel de Tucumán, Argentina",
-      "email": "contact@maavyt.com",
+      "email": "info@turismotucuman.com",
       "telefono": "+54 381 000 0000"
     },
-    "copyright": "© 2025 MAAVYT — All rights reserved.",
+    "copyright": "© 2025 Turismo Tucumán. — All rights reserved.",
     "admin": {
       "titulo": "Access the admin panel",
       "link": "Admin panel"
@@ -79,7 +79,27 @@
     "all": "All",
     "apply": "Apply",
     "clear": "Clear"
-  }
+  },
+  "catalogGrid": {
+  "viewDetails": "View details"
+  },
+  "categorias": {
+    "Aventura": "Adventure",
+    "Cultural": "Cultural",
+    "Naturaleza": "Nature",
+    "Gastronómica": "Gastronomic",
+    "Relajación": "Relaxation",
+    "Familiar": "Family",
+    "Fotográfica": "Photography",
+    "Nocturna": "Night"
+  },
+  "sortBar": {
+  "sortBy": "Sort by...",
+  "priceLowHigh": "Price: low to high",
+  "priceHighLow": "Price: high to low",
+  "newest": "Newest",
+  "oldest": "Oldest"
+}
 
 }
 

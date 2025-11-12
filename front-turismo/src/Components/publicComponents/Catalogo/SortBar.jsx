@@ -1,7 +1,9 @@
 // Components/publicComponents/Catalogo/SortBar.jsx
-import React from "react";
+import { useTranslation } from "react-i18next";
 
 export default function SortBar({ onSortChange }) {
+  const { t } = useTranslation();
+
   return (
     <div className="sort-bar">
       <select
@@ -10,13 +12,14 @@ export default function SortBar({ onSortChange }) {
         defaultValue=""
       >
         <option value="" disabled>
-          Ordenar por...
+          {t("sortBar.sortBy")}
         </option>
-        <option value="precio_asc">Precio: menor a mayor</option>
-        <option value="precio_desc">Precio: mayor a menor</option>
-        <option value="fecha_nueva">Más recientes</option>
-        <option value="fecha_vieja">Más antiguas</option>
+        <option value="precio_asc">{t("sortBar.priceLowHigh")}</option>
+        <option value="precio_desc">{t("sortBar.priceHighLow")}</option>
+        <option value="fecha_nueva">{t("sortBar.newest")}</option>
+        <option value="fecha_vieja">{t("sortBar.oldest")}</option>
       </select>
     </div>
   );
 }
+

@@ -79,9 +79,27 @@
     "all": "Todas",
     "apply": "Aplicar",
     "clear": "Limpiar"
+  },
+  "catalogGrid": {
+  "viewDetails": "Ver detalles"
+  },
+  "categorias": {
+    "Aventura": "Aventura",
+    "Cultural": "Cultural",
+    "Naturaleza": "Naturaleza",
+    "Gastronómica": "Gastronómica",
+    "Relajación": "Relajación",
+    "Familiar": "Familiar",
+    "Fotográfica": "Fotográfica",
+    "Nocturna": "Nocturna"
+  },
+  "sortBar": {
+  "sortBy": "Ordenar por...",
+  "priceLowHigh": "Precio: menor a mayor",
+  "priceHighLow": "Precio: mayor a menor",
+  "newest": "Más recientes",
+  "oldest": "Más antiguas"
   }
-
-  
 
 }
 

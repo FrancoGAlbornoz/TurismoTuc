@@ -56,7 +56,7 @@ export default function CategoryCarousel() {
               }
             >
               <i className={`bi ${cat.icono || "bi-tag"} fs-3 d-block mb-2`}></i>
-              <span>{cat.nombre_categoria}</span>
+              <span>{t(`categorias.${cat.nombre_categoria}`)}</span>
             </div>
           ))}
         </div>
