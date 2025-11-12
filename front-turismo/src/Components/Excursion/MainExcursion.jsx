@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Card, Button, Table, Alert } from "react-bootstrap";
+import { Card, Button, Table } from "react-bootstrap";
+import Swal from "sweetalert2";
 
 export default function MainExcursiones() {
   const [excursiones, setExcursiones] = useState([]);
-  const [mensaje, setMensaje] = useState("");
-  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const fetchExcursiones = async () => {
@@ -15,22 +14,43 @@ export default function MainExcursiones() {
       setExcursiones(res.data);
     } catch (err) {
       console.error("Error al obtener excursiones:", err);
-      setError("No se pudieron cargar las excursiones.");
+      Swal.fire({
+        title: "Error",
+        text: "No se pudieron cargar las excursiones.",
+        icon: "error",
+      });
     }
   };
 
   const handleEliminar = async (id) => {
-    if (!window.confirm("¿Estás seguro de que querés eliminar esta excursión?")) return;
+    const confirmacion = await Swal.fire({
+      title: "¿Eliminar excursión?",
+      text: "Esta acción no se puede deshacer.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+    });
+
+    if (!confirmacion.isConfirmed) return;
 
     try {
       const res = await axios.delete(`http://localhost:8000/api/excursiones/${id}`);
-      setMensaje(res.data.message);
-      setError("");
+      await Swal.fire({
+        title: "Excursión eliminada",
+        text: res.data.message,
+        icon: "success",
+        timer: 2000,
+        showConfirmButton: false,
+      });
       fetchExcursiones();
     } catch (err) {
       console.error("Error al eliminar excursión:", err);
-      setError("No se pudo eliminar la excursión.");
-      setMensaje("");
+      Swal.fire({
+        title: "Error",
+        text: "No se pudo eliminar la excursión.",
+        icon: "error",
+      });
     }
   };
 
@@ -51,9 +71,6 @@ export default function MainExcursiones() {
             <i className="bi bi-plus-circle me-1"></i> Nueva Excursión
           </Button>
         </div>
-
-        {mensaje && <Alert variant="success" className="py-2">{mensaje}</Alert>}
-        {error && <Alert variant="danger" className="py-2">{error}</Alert>}
 
         <Table hover responsive className="align-middle">
           <thead className="table-light">
