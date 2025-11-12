@@ -33,15 +33,6 @@
     background-color: #198754;
     color: white;
   }
-
-
-  .categoria-scroll-container {
-    display: flex;
-    overflow-x: auto;
-    scroll-behavior: smooth;
-    gap: 1rem;
-    padding: 1rem 2rem;
-  }
   
   .categoria-card {
     flex: 0 0 auto;
@@ -75,11 +66,11 @@
   }
   
   .carousel-arrow.left {
-    left: 0;
+    left: -25px;
   }
   
   .carousel-arrow.right {
-    right: 0;
+    right: -25px;
   }
 
   .categoria-scroll-container {
@@ -87,7 +78,7 @@
     overflow-x: auto;
     scroll-behavior: smooth;
     gap: 1rem;
-    padding: 1rem 2rem;
+    padding: 1rem 4rem;
     scrollbar-width: none; /* Firefox */
   }
   

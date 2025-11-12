@@ -6,11 +6,18 @@ import PromoSection from "../../Components/publicComponents/Home/PromoSection";
 
 export default function Home() {
   const [resultados, setResultados] = useState([]);
+  const [busquedaRealizada, setBusquedaRealizada] = useState(false);
 
   return (
     <>
-      <HeroBanner setResultados={setResultados} />
-      <SearchResults resultados={resultados} />
+      <HeroBanner
+        setResultados={setResultados}
+        setBusquedaRealizada={setBusquedaRealizada}
+      />
+      <SearchResults
+        resultados={resultados}
+        busquedaRealizada={busquedaRealizada}
+      />
       <CategoryGrid />
       <PromoSection />
     </>

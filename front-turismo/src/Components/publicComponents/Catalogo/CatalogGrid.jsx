@@ -1,11 +1,11 @@
 import { Card, Button } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
-
+import { useTranslation } from "react-i18next";
 import "../../../styles/publicComponents/catalogo.css";
 
 export default function CatalogGrid({ excursiones }) {
   const navigate = useNavigate();
-
+  const { t } = useTranslation();
 
   return (
     <div className="row g-4">
@@ -49,7 +49,7 @@ export default function CatalogGrid({ excursiones }) {
                       key={cat.id_categoria_excursion}
                       className="badge bg-light text-dark border"
                     >
-                      {cat.nombre_categoria}
+                      {t(`categorias.${cat.nombre_categoria}`)}
                     </span>
                   ))}
                 </div>
@@ -62,7 +62,7 @@ export default function CatalogGrid({ excursiones }) {
                   className="w-100"
                   onClick={() => navigate(`/excursion/${exc.id_excursion}`)}
                 >
-                  Ver detalles
+                  {t("catalogGrid.viewDetails")}
                 </Button>
 
                 
