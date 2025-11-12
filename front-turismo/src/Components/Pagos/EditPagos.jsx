@@ -1,11 +1,19 @@
 import { useEffect, useState } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Form, Button, Card, Alert } from "react-bootstrap";
+import {
+  Container,
+  Card,
+  Form,
+  Button,
+  Alert,
+  Spinner,
+} from "react-bootstrap";
 
 export default function EditPagos() {
   const { id } = useParams();
   const navigate = useNavigate();
+
   const [pago, setPago] = useState(null);
   const [nuevoEstado, setNuevoEstado] = useState("");
   const [referencia, setReferencia] = useState("");
@@ -45,45 +53,71 @@ export default function EditPagos() {
     }
   };
 
-  if (error) return <Alert variant="danger" className="mt-4">{error}</Alert>;
-  if (!pago) return <div className="text-center mt-5">Cargando...</div>;
+  if (error)
+    return (
+      <Container className="py-4">
+        <Alert variant="danger">{error}</Alert>
+        <Button variant="secondary" onClick={() => navigate(-1)}>
+          ← Volver
+        </Button>
+      </Container>
+    );
+
+  if (!pago)
+    return (
+      <Container className="text-center py-4">
+        <Spinner animation="border" variant="success" />
+        <div className="mt-2">Cargando información del pago...</div>
+      </Container>
+    );
 
   return (
-    <Card className="shadow-sm p-4 mt-4">
-      <h4 className="fw-bold text-success mb-3">Editar Pago</h4>
-
-      {mensaje && <Alert variant="success">{mensaje}</Alert>}
-
-      <Form onSubmit={handleGuardar}>
-        <Form.Group className="mb-3">
-          <Form.Label>Estado del pago</Form.Label>
-          <Form.Select
-            value={nuevoEstado}
-            onChange={(e) => setNuevoEstado(e.target.value)}
-          >
-            <option value="pendiente">Pendiente</option>
-            <option value="aprobado">Aprobado</option>
-            <option value="rechazado">Rechazado</option>
-          </Form.Select>
-        </Form.Group>
-
-        <Form.Group className="mb-3">
-          <Form.Label>Referencia / Comprobante</Form.Label>
-          <Form.Control
-            type="text"
-            value={referencia}
-            onChange={(e) => setReferencia(e.target.value)}
-            placeholder="Ej: 1234-ABC o #transferencia"
-          />
-        </Form.Group>
-
-        <Button variant="success" type="submit" className="me-2">
-          Guardar cambios
+    <Container className="py-4">
+      <div className="col-12 col-md-6 mb-2 mb-md-0">
+        <Button variant="outline-secondary" size="sm" onClick={() => navigate(-1)}>
+          ← Volver
         </Button>
-        <Link to="/dashboard-admin/pagos" className="btn btn-outline-secondary">
-          Cancelar
-        </Link>
-      </Form>
-    </Card>
+        <br />
+      </div>
+      <br />
+
+      <Card className="shadow-sm">
+        <Card.Body>
+          <h4 className="fw-bold text-success mb-4">Editar Pago</h4>
+
+          {mensaje && <Alert variant="success">{mensaje}</Alert>}
+
+          <Form onSubmit={handleGuardar}>
+            <Form.Group className="mb-3">
+              <Form.Label>Estado del pago</Form.Label>
+              <Form.Select
+                value={nuevoEstado}
+                onChange={(e) => setNuevoEstado(e.target.value)}
+              >
+                <option value="pendiente">Pendiente</option>
+                <option value="aprobado">Aprobado</option>
+                <option value="rechazado">Rechazado</option>
+              </Form.Select>
+            </Form.Group>
+
+            <Form.Group className="mb-4">
+              <Form.Label>Referencia / Comprobante</Form.Label>
+              <Form.Control
+                type="text"
+                value={referencia}
+                onChange={(e) => setReferencia(e.target.value)}
+                placeholder="Ej: 1234-ABC o #transferencia"
+              />
+            </Form.Group>
+
+            <div className="d-flex justify-content-end">
+              <Button variant="success" type="submit" className="me-2">
+                Guardar cambios
+              </Button>
+            </div>
+          </Form>
+        </Card.Body>
+      </Card>
+    </Container>
   );
 }
