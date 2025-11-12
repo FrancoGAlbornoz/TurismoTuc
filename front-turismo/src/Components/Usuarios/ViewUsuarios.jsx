@@ -7,13 +7,9 @@ import Swal from "sweetalert2";
 export default function ViewUsuario() {
   const { id } = useParams();
   const navigate = useNavigate();
-
   const [usuario, setUsuario] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
-  const [excursionesConFechas, setExcursionesConFechas] = useState([]);
-  const [notificando, setNotificando] = useState(null);
-
   const [excursionesConFechas, setExcursionesConFechas] = useState([]);
   const [notificando, setNotificando] = useState(null);
 
@@ -58,75 +54,6 @@ export default function ViewUsuario() {
 
       Swal.fire("Correo enviado", "El guía fue notificado correctamente.", "success");
 
-      const resExc = await axios.get(`http://localhost:8000/api/excursiones/guia/${id}`);
-      const excursiones = resExc.data;
-
-      const detalles = await Promise.all(
-        excursiones.map(async (exc) => {
-          const resFechas = await axios.get(`http://localhost:8000/api/excursiones/${exc.id_excursion}/fechas`);
-          return resFechas.data.map((fecha) => ({
-            id_excursion: exc.id_excursion,
-            titulo: exc.titulo,
-            ubicacion: exc.ubicacion,
-            estado: exc.estado,
-            id_fecha: fecha.id_fecha,
-            fecha: fecha.fecha,
-          }));
-        })
-      );
-
-      setExcursionesConFechas(detalles.flat());
-    } catch (err) {
-      Swal.fire("Error", "No se pudo enviar el correo.", "error");
-    } finally {
-      setNotificando(null);
-    }
-  };
-
-  useEffect(() => {
-    if (!usuario) return;
-
-    const fetchExcursionesYFechas = async () => {
-      try {
-        const resExc = await axios.get(`http://localhost:8000/api/excursiones/guia/${id}`);
-        const excursiones = resExc.data;
-
-        const detalles = await Promise.all(
-          excursiones.map(async (exc) => {
-            const resFechas = await axios.get(`http://localhost:8000/api/excursiones/${exc.id_excursion}/fechas`);
-            return resFechas.data.map((fecha) => ({
-              id_excursion: exc.id_excursion,
-              titulo: exc.titulo,
-              ubicacion: exc.ubicacion,
-              estado: exc.estado,
-              id_fecha: fecha.id_fecha,
-              fecha: fecha.fecha,
-            }));
-          })
-        );
-
-        setExcursionesConFechas(detalles.flat());
-      } catch (err) {
-        console.error("Error al obtener excursiones y fechas:", err);
-      }
-    };
-
-    if (usuario.nombre_rol?.toLowerCase().includes("guía")) {
-      fetchExcursionesYFechas();
-    }
-  }, [usuario, id]);
-
-  const handleNotificar = async (item) => {
-    setNotificando(item.id_fecha);
-    try {
-      await axios.post(`http://localhost:8000/api/excursiones/notificar/${item.id_excursion}`, {
-        fecha: item.fecha,
-        id_fecha: item.id_fecha,
-      });
-
-      Swal.fire("Correo enviado", "El guía fue notificado correctamente.", "success");
-
-      // Recargar fechas
       const resExc = await axios.get(`http://localhost:8000/api/excursiones/guia/${id}`);
       const excursiones = resExc.data;
 
@@ -231,47 +158,6 @@ export default function ViewUsuario() {
                         variant="primary"
                         size="sm"
                         disabled={item.notificado || notificando === item.id_fecha}
-                        onClick={() => handleNotificar(item)}
-                      >
-                        {notificando === item.id_fecha ? (
-                          <Spinner size="sm" />
-                        ) : (
-                          "Enviar correo"
-                        )}
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-          </div>
-        )}
-
-        {usuario.nombre_rol?.toLowerCase().includes("guía") && (
-          <div className="mt-4">
-            <h5 className="fw-bold text-primary mb-3">Fechas de excursiones asignadas</h5>
-            <Table striped bordered hover>
-              <thead>
-                <tr>
-                  <th>Título</th>
-                  <th>Ubicación</th>
-                  <th>Estado</th>
-                  <th>Fecha</th>
-                  <th>Acción</th>
-                </tr>
-              </thead>
-              <tbody>
-                {excursionesConFechas.map((item) => (
-                  <tr key={item.id_fecha}>
-                    <td>{item.titulo}</td>
-                    <td>{item.ubicacion}</td>
-                    <td>{item.estado}</td>
-                    <td>{new Date(item.fecha).toLocaleDateString()}</td>
-                    <td>
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        disabled={notificando === item.id_fecha}
                         onClick={() => handleNotificar(item)}
                       >
                         {notificando === item.id_fecha ? (

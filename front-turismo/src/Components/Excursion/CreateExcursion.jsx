@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import Swal from "sweetalert2"; 
 
 export default function CreateExcursion() {
   const navigate = useNavigate();
@@ -43,11 +44,24 @@ export default function CreateExcursion() {
         });
       }
 
-      alert("Excursión creada correctamente ✅");
+      // Usar SweetAlert2 para mostrar éxito
+      Swal.fire({
+        icon: "success",
+        title: "Excursión creada correctamente ✅",
+        showConfirmButton: false,
+        timer: 2000,
+      });
+
       navigate("/dashboard-admin/excursiones");
     } catch (err) {
       console.error("Error al crear excursión:", err);
-      alert("Error al crear excursión ❌");
+
+      // Usar SweetAlert2 para mostrar error
+      Swal.fire({
+        icon: "error",
+        title: "Error al crear excursión ❌",
+        text: "Por favor, revisa los datos ingresados.",
+      });
     }
   };
 

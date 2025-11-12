@@ -16,7 +16,6 @@ import {
   updateFechaExcursion,
   deleteFechaExcursion,
   getGuias,
-  notificarGuia,
   getExcursionesPorGuia,
   getParticipantesByExcursion,
   getFechaById,
