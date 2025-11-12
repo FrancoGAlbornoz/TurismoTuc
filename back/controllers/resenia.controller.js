@@ -306,3 +306,36 @@ export const updateResena = (req, res) => {
     res.json({ message: "Reseña actualizada correctamente" });
   });
 };
+
+
+// =============================
+// 🔹 OBTENER RESEÑAS POR EXCURSIÓN (para frontend público)
+// =============================
+export const getResenasByExcursion = (req, res) => {
+  const { id_excursion } = req.params;
+
+  const sql = `
+    SELECT 
+      r.id_resena,
+      r.comentario,
+      r.calificacion AS puntuacion,
+      CONCAT(t.nombre, ' ', t.apellido) AS nombre_turista,
+      r.fecha_resena
+    FROM Reseñas r
+    JOIN Reservas resv ON r.id_reserva = resv.id_reserva
+    JOIN Turistas t ON resv.id_turista = t.id_turista
+    WHERE r.id_excursion = ? 
+      AND r.eliminado = 0 
+      AND r.estado = 'publicada'
+    ORDER BY r.fecha_resena DESC
+  `;
+
+  pool.query(sql, [id_excursion], (err, results) => {
+    if (err) {
+      console.error("❌ Error al obtener reseñas por excursión:", err);
+      return res.status(500).json({ message: "Error al obtener reseñas" });
+    }
+
+    res.json(results);
+  });
+};

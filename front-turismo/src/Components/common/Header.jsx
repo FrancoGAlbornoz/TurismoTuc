@@ -12,6 +12,7 @@ import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import "../../styles/components/common/header.css";
 import { Dropdown, Button } from "react-bootstrap";
+import logo from "../../public/LOGOTURISMO.png";
 
 export default function Header() {
   const navigate = useNavigate();
@@ -43,8 +44,8 @@ export default function Header() {
             className="navbar-brand fw-bold text-teal d-flex align-items-center gap-2"
             to="/"
           >
-            <div className="logo-circle"></div>
-            {t("brand")}
+            <img src={logo} alt="Logo Turismo" className="header-logo" />
+            <span className="brand-text ms-2">{t("brand")}</span>
           </Link>
 
           {/* Botón hamburguesa móvil */}
@@ -68,7 +69,10 @@ export default function Header() {
             {/* 🔹 Izquierda: saludo */}
             {turista && (
               <span className="fw-semibold text-success small me-3">
-                👋 {t("hello", { name: turista?.nombre?.split(" ")[0] || "Turista" })}
+                👋{" "}
+                {t("hello", {
+                  name: turista?.nombre?.split(" ")[0] || "Turista",
+                })}
               </span>
             )}
 
@@ -128,7 +132,9 @@ export default function Header() {
                     </Dropdown.Toggle>
 
                     <Dropdown.Menu>
-                      <Dropdown.Item onClick={() => navigate("/perfil-turista")}>
+                      <Dropdown.Item
+                        onClick={() => navigate("/perfil-turista")}
+                      >
                         <FaUserCircle className="me-2 text-primary" />
                         {t("profile") || "Mi perfil"}
                       </Dropdown.Item>
@@ -148,6 +154,17 @@ export default function Header() {
                 </>
               ) : (
                 <>
+                  {/* 🌐 Botón idioma toggle */}
+                  <Button
+                    variant="outline-primary"
+                    size="sm"
+                    className="d-flex align-items-center gap-2 px-3 py-2"
+                    onClick={toggleLanguage}
+                    title="Cambiar idioma"
+                  >
+                    <FaGlobe />
+                    {i18n.language === "es" ? "ES" : "EN"}
+                  </Button>
                   <button
                     className="btn btn-outline-success btn-sm"
                     onClick={() => navigate("/login-turista")}

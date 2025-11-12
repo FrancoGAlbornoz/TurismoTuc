@@ -79,9 +79,56 @@
     "all": "Todas",
     "apply": "Aplicar",
     "clear": "Limpiar"
+  },
+  "catalogGrid": {
+  "viewDetails": "Ver detalles"
+  },
+  "categorias": {
+    "Aventura": "Aventura",
+    "Cultural": "Cultural",
+    "Naturaleza": "Naturaleza",
+    "Gastronómica": "Gastronómica",
+    "Relajación": "Relajación",
+    "Familiar": "Familiar",
+    "Fotográfica": "Fotográfica",
+    "Nocturna": "Nocturna"
+  },
+  "sortBar": {
+  "sortBy": "Ordenar por...",
+  "priceLowHigh": "Precio: menor a mayor",
+  "priceHighLow": "Precio: mayor a menor",
+  "newest": "Más recientes",
+  "oldest": "Más antiguas"
+  },
+  "loginTurista": {
+    "title": "Turismo Tucumán",
+    "subtitle": "Inicio de sesión",
+    "email": "Email",
+    "password": "Contraseña",
+    "loading": "Ingresando...",
+    "button": "Ingresar",
+    "noAccount": "¿No tenés cuenta?",
+    "createAccount": "Crear una cuenta",
+    "forgotPassword": "¿Olvidaste tu contraseña?"
+  },
+  "registerTurista": {
+    "title": "Turismo Tucumán",
+    "subtitle": "Crear cuenta",
+    "name": "Nombre",
+    "lastname": "Apellido",
+    "dni": "DNI",
+    "dniPlaceholder": "Solo números",
+    "nationality": "Nacionalidad",
+    "email": "Email",
+    "password": "Contraseña",
+    "phone": "Teléfono",
+    "phonePlaceholder": "Solo números",
+    "address": "Dirección",
+    "button": "Registrarme",
+    "loading": "Registrando...",
+    "haveAccount": "¿Ya tenés cuenta?",
+    "login": "Iniciar sesión"
   }
-
-  
 
 }
 
