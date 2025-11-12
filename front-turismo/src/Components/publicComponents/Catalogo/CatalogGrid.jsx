@@ -14,7 +14,7 @@ export default function CatalogGrid({ excursiones }) {
           key={exc.id_excursion}
           className="col-12 col-sm-6 col-md-4 col-lg-3"
         >
-          <Card className="catalog-card shadow-sm h-100">
+          <Card className="catalog-card shadow-sm h-100" onClick={() => navigate(`/excursion/${exc.id_excursion}`)}>
             <div className="catalog-card__img-wrapper">
               <Card.Img
                 variant="top"
