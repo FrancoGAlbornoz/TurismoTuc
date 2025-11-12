@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Card, Table, Button, Badge, Alert } from "react-bootstrap";
+import Swal from "sweetalert2";
 
 export default function MainPagos() {
   const [pagos, setPagos] = useState([]);
@@ -24,6 +25,17 @@ export default function MainPagos() {
   }, []);
 
   const actualizarEstado = async (id_pago, nuevo_estado) => {
+    const confirmacion = await Swal.fire({
+      title: `¿Confirmar cambio a "${nuevo_estado}"?`,
+      text: "Esta acción actualizará el estado del pago.",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Sí, confirmar",
+      cancelButtonText: "Cancelar",
+    });
+
+    if (!confirmacion.isConfirmed) return;
+
     try {
       await axios.put(`http://localhost:8000/api/pagos/${id_pago}`, {
         nuevo_estado,
@@ -44,16 +56,8 @@ export default function MainPagos() {
           <h5 className="fw-bold text-success mb-0">Gestión de Pagos</h5>
         </div>
 
-        {mensaje && (
-          <Alert variant="success" className="py-2">
-            {mensaje}
-          </Alert>
-        )}
-        {error && (
-          <Alert variant="danger" className="py-2">
-            {error}
-          </Alert>
-        )}
+        {mensaje && <Alert variant="success" className="py-2">{mensaje}</Alert>}
+        {error && <Alert variant="danger" className="py-2">{error}</Alert>}
 
         <Table hover responsive className="align-middle">
           <thead className="table-light">
@@ -73,9 +77,7 @@ export default function MainPagos() {
               pagos.map((p) => (
                 <tr key={p.id_pago}>
                   <td>{p.id_pago}</td>
-                  <td>
-                    {p.turista_nombre} {p.turista_apellido}
-                  </td>
+                  <td>{p.turista_nombre} {p.turista_apellido}</td>
                   <td>{p.metodo}</td>
                   <td>${p.monto?.toLocaleString("es-AR")}</td>
                   <td>
@@ -95,49 +97,38 @@ export default function MainPagos() {
                   <td>{p.id_reserva}</td>
                   <td>
                     <div className="btn-group" role="group">
-                      {/* 👁 Ver */}
                       <Button
                         variant="outline-secondary"
                         size="sm"
-                        onClick={() =>
-                          navigate(`/dashboard-admin/pagos/view/${p.id_pago}`)
-                        }
+                        onClick={() => navigate(`/dashboard-admin/pagos/view/${p.id_pago}`)}
                       >
                         <i className="bi bi-eye"></i>
                       </Button>
 
-                      {/* ✏️ Editar */}
                       <Button
                         variant="outline-primary"
                         size="sm"
-                        onClick={() =>
-                          navigate(`/dashboard-admin/pagos/edit/${p.id_pago}`)
-                        }
+                        onClick={() => navigate(`/dashboard-admin/pagos/edit/${p.id_pago}`)}
                       >
-                        <i className="bi bi-pencil-square"></i>
+                        <i className="bi bi-pencil"></i>
                       </Button>
 
-                      {/* Si está pendiente → aprobar / rechazar directos */}
                       {p.estado_pago === "pendiente" && (
                         <>
                           <Button
                             variant="outline-success"
                             size="sm"
-                            onClick={() =>
-                              actualizarEstado(p.id_pago, "aprobado")
-                            }
+                            onClick={() => actualizarEstado(p.id_pago, "aprobado")}
                           >
                             <i className="bi bi-check2-circle"></i>
                           </Button>
                           <Button
-                            variant="outline-danger"
-                            size="sm"
-                            onClick={() =>
-                              actualizarEstado(p.id_pago, "rechazado")
-                            }
-                          >
-                            <i className="bi bi-x-circle"></i>
-                          </Button>
+                          variant="outline-danger"
+                          size="sm"
+                          onClick={() => actualizarEstado(p.id_pago, "rechazado")}
+                        >
+                          <i className="bi bi-x-circle"></i>
+                        </Button>
                         </>
                       )}
                     </div>
