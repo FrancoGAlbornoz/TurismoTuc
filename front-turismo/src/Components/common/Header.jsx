@@ -154,6 +154,17 @@ export default function Header() {
                 </>
               ) : (
                 <>
+                  {/* 🌐 Botón idioma toggle */}
+                  <Button
+                    variant="outline-primary"
+                    size="sm"
+                    className="d-flex align-items-center gap-2 px-3 py-2"
+                    onClick={toggleLanguage}
+                    title="Cambiar idioma"
+                  >
+                    <FaGlobe />
+                    {i18n.language === "es" ? "ES" : "EN"}
+                  </Button>
                   <button
                     className="btn btn-outline-success btn-sm"
                     onClick={() => navigate("/login-turista")}

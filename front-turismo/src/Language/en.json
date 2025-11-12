@@ -99,7 +99,36 @@
   "priceHighLow": "Price: high to low",
   "newest": "Newest",
   "oldest": "Oldest"
-}
+},
+"loginTurista": {
+    "title": "Tucumán Tourism",
+    "subtitle": "Sign in",
+    "email": "Email",
+    "password": "Password",
+    "loading": "Signing in...",
+    "button": "Log in",
+    "noAccount": "Don’t have an account?",
+    "createAccount": "Create an account",
+    "forgotPassword": "Forgot your password?"
+  },
+  "registerTurista": {
+    "title": "Tucumán Tourism",
+    "subtitle": "Create account",
+    "name": "First name",
+    "lastname": "Last name",
+    "dni": "ID number",
+    "dniPlaceholder": "Numbers only",
+    "nationality": "Nationality",
+    "email": "Email",
+    "password": "Password",
+    "phone": "Phone",
+    "phonePlaceholder": "Numbers only",
+    "address": "Address",
+    "button": "Register",
+    "loading": "Registering...",
+    "haveAccount": "Already have an account?",
+    "login": "Log in"
+  }
 
 }
 

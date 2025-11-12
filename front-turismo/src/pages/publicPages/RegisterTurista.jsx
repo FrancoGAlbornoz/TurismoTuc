@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import axios from "axios";
 import { Container, Row, Col, Card, Form, Button, Alert, Spinner } from "react-bootstrap";
 import "../../styles/components/login.css";
 
 export default function RegisterTurista() {
+  const { t } = useTranslation();
+
   const [formData, setFormData] = useState({
     nombre: "",
     apellido: "",
@@ -83,9 +86,9 @@ export default function RegisterTurista() {
               <Card.Body className="p-4">
                 <div className="brand mb-3 text-center">
                   <span className="brand-dot"></span>
-                  <h1>Turismo Tucumán</h1>
+                  <h1>{t("registerTurista.title")}</h1>
                 </div>
-                <h4 className="text-center text-success fw-bold mb-4">Crear cuenta</h4>
+                <h4 className="text-center text-success fw-bold mb-4">{t("registerTurista.subtitle")}</h4>
 
                 {error && <Alert variant="danger">{error}</Alert>}
                 {success && <Alert variant="success">{success}</Alert>}
@@ -94,7 +97,7 @@ export default function RegisterTurista() {
                   <Row>
                     <Col md={6}>
                       <Form.Group className="mb-3">
-                        <Form.Label>Nombre</Form.Label>
+                        <Form.Label>{t("registerTurista.name")}</Form.Label>
                         <Form.Control
                           name="nombre"
                           value={formData.nombre}
@@ -105,7 +108,7 @@ export default function RegisterTurista() {
                     </Col>
                     <Col md={6}>
                       <Form.Group className="mb-3">
-                        <Form.Label>Apellido</Form.Label>
+                        <Form.Label>{t("registerTurista.lastname")}</Form.Label>
                         <Form.Control
                           name="apellido"
                           value={formData.apellido}
@@ -119,21 +122,21 @@ export default function RegisterTurista() {
                   <Row>
                     <Col md={6}>
                       <Form.Group className="mb-3">
-                        <Form.Label>DNI</Form.Label>
+                        <Form.Label>{t("registerTurista.dni")}</Form.Label>
                         <Form.Control
                           name="dni"
                           value={formData.dni}
                           onChange={handleChange}
                           maxLength={8}
                           inputMode="numeric"
-                          placeholder="Solo números"
+                          placeholder={t("registerTurista.dniPlaceholder")}
                           required
                         />
                       </Form.Group>
                     </Col>
                     <Col md={6}>
                       <Form.Group className="mb-3">
-                        <Form.Label>Nacionalidad</Form.Label>
+                        <Form.Label>{t("registerTurista.nationality")}</Form.Label>
                         <Form.Control
                           name="nacionalidad"
                           value={formData.nacionalidad}
@@ -145,7 +148,7 @@ export default function RegisterTurista() {
                   </Row>
 
                   <Form.Group className="mb-3">
-                    <Form.Label>Email</Form.Label>
+                    <Form.Label>{t("registerTurista.email")}</Form.Label>
                     <Form.Control
                       type="email"
                       name="email"
@@ -156,7 +159,7 @@ export default function RegisterTurista() {
                   </Form.Group>
 
                   <Form.Group className="mb-3">
-                    <Form.Label>Contraseña</Form.Label>
+                    <Form.Label>{t("registerTurista.password")}</Form.Label>
                     <Form.Control
                       type="password"
                       name="password"
@@ -167,18 +170,18 @@ export default function RegisterTurista() {
                   </Form.Group>
 
                   <Form.Group className="mb-3">
-                    <Form.Label>Teléfono</Form.Label>
+                    <Form.Label>{t("registerTurista.phone")}</Form.Label>
                     <Form.Control
                       name="telefono"
                       value={formData.telefono}
                       onChange={handleChange}
-                      placeholder="Solo números"
+                      placeholder={t("registerTurista.phonePlaceholder")}
                       required
                     />
                   </Form.Group>
 
                   <Form.Group className="mb-3">
-                    <Form.Label>Dirección</Form.Label>
+                    <Form.Label>{t("registerTurista.address")}</Form.Label>
                     <Form.Control
                       name="direccion"
                       value={formData.direccion}
@@ -190,22 +193,22 @@ export default function RegisterTurista() {
                   <Button type="submit" variant="success" className="w-100" disabled={isLoading}>
                     {isLoading ? (
                       <>
-                        <Spinner size="sm" className="me-2" /> Registrando...
+                        <Spinner size="sm" className="me-2" /> {t("registerTurista.loading")}
                       </>
                     ) : (
-                      "Registrarme"
+                      t("registerTurista.button")
                     )}
                   </Button>
 
                   <div className="text-center mt-3">
-                    <small>¿Ya tenés cuenta?</small>
+                    <small>{t("registerTurista.haveAccount")}</small>
                     <br />
                     <Button
                       variant="link"
                       className="text-success fw-semibold p-0"
                       onClick={() => navigate("/login-turista")}
                     >
-                      Iniciar sesión
+                      {t("registerTurista.login")}
                     </Button>
                   </div>
                 </Form>
