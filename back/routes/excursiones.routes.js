@@ -16,6 +16,7 @@ import {
   updateFechaExcursion,
   deleteFechaExcursion,
   getGuias,
+  notificarGuia,
   getExcursionesPorGuia,
   getParticipantesByExcursion,
   getFechaById,
@@ -62,8 +63,15 @@ router.put("/fechas/:id", updateFechaExcursion);
 router.delete("/fechas/:id", deleteFechaExcursion);
 
 // =============================
+// Notificar Guía
+// =============================
+router.post("/notificar/:id_excursion", notificarGuia);
+
+// =============================
 // Obtener info de una fecha (para control de cupos)
 // =============================
+
+
 router.get("/fecha/:id_fecha", async (req, res) => {
   const { id_fecha } = req.params;
 

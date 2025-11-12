@@ -557,6 +557,9 @@ export const deleteMultimedia = (req, res) => {
   });
 };
 
+// =============================
+// OTROS
+// =============================
 export const getExcursionesPorGuia = async (req, res) => {
   const { id_guia } = req.params;
 
@@ -583,6 +586,8 @@ export const getExcursionesPorGuia = async (req, res) => {
     res.status(500).json({ message: "Error interno al obtener excursiones" });
   }
 };
+
+
 
 export const getParticipantesByExcursion = (req, res) => {
   const { id } = req.params;
@@ -613,6 +618,7 @@ export const getParticipantesByExcursion = (req, res) => {
     res.json(results);
   });
 };
+
 
 export const notificarGuia = async (req, res) => {
   const { id_excursion } = req.params;
@@ -675,11 +681,9 @@ export const notificarGuia = async (req, res) => {
       `,
     });
 
-    // Marcar la fecha como notificada (opcional si querés permitir múltiples envíos)
     await pool.promise().query(
       `UPDATE FechasExcursion SET notificado = 1 WHERE id_fecha = ?`,
-      [id_fecha]
-    );
+      [id_fecha]);
 
     res.json({ message: "Correo enviado y fecha marcada como notificada" });
   } catch (err) {
@@ -687,5 +691,3 @@ export const notificarGuia = async (req, res) => {
     res.status(500).json({ message: "Error al enviar correo" });
   }
 };
-
-

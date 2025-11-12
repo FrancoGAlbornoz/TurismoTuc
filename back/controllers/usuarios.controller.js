@@ -49,20 +49,18 @@ export const createUsuario = async (req, res) => {
   const { nombre, apellido, email, password, telefono, id_rol } = req.body;
   if (!nombre || !apellido || !email || !password || !id_rol)
     return res.status(400).json({ message: "Faltan datos obligatorios" });
-
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
-    const sql = `INSERT INTO Usuarios (nombre, apellido, email, password, telefono, id_rol)
-                 VALUES (?, ?, ?, ?, ?, ?)`;
+    const sql = `INSERT INTO Usuarios (nombre, apellido, email, password, telefono, id_rol) VALUES (?, ?, ?, ?, ?, ?)`;
     const values = [nombre, apellido, email, hashedPassword, telefono, id_rol];
-
-    pool.query(sql, values, (err, result) => {
+  pool.query(sql, values, (err, result) => {
       if (err) return res.status(500).json({ message: "Error al crear usuario" });
       res.status(201).json({ message: "Usuario creado exitosamente", id: result.insertId });
     });
   } catch (error) {
     res.status(500).json({ message: "Error al hashear contraseña" });
   }
+  
 };
 
 export const updateUsuario = (req, res) => {
@@ -199,7 +197,7 @@ export const resetPassword = (req, res) => {
   pool.query(
     "SELECT id_turista, reset_token_expiration FROM Turistas WHERE reset_token=? AND eliminado=0",
     [token],
-    async (err, tResults) => {
+    async(err, tResults) => {
       if (err) return res.status(500).json({ message: "Error interno" });
 
       if (tResults.length > 0) {
@@ -207,8 +205,8 @@ export const resetPassword = (req, res) => {
         if (new Date() > reset_token_expiration) {
           return res.status(400).json({ message: "Token expirado" });
         }
-
         const hashedPassword = await bcrypt.hash(nuevaPassword, 10);
+        // Actualizar contraseña en Turistas
         pool.query(
           "UPDATE Turistas SET password=?, reset_token=NULL, reset_token_expiration=NULL WHERE id_turista=?",
           [hashedPassword, id_turista],
@@ -231,7 +229,6 @@ export const resetPassword = (req, res) => {
             if (new Date() > reset_token_expiration) {
               return res.status(400).json({ message: "Token expirado" });
             }
-
             const hashedPassword = await bcrypt.hash(nuevaPassword, 10);
             pool.query(
               "UPDATE Usuarios SET password=?, reset_token=NULL, reset_token_expiration=NULL WHERE id_usuario=?",

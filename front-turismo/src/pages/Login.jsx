@@ -89,6 +89,7 @@ export default function Login() {
                       {/* <Button variant="outline-secondary" size="sm" onClick={() => clearUser()}>
                         Reintentar
                       </Button> */}
+                      </Button> */}
                     </div>
                   </Alert>
                 )}
