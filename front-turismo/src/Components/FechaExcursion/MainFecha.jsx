@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { Card, Table, Button, Alert } from "react-bootstrap";
+import { Card, Table, Button, Spinner } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
 
 export default function MainFechasExcursion() {
   const [excursiones, setExcursiones] = useState([]);
-  const [error, setError] = useState("");
-  const [mensaje, setMensaje] = useState("");
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   const fetchFechas = async () => {
@@ -15,7 +15,9 @@ export default function MainFechasExcursion() {
       setExcursiones(res.data);
     } catch (err) {
       console.error("Error al obtener excursiones con fechas:", err);
-      setError("No se pudieron cargar las fechas.");
+      Swal.fire("Error", "No se pudieron cargar las fechas.", "error");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -24,99 +26,117 @@ export default function MainFechasExcursion() {
   }, []);
 
   const handleDelete = async (id_fecha) => {
-    const confirmar = window.confirm("¿Estás seguro de que querés eliminar esta fecha?");
-    if (!confirmar) return;
+    const confirmar = await Swal.fire({
+      title: "¿Eliminar fecha?",
+      text: "Esta acción no se puede deshacer.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+    });
+
+    if (!confirmar.isConfirmed) return;
 
     try {
       const res = await axios.delete(`http://localhost:8000/api/excursiones/fechas/${id_fecha}`);
-      setMensaje(res.data.message);
-      fetchFechas(); // recargar fechas
+      await Swal.fire({
+        icon: "success",
+        title: "Fecha eliminada",
+        text: res.data.message,
+        timer: 2000,
+        showConfirmButton: false,
+      });
+      fetchFechas();
     } catch (err) {
       console.error("Error al eliminar fecha:", err);
-      setError("No se pudo eliminar la fecha.");
+      Swal.fire("Error", "No se pudo eliminar la fecha.", "error");
     }
   };
 
   return (
-    <Card className="shadow-sm">
-      <Card.Body>
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <h5 className="fw-bold text-primary mb-0">Fechas de Excursiones</h5>
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => navigate("/dashboard-admin/fechas/create")}
-          >
-            <i className="bi bi-calendar-plus me-1"></i> Nueva Fecha
-          </Button>
-        </div>
+    <div className="container-fluid py-4">
+      <Card className="shadow-sm">
+        <Card.Body>
+          <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+            <h5 className="fw-bold text-primary mb-2 mb-md-0">Fechas de Excursiones</h5>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => navigate("/dashboard-admin/fechas/create")}
+            >
+              <i className="bi bi-calendar-plus me-1"></i> Nueva Fecha
+            </Button>
+          </div>
 
-        {mensaje && <Alert variant="success">{mensaje}</Alert>}
-        {error && <Alert variant="danger">{error}</Alert>}
-
-        {excursiones.length > 0 ? (
-          excursiones.map((e) => (
-            <div key={e.id_excursion} className="mb-4">
-              <h6 className="fw-bold text-success">{e.titulo}</h6>
-              <Table bordered size="sm" responsive>
-                <thead className="table-light">
-                  <tr>
-                    <th>Fecha</th>
-                    <th>Hora</th>
-                    <th>Cupo</th>
-                    <th>Disponible</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {e.fechas.length > 0 ? (
-                    e.fechas.map((f) => (
-                      <tr key={f.id_fecha}>
-                        <td>{new Date(f.fecha).toLocaleDateString()}</td>
-                        <td>{f.hora_salida || "—"}</td>
-                        <td>{f.cupo_maximo}</td>
-                        <td>{f.cupo_disponible}</td>
-                        <td>
-                          <span className={`badge ${f.estado === "abierta" ? "bg-success" : "bg-secondary"}`}>
-                            {f.estado}
-                          </span>
-                        </td>
-                        <td>
-                          <div className="btn-group" role="group">
-                            <Button
-                              variant="outline-primary"
-                              size="sm"
-                              onClick={() => navigate(`/dashboard-admin/fechas/edit/${f.id_fecha}`)}
-                            >
-                              <i className="bi bi-pencil"></i>
-                            </Button>
-                            <Button
-                              variant="outline-danger"
-                              size="sm"
-                              onClick={() => handleDelete(f.id_fecha)}
-                            >
-                              <i className="bi bi-trash"></i>
-                            </Button>
-                          </div>
+          {loading ? (
+            <div className="text-center py-5">
+              <Spinner animation="border" variant="primary" />
+              <p className="mt-3 text-muted">Cargando fechas...</p>
+            </div>
+          ) : excursiones.length > 0 ? (
+            excursiones.map((e) => (
+              <div key={e.id_excursion} className="mb-4">
+                <h6 className="fw-bold text-success">{e.titulo}</h6>
+                <Table bordered responsive hover size="sm" className="align-middle">
+                  <thead className="table-light">
+                    <tr>
+                      <th>Fecha</th>
+                      <th>Hora</th>
+                      <th>Cupo</th>
+                      <th>Disponible</th>
+                      <th>Estado</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {e.fechas.length > 0 ? (
+                      e.fechas.map((f) => (
+                        <tr key={f.id_fecha}>
+                          <td>{new Date(f.fecha).toLocaleDateString()}</td>
+                          <td>{f.hora_salida || "—"}</td>
+                          <td>{f.cupo_maximo}</td>
+                          <td>{f.cupo_disponible}</td>
+                          <td>
+                            <span className={`badge ${f.estado === "abierta" ? "bg-success" : "bg-secondary"}`}>
+                              {f.estado}
+                            </span>
+                          </td>
+                          <td>
+                            <div className="btn-group" role="group">
+                              <Button
+                                variant="outline-primary"
+                                size="sm"
+                                onClick={() => navigate(`/dashboard-admin/fechas/edit/${f.id_fecha}`)}
+                              >
+                                <i className="bi bi-pencil"></i>
+                              </Button>
+                              <Button
+                                variant="outline-danger"
+                                size="sm"
+                                onClick={() => handleDelete(f.id_fecha)}
+                              >
+                                <i className="bi bi-trash"></i>
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="6" className="text-muted text-center">
+                          Sin fechas registradas
                         </td>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="6" className="text-muted text-center">
-                        Sin fechas registradas
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </Table>
-            </div>
-          ))
-        ) : (
-          <p className="text-muted">No hay excursiones registradas</p>
-        )}
-      </Card.Body>
-    </Card>
+                    )}
+                  </tbody>
+                </Table>
+              </div>
+            ))
+          ) : (
+            <p className="text-muted">No hay excursiones registradas</p>
+          )}
+        </Card.Body>
+      </Card>
+    </div>
   );
 }
