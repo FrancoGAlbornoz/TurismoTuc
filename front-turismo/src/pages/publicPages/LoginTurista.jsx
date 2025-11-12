@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import axios from "axios";
 import {
   Container,
@@ -22,6 +23,8 @@ export default function LoginTurista() {
 
   const navigate = useNavigate();
   const { setTurista } = useTuristaStore();
+
+  const { t } = useTranslation();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -53,9 +56,9 @@ export default function LoginTurista() {
               <Card.Body className="p-4">
                 <div className="brand mb-3 text-center">
                   <span className="brand-dot"></span>
-                  <h1>Turismo Tucumán</h1>
+                  <h1>{t("loginTurista.title")}</h1>
                 </div>
-                <h4 className="text-center text-success fw-bold mb-4">Inicio de sesión</h4>
+                <h4 className="text-center text-success fw-bold mb-4">{t("loginTurista.subtitle")}</h4>
 
                 {error && (
                   <Alert variant="danger" className="py-2 text-center">
@@ -65,7 +68,7 @@ export default function LoginTurista() {
 
                 <Form onSubmit={handleSubmit}>
                   <Form.Group className="mb-3">
-                    <Form.Label>Email</Form.Label>
+                    <Form.Label>{t("loginTurista.email")}</Form.Label>
                     <Form.Control
                       type="email"
                       value={email}
@@ -75,7 +78,7 @@ export default function LoginTurista() {
                   </Form.Group>
 
                   <Form.Group className="mb-3">
-                    <Form.Label>Contraseña</Form.Label>
+                    <Form.Label>{t("loginTurista.password")}</Form.Label>
                     <Form.Control
                       type="password"
                       value={password}
@@ -87,22 +90,22 @@ export default function LoginTurista() {
                   <Button type="submit" variant="success" className="w-100" disabled={isLoading}>
                     {isLoading ? (
                       <>
-                        <Spinner size="sm" className="me-2" /> Ingresando...
+                        <Spinner size="sm" className="me-2" /> {t("loginTurista.loading")}
                       </>
                     ) : (
-                      "Ingresar"
+                      t("loginTurista.button")
                     )}
                   </Button>
 
                   <div className="text-center mt-3">
-                    <small>¿No tenés cuenta?</small>
+                    <small>{t("loginTurista.noAccount")}</small>
                     <br />
                     <Button
                       variant="link"
                       className="text-success fw-semibold p-0"
                       onClick={() => navigate("/register-turista")}
                     >
-                      Crear una cuenta
+                      {t("loginTurista.createAccount")}
                     </Button>
                   </div>
 
@@ -112,7 +115,7 @@ export default function LoginTurista() {
                       className="text-secondary fw-semibold p-0"
                       onClick={() => navigate("/forgot-password")}
                     >
-                      ¿Olvidaste tu contraseña?
+                      {t("loginTurista.forgotPassword")}
                     </Button>
                   </div>
                 </Form>
