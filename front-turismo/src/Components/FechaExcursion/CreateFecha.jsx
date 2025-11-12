@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Card, Form, Button, Alert, Spinner } from "react-bootstrap";
+import Swal from "sweetalert2";
+import { Card, Form, Button, Spinner, Row, Col } from "react-bootstrap";
 
 export default function FechasCreate() {
   const [excursiones, setExcursiones] = useState([]);
@@ -11,8 +12,6 @@ export default function FechasCreate() {
     hora_salida: "",
     cupo_maximo: "",
   });
-  const [mensaje, setMensaje] = useState("");
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -22,7 +21,7 @@ export default function FechasCreate() {
       setExcursiones(res.data);
     } catch (err) {
       console.error("Error al cargar excursiones:", err);
-      setError("No se pudieron cargar las excursiones.");
+      Swal.fire("Error", "No se pudieron cargar las excursiones.", "error");
     }
   };
 
@@ -37,93 +36,104 @@ export default function FechasCreate() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMensaje("");
-    setError("");
     setLoading(true);
 
     try {
       const res = await axios.post("http://localhost:8000/api/excursiones/fechas-excursion", form);
-      setMensaje(res.data.message);
+
+      await Swal.fire({
+        icon: "success",
+        title: "Fecha creada",
+        text: res.data.message || "La fecha fue registrada correctamente.",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+
       setForm({ id_excursion: "", fecha: "", hora_salida: "", cupo_maximo: "" });
-      setTimeout(() => navigate("/dashboard-admin/fechas"), 1500);
+      navigate("/dashboard-admin/fechas");
     } catch (err) {
       console.error("Error al crear fecha:", err);
-      console.log("Respuesta del backend:", err.response?.data);
-      setError(err.response?.data?.message || "No se pudo crear la fecha.");
+      Swal.fire("Error", err.response?.data?.message || "No se pudo crear la fecha.", "error");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Card className="shadow-sm">
-      <Card.Body>
-        <h5 className="fw-bold text-primary mb-3">Crear Nueva Fecha de Excursión</h5>
-
-        {mensaje && <Alert variant="success">{mensaje}</Alert>}
-        {error && <Alert variant="danger">{error}</Alert>}
-
-        <Form onSubmit={handleSubmit}>
-          <Form.Group className="mb-3">
-            <Form.Label>Excursión</Form.Label>
-            <Form.Select
-              name="id_excursion"
-              value={form.id_excursion}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Seleccionar excursión</option>
-              {excursiones.map((e) => (
-                <option key={e.id_excursion} value={e.id_excursion}>
-                  {e.titulo}
-                </option>
-              ))}
-            </Form.Select>
-          </Form.Group>
-
-          <Form.Group className="mb-3">
-            <Form.Label>Fecha</Form.Label>
-            <Form.Control
-              type="date"
-              name="fecha"
-              value={form.fecha}
-              onChange={handleChange}
-              required
-            />
-          </Form.Group>
-
-          <Form.Group className="mb-3">
-            <Form.Label>Hora de salida</Form.Label>
-            <Form.Control
-              type="time"
-              name="hora_salida"
-              value={form.hora_salida}
-              onChange={handleChange}
-            />
-          </Form.Group>
-
-          <Form.Group className="mb-3">
-            <Form.Label>Cupo máximo</Form.Label>
-            <Form.Control
-              type="number"
-              name="cupo_maximo"
-              value={form.cupo_maximo}
-              onChange={handleChange}
-              required
-              min={1}
-            />
-          </Form.Group>
-
-          <div className="d-flex justify-content-end">
-            <Button variant="secondary" className="me-2" onClick={() => navigate(-1)}>
-              Cancelar
-            </Button>
-            <Button type="submit" variant="primary" disabled={loading}>
-              {loading ? <Spinner size="sm" animation="border" /> : "Crear Fecha"}
+    <div className="container py-4">
+      <Card className="shadow-sm">
+        <Card.Body>
+          <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+            <h5 className="fw-bold text-primary mb-2 mb-md-0">Crear Nueva Fecha de Excursión</h5>
+            <Button variant="outline-secondary" size="sm" onClick={() => navigate(-1)}>
+              ← Volver
             </Button>
           </div>
-        </Form>
-      </Card.Body>
-    </Card>
+
+          <Form onSubmit={handleSubmit}>
+            <Form.Group className="mb-3">
+              <Form.Label>Excursión</Form.Label>
+              <Form.Select
+                name="id_excursion"
+                value={form.id_excursion}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Seleccionar excursión</option>
+                {excursiones.map((e) => (
+                  <option key={e.id_excursion} value={e.id_excursion}>
+                    {e.titulo}
+                  </option>
+                ))}
+              </Form.Select>
+            </Form.Group>
+
+            <Row className="mb-3">
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label>Fecha</Form.Label>
+                  <Form.Control
+                    type="date"
+                    name="fecha"
+                    value={form.fecha}
+                    onChange={handleChange}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label>Hora de salida</Form.Label>
+                  <Form.Control
+                    type="time"
+                    name="hora_salida"
+                    value={form.hora_salida}
+                    onChange={handleChange}
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Form.Group className="mb-4">
+              <Form.Label>Cupo máximo</Form.Label>
+              <Form.Control
+                type="number"
+                name="cupo_maximo"
+                value={form.cupo_maximo}
+                onChange={handleChange}
+                required
+                min={1}
+              />
+            </Form.Group>
+
+            <div className="d-flex justify-content-end">
+              <Button type="submit" variant="primary" disabled={loading}>
+                {loading ? <Spinner size="sm" animation="border" /> : "Crear Fecha"}
+              </Button>
+            </div>
+          </Form>
+        </Card.Body>
+      </Card>
+    </div>
   );
 }
