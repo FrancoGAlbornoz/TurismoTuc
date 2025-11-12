@@ -57,14 +57,18 @@ export default function EditTurista() {
 
   return (
     <div className="container py-4">
+                    <div className="col-12 col-md-6 mb-2 mb-md-0">
+          <Button variant="outline-secondary" size="sm" onClick={() => navigate(-1)}>
+            ← Volver
+          </Button>
+          <br />
+        </div>
+        <br />
       <Card className="shadow-sm">
+      <div className="col-12 col-md-6 text-md-end">
+              <h4 className="fw-bold text-success mb-0">Editar Turista</h4>
+            </div>
         <Card.Body>
-          <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap">
-            <h4 className="fw-bold text-success mb-2 mb-md-0">Editar Turista</h4>
-            <Link to="/dashboard-admin/turistas" className="btn btn-outline-secondary btn-sm">
-              ← Volver
-            </Link>
-          </div>
 
           <Form onSubmit={handleSubmit}>
             <Row className="mb-3">

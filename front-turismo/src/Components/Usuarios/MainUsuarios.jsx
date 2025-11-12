@@ -1,15 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Card, Button, Table, Alert, Badge } from "react-bootstrap";
-
+import { Card, Button, Table, Badge } from "react-bootstrap";
+import Swal from "sweetalert2";
 
 export default function MainUsuarios() {
   const [usuarios, setUsuarios] = useState([]);
-  const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  // Cargar usuarios al montar
   useEffect(() => {
     const fetchUsuarios = async () => {
       try {
@@ -17,22 +15,45 @@ export default function MainUsuarios() {
         setUsuarios(res.data);
       } catch (err) {
         console.error("Error al obtener usuarios:", err);
-        setError("No se pudieron cargar los usuarios.");
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: "No se pudieron cargar los usuarios.",
+        });
       }
     };
     fetchUsuarios();
   }, []);
 
-  // Eliminar usuario (baja lógica)
   const handleDelete = async (id) => {
-    if (!confirm("¿Seguro que deseas eliminar este usuario?")) return;
+    const confirmacion = await Swal.fire({
+      title: "¿Eliminar usuario?",
+      text: "Esta acción no se puede deshacer.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+    });
+
+    if (!confirmacion.isConfirmed) return;
 
     try {
       await axios.delete(`http://localhost:8000/api/usuarios/${id}`);
-      setUsuarios(usuarios.filter((u) => u.id_usuario !== id));
+      setUsuarios((prev) => prev.filter((u) => u.id_usuario !== id));
+      Swal.fire({
+        icon: "success",
+        title: "Usuario eliminado",
+        text: "El usuario fue eliminado correctamente.",
+        timer: 2000,
+        showConfirmButton: false,
+      });
     } catch (err) {
       console.error("Error al eliminar usuario:", err);
-      setError("No se pudo eliminar el usuario.");
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "No se pudo eliminar el usuario.",
+      });
     }
   };
 
@@ -41,16 +62,10 @@ export default function MainUsuarios() {
       <Card.Body className="p-3">
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h5 className="fw-bold text-success mb-0">Gestión de Usuarios</h5>
-          <Button 
-            variant="success" 
-            size="sm"
-            onClick={() => navigate("create")}
-          >
+          <Button variant="success" size="sm" onClick={() => navigate("create")}>
             <i className="bi bi-plus-circle me-1"></i> Agregar Usuario
           </Button>
         </div>
-
-        {error && <Alert variant="danger" className="py-2">{error}</Alert>}
 
         <Table hover responsive className="align-middle">
           <thead className="table-light">
@@ -102,6 +117,7 @@ export default function MainUsuarios() {
                         onClick={() => handleDelete(u.id_usuario)}
                       >
                         <i className="bi bi-trash"></i>
+
                       </Button>
                     </div>
                   </td>

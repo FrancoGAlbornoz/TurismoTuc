@@ -47,7 +47,9 @@ export default function ViewExcursion() {
           <Button variant="outline-secondary" size="sm" onClick={() => navigate(-1)}>
             ← Volver
           </Button>
+          <br />
         </div>
+        <br />
       <Card className="shadow-sm mb-4">
         
         <Card.Body>

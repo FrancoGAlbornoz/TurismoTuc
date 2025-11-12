@@ -85,15 +85,20 @@ export default function CreateExcursion() {
 
   return (
     <div className="container py-4">
-      <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap">
-        <h4 className="fw-bold text-success mb-2 mb-md-0">Nueva Excursión</h4>
-        <Button variant="outline-secondary" size="sm" onClick={() => navigate(-1)}>
-          ← Volver
-        </Button>
+      <div className="col-12 col-md-6 mb-2 mb-md-0">
+          <Button variant="outline-secondary" size="sm" onClick={() => navigate(-1)}>
+            ← Volver
+          </Button>
+          <br />
       </div>
+      <br />
+
 
       <Form onSubmit={handleSubmit}>
         <Card className="shadow-sm">
+        <div className="col-12 col-md-6 text-md-end">
+              <h4 className="fw-bold text-success mb-0">Nueva Excursión</h4>
+            </div>
           <Card.Body>
             <h6 className="fw-semibold mb-3">Información general</h6>
             <Row className="mb-3">
