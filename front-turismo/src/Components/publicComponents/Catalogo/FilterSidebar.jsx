@@ -114,7 +114,7 @@ export default function FilterSidebar({ onFilterChange }) {
                 key={cat.id_categoria_excursion}
                 value={cat.nombre_categoria}
               >
-                {cat.nombre_categoria}
+                {t(`categorias.${cat.nombre_categoria}`)}
               </option>
             ))}
           </Form.Select>
