@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Card, Button, Form, Alert, Spinner } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import useCarritoStore from "../../../store/useCarritoStore"; // ✅ default import
 
@@ -9,6 +10,7 @@ export default function CheckoutPago({ turista, onNext }) {
   const [procesandoPago, setProcesandoPago] = useState(false);
   const [msgError, setMsgError] = useState("");
   const [msgInfo, setMsgInfo] = useState("");
+  const navigate = useNavigate();
 
   const [idCarrito, setIdCarrito] = useState(null);
   const [item, setItem] = useState(null);
@@ -83,57 +85,52 @@ export default function CheckoutPago({ turista, onNext }) {
   };
 
   const handleConfirmar = async () => {
-    try {
-      if (!metodo) {
-        setMsgError("Seleccioná un método de pago.");
-        return;
-      }
-      if (!item) {
-        setMsgError("No hay ítems en el carrito.");
-        return;
-      }
-
-      setProcesandoPago(true);
-      setMsgError("");
-      setMsgInfo("Procesando tu pago...");
-
-      // simulamos demora de pasarela
-      await new Promise((r) => setTimeout(r, 2000));
-
-      // 1) crear reserva
-      const reserva = await crearReserva();
-      const id_reserva = reserva.id_reserva;
-
-      // 2) pagar
-      let pago;
-      if (metodo === "Payway") {
-        pago = await pagarPayway(id_reserva);
-      } else {
-        pago = await pagarTransferencia(id_reserva);
-      }
-
-      // 3) vaciar carrito en el store ✅
-      useCarritoStore.getState().clearCarrito();
-
-      // 4) mini delay para que se vea más real
-      await new Promise((r) => setTimeout(r, 800));
-
-      // 5) pasar al paso de confirmación
-      onNext({
-      id_reserva: reserva.id_reserva,
-      monto_total: reserva.monto_total ?? pago.data?.amount ?? 0,
-      metodo,
-      estado_reserva: reserva.estado_reserva ?? "confirmada",
-      });
-    } catch (err) {
-      console.error("Error en el proceso de pago:", err);
-      const apiMsg = err?.response?.data?.message;
-      setMsgError(apiMsg || "Error al crear la reserva/pago.");
-    } finally {
-      setProcesandoPago(false);
-      setMsgInfo("");
+  try {
+    if (!metodo) {
+      setMsgError("Seleccioná un método de pago.");
+      return;
     }
-  };
+    if (!item) {
+      setMsgError("No hay ítems en el carrito.");
+      return;
+    }
+
+    setProcesandoPago(true);
+    setMsgError("");
+    setMsgInfo("Procesando tu pago...");
+
+    await new Promise((r) => setTimeout(r, 2000));
+
+    // 1️⃣ crear reserva
+    const reserva = await crearReserva();
+    const id_reserva = reserva.id_reserva;
+    const id_excursion = item.id_excursion;
+
+    // 2️⃣ procesar pago
+    let pago;
+    if (metodo === "Payway") {
+      pago = await pagarPayway(id_reserva);
+    } else {
+      pago = await pagarTransferencia(id_reserva);
+    }
+
+    // 3️⃣ vaciar carrito
+    useCarritoStore.getState().clearCarrito();
+
+    // 4️⃣ redirigir al formulario personalizado
+    navigate(`/reserva/${id_reserva}/personalizacion/${id_excursion}`);
+    return;
+
+  } catch (err) {
+    console.error("Error en el proceso de pago:", err);
+    const apiMsg = err?.response?.data?.message;
+    setMsgError(apiMsg || "Error al crear la reserva/pago.");
+  } finally {
+    setProcesandoPago(false);
+    setMsgInfo("");
+  }
+};
+
 
   return (
     <Card className="p-4 shadow-sm">
