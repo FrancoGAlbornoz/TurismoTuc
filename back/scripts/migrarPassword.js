@@ -27,4 +27,5 @@ const migrarPasswords = async () => {
     console.error(" Error en la migración:", error);
   }
 };
+
 migrarPasswords();

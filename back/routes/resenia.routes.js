@@ -4,6 +4,7 @@ import {
   getTokens,
   validarToken,
   getResenas,
+  getResenasByExcursion,
   getResenaById,
   updateResena,
   createResena,
@@ -31,5 +32,9 @@ router.put("/:id", updateResena);
 router.get("/multimedia/:id_excursion", getMultimediaByExcursion);
 router.post("/multimedia", addMultimedia);
 router.delete("/multimedia/:id", deleteMultimedia);
+
+
+//  Reseñas públicas por excursión
+router.get("/excursion/:id_excursion", getResenasByExcursion);
 
 export default router;

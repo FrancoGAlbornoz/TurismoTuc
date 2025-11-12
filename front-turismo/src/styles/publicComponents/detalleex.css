@@ -213,3 +213,44 @@
 .nav-tabs {
   border-bottom: 2px solid #0e7667;
 }
+
+/* ===== RESEÑAS CAROUSEL ===== */
+.reseñas-carousel {
+  margin-top: 3rem;
+  margin-bottom: 3rem;
+  text-align: center;
+}
+
+.reseña-card {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.reseña-text {
+  font-style: italic;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.reseña-author {
+  margin-top: 1rem;
+  font-weight: 600;
+  color: #0e7667;
+}
+
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+  background-color: #0e7667; /* 💚 tu color teal */
+  border-radius: 50%;
+  padding: 0.8rem;
+  filter: brightness(1.2);
+}
+
+.carousel-control-prev,
+.carousel-control-next {
+  width: 5%;
+}

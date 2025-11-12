@@ -9,6 +9,7 @@ import ExcursionTabs from "../../Components/publicComponents/DetalleExcursion/Ex
 import ExcursionMap from "../../Components/publicComponents/DetalleExcursion/ExcursionMap";
 import ExcursionGallery from "../../Components/publicComponents/DetalleExcursion/ExcursionGallery";
 import ExcursionSidebar from "../../Components/publicComponents/DetalleExcursion/ExcursionSidebar";
+import ReseñasCarousel from "../../Components/publicComponents/DetalleExcursion/ReseñasCarrousel";
 
 import "../../styles/publicComponents/detalleex.css";
 
@@ -82,6 +83,7 @@ export default function DetalleExcursion() {
             <ExcursionTabs excursion={excursion} />
             <ExcursionMap excursion={excursion} />
             <ExcursionGallery excursion={excursion} />
+            <ReseñasCarousel id_excursion={id} />
           </Col>
 
           <Col xs={12} md={4} lg={3}>
