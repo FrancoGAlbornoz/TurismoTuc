@@ -6,6 +6,7 @@ import { pool } from "../config/DB.js";
 // =============================
 
 // Obtener carrito de un turista (solo el abierto)
+// Obtener carrito de un turista (solo el abierto, NO crea automáticamente)
 export const getCarritoByTurista = async (req, res) => {
   const { id_turista } = req.params;
 
@@ -14,37 +15,28 @@ export const getCarritoByTurista = async (req, res) => {
       `
       SELECT c.id_carrito, c.estado, c.fecha_creacion
       FROM Carrito c
-      WHERE c.id_turista = ? AND c.eliminado = 0
+      WHERE c.id_turista = ? AND c.eliminado = 0 AND c.estado = 'abierto'
       ORDER BY c.id_carrito DESC
       LIMIT 1
       `,
       [id_turista]
     );
 
-    // si no hay, lo creo
+    // 🚫 Si no hay carrito abierto, devolvemos null (NO creamos uno nuevo)
     if (results.length === 0) {
-      const [insertResult] = await pool.promise().query(
-        `
-        INSERT INTO Carrito (id_turista, estado)
-        VALUES (?, 'abierto')
-        `,
-        [id_turista]
-      );
-
-      return res.status(201).json({
-        id_carrito: insertResult.insertId,
-        estado: "abierto",
-        fecha_creacion: new Date(),
-        autoCreado: true,
-      });
+      return res.json(null);
     }
 
+    // ✅ Si hay, lo devolvemos normalmente
     res.json(results[0]);
   } catch (err) {
     console.error("❌ Error al obtener carrito:", err);
     res.status(500).json({ message: "Error al obtener carrito" });
   }
 };
+
+
+
 
 // Crear carrito manual (casi no lo usás)
 export const createCarrito = (req, res) => {
@@ -164,6 +156,7 @@ export const getItemsCarrito = (req, res) => {
     SELECT 
       ci.id_item,
       ci.id_fecha,
+      f.id_excursion,
       e.titulo AS excursion,
       f.fecha,
       f.cupo_disponible,
@@ -297,5 +290,52 @@ export const updateCantidadItem = async (req, res) => {
   } catch (error) {
     console.error("❌ Error al actualizar cantidad del item:", error);
     res.status(500).json({ message: "Error al actualizar cantidad del item" });
+  }
+};
+
+
+// 🔹 Vaciar carrito luego de pagar
+export const vaciarCarrito = async (req, res) => {
+  const { id_turista } = req.params;
+
+  try {
+    // 1️⃣ Obtener carrito abierto del turista
+    const [carritoRows] = await pool.promise().query(
+      `
+      SELECT id_carrito 
+      FROM Carrito 
+      WHERE id_turista = ? AND estado = 'abierto' AND eliminado = 0
+      ORDER BY id_carrito DESC
+      LIMIT 1
+      `,
+      [id_turista]
+    );
+
+    if (carritoRows.length === 0) {
+      return res.status(404).json({ message: "No hay carrito abierto para vaciar." });
+    }
+
+    const id_carrito = carritoRows[0].id_carrito;
+
+    // 2️⃣ Eliminar ítems correctamente (nombre correcto de la tabla)
+    await pool.promise().query(
+      `DELETE FROM CarritoItems WHERE id_carrito = ?`,
+      [id_carrito]
+    );
+
+    // 3️⃣ Marcar carrito como cerrado
+    await pool.promise().query(
+      `UPDATE Carrito SET estado = 'cerrado' WHERE id_carrito = ?`,
+      [id_carrito]
+    );
+
+    res.json({
+      message: "🧹 Carrito vaciado y cerrado correctamente.",
+      id_carrito,
+    });
+
+  } catch (err) {
+    console.error("❌ Error al vaciar carrito:", err);
+    res.status(500).json({ message: "Error al vaciar carrito." });
   }
 };

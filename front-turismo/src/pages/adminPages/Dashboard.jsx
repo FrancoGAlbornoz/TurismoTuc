@@ -7,7 +7,9 @@ import UsuariosCRUD from "./CRUDS/UsuariosCRUD";
 import ReseñasCRUD from "./CRUDS/ReseniasCRUD";
 import FechasCRUD from "./CRUDS/FechasCRUD";
 import PagosCRUD from "./CRUDS/PagosCRUD";
+import PreguntasCRUD from "./CRUDS/PreguntasCRUD";
 import DashboardHome from "./DashboardHome";
+
 
 const Dashboard = () => {
   return (
@@ -30,6 +32,7 @@ const Dashboard = () => {
               <Route path="reseñas/*" element={<ReseñasCRUD />} />
               <Route path="usuarios/*" element={<UsuariosCRUD />} />
               <Route path="pagos/*" element={<PagosCRUD />} />
+              <Route path="preguntas/*" element={<PreguntasCRUD />} />
             </Routes>
           </main>
         </div>
