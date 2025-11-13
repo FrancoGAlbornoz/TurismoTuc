@@ -2,7 +2,6 @@ import { Carousel, Row, Col, Card } from "react-bootstrap";
 import "../../../styles/publicComponents/detalleex.css";
 
 export default function ExcursionGallery({ excursion }) {
-  // ✅ Validar el array de imágenes reales que viene del backend
   const imagenes = excursion?.imagenes || [];
 
   return (
