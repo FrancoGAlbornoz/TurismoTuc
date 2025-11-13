@@ -1,11 +1,16 @@
 import { Card, Button, Form } from "react-bootstrap";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { getLocalizedPrice , i18n} from "../../../language/index";
 import Swal from "sweetalert2";
 import useTuristaStore from "../../../store/useTuristaStore";
 import useCarritoStore from "../../../store/useCarritoStore";
 import "../../../styles/publicComponents/detalleex.css";
 
+
+
 export default function ExcursionSidebar({ excursion, fechas }) {
+  const { t } = useTranslation();
   const [personas, setPersonas] = useState(1);
   const [fechaSeleccionada, setFechaSeleccionada] = useState(
     fechas && fechas.length > 0 ? fechas[0].id_fecha : null
@@ -42,7 +47,9 @@ export default function ExcursionSidebar({ excursion, fechas }) {
       return;
     }
 
-    const fechaObj = fechas.find((f) => f.id_fecha === Number(fechaSeleccionada));
+    const fechaObj = fechas.find(
+      (f) => f.id_fecha === Number(fechaSeleccionada)
+    );
     if (fechaObj && Number(personas) > fechaObj.cupo_disponible) {
       Swal.fire({
         icon: "error",
@@ -62,7 +69,7 @@ export default function ExcursionSidebar({ excursion, fechas }) {
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h5 className="fw-bold text-teal mb-0">Desde</h5>
           <h4 className="fw-bold text-success mb-0">
-            ${excursion.precio_base?.toLocaleString("es-AR")} ARS
+            {getLocalizedPrice(excursion.precio_base, t)}
           </h4>
         </div>
 
@@ -77,7 +84,7 @@ export default function ExcursionSidebar({ excursion, fechas }) {
             >
               {fechas.map((f) => (
                 <option key={f.id_fecha} value={f.id_fecha}>
-                  {new Date(f.fecha).toLocaleDateString("es-AR", {
+                  {new Date(f.fecha).toLocaleDateString(i18n.language, {
                     weekday: "long",
                     day: "numeric",
                     month: "long",
@@ -88,7 +95,7 @@ export default function ExcursionSidebar({ excursion, fechas }) {
             </Form.Select>
           ) : (
             <div className="text-muted small fst-italic px-2 py-2 border rounded bg-light">
-              🕒 Sin fechas disponibles
+              Sin fechas disponibles
             </div>
           )}
         </Form.Group>

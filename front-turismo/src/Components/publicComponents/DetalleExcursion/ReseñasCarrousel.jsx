@@ -1,9 +1,11 @@
 import { Carousel, Container } from "react-bootstrap";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import axios from "axios";
 import "../../../styles/publicComponents/detalleex.css";
 
 export default function ReseñasCarousel({ id_excursion }) {
+  const { t } = useTranslation()
   const [reseñas, setReseñas] = useState([]);
 
   useEffect(() => {
@@ -28,13 +30,21 @@ export default function ReseñasCarousel({ id_excursion }) {
 
   return (
     <Container className="reseñas-carousel">
-      <h4 className="mb-4 text-teal">Opiniones de otros viajeros</h4>
-      <Carousel variant="dark" interval={6000} pause="hover" indicators={reseñas.length > 1} controls={reseñas.length > 1}>
+      <h4 className="mb-4 text-teal">{t("reviews.title")}</h4>
+      <Carousel
+        variant="dark"
+        interval={6000}
+        pause="hover"
+        indicators={reseñas.length > 1}
+        controls={reseñas.length > 1}
+      >
         {reseñas.map((r, index) => (
           <Carousel.Item key={index}>
             <div className="reseña-card">
               <p className="reseña-text">“{r.comentario}”</p>
-              <p className="reseña-author">⭐ {r.puntuacion}/5 — {r.nombre_turista}</p>
+              <p className="reseña-author">
+                ⭐ {r.puntuacion}/5 — {r.nombre_turista}
+              </p>
             </div>
           </Carousel.Item>
         ))}

@@ -1,12 +1,18 @@
 import { Container, Row, Col, Card } from "react-bootstrap";
+import { useTranslation } from "react-i18next";
 import "../../../styles/publicComponents/detalleex.css";
 
 export default function ExcursionHero({ excursion, imagenes = [] }) {
+  const { t } = useTranslation();
   // Si hay imágenes cargadas, usa la primera
   const imagenPrincipal =
     imagenes.length > 0
       ? imagenes[0].url
       : excursion.imagen_url || "/placeholder.jpg";
+
+  const descripcionTraducida = excursion.descripcion
+    ? t(excursion.descripcion)
+    : "";
 
   return (
     <section className="excursion-hero mb-4 position-relative">
@@ -33,7 +39,7 @@ export default function ExcursionHero({ excursion, imagenes = [] }) {
                       {excursion.ubicacion}
                     </p>
                     <p className="hero-description mb-0">
-                      {excursion.descripcion?.slice(0, 150)}...
+                      {descripcionTraducida.slice(0, 150)}...
                     </p>
                   </Col>
                 </Row>
