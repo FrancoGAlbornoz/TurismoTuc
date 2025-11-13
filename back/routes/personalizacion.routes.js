@@ -10,6 +10,8 @@ import {
   addPreguntaAExcursion,
   getRespuestasPorReserva,
   addRespuestaPersonalizacion,
+  deleteCategoria,
+  guardarRespuestas,
 } from "../controllers/personalizacion.controller.js";
 
 const router = express.Router();
@@ -29,5 +31,9 @@ router.post("/excursion", addPreguntaAExcursion);
 // Respuestas
 router.get("/reserva/:id_reserva", getRespuestasPorReserva);
 router.post("/reserva", addRespuestaPersonalizacion);
+router.post("/respuestas", guardarRespuestas);
+
+// Ruta para eliminar categoría (marcar como eliminada)
+router.put("/categorias/eliminar/:id", deleteCategoria);
 
 export default router;

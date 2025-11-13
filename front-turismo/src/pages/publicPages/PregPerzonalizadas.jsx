@@ -41,22 +41,28 @@ export default function PreguntasPersonalizadas() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const payload = Object.entries(respuestas).map(([id_pregunta, valor_respuesta]) => ({
-      id_reserva,
-      id_pregunta,
-      valor_respuesta,
-    }));
+    const payload = Object.entries(respuestas).map(
+      ([id_pregunta, valor_respuesta]) => ({
+        id_reserva,
+        id_pregunta,
+        valor_respuesta,
+      })
+    );
 
     try {
-      await axios.post("http://localhost:8000/api/personalizacion/reserva", payload, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.post(
+        "http://localhost:8000/api/personalizacion/reserva",
+        payload,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       Swal.fire({
         icon: "success",
         title: "¡Gracias!",
         text: "Tus respuestas fueron guardadas correctamente.",
         confirmButtonColor: "#3085d6",
-      }).then(() => navigate("/perfil"));
+      }).then(() => navigate("/perfil-turista"));
     } catch (err) {
       console.error("Error al guardar respuestas:", err);
       Swal.fire({
@@ -81,10 +87,38 @@ export default function PreguntasPersonalizadas() {
       </Container>
     );
 
+  const handleGuardarRespuestas = async () => {
+    try {
+      const respuestasFormateadas = preguntas.map((p) => ({
+        id_pregunta: p.id_pregunta,
+        valor_respuesta: respuestas[p.id_pregunta] || "",
+      }));
+
+      await axios.post("http://localhost:8000/api/personalizacion/respuestas", {
+        id_reserva,
+        respuestas: respuestasFormateadas,
+      });
+
+      Swal.fire({
+        title: "¡Gracias!",
+        text: "Tus respuestas fueron guardadas correctamente 🌿",
+        icon: "success",
+        confirmButtonColor: "#0e7667",
+      });
+
+      navigate("/perfil-turista"); // o adonde quieras redirigir después
+    } catch (err) {
+      console.error(err);
+      Swal.fire("Error", "No se pudieron guardar las respuestas", "error");
+    }
+  };
+
   return (
     <Container className="my-5">
       <Card className="shadow p-4">
-        <h3 className="mb-4 text-center text-primary">Personalización de tu Excursión</h3>
+        <h3 className="mb-4 text-center text-primary">
+          Personalización de tu Excursión
+        </h3>
         <Form onSubmit={handleSubmit}>
           {preguntas.map((p) => (
             <Form.Group key={p.id_pregunta} className="mb-3">
@@ -106,7 +140,9 @@ export default function PreguntasPersonalizadas() {
                 />
               )}
               {p.tipo_respuesta === "select" && (
-                <Form.Select onChange={(e) => handleChange(p.id_pregunta, e.target.value)}>
+                <Form.Select
+                  onChange={(e) => handleChange(p.id_pregunta, e.target.value)}
+                >
                   <option value="">Seleccioná una opción</option>
                   <option value="Sí">Sí</option>
                   <option value="No">No</option>
@@ -117,7 +153,7 @@ export default function PreguntasPersonalizadas() {
           ))}
 
           <div className="text-center mt-4">
-            <Button type="submit" variant="success">
+            <Button variant="success" onClick={handleGuardarRespuestas}>
               Guardar respuestas
             </Button>
           </div>

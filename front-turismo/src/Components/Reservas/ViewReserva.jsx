@@ -15,14 +15,23 @@ export default function ViewReserva() {
   const navigate = useNavigate();
 
   const [reserva, setReserva] = useState(null);
+  const [respuestas, setRespuestas] = useState([]); // ← respuestas personalizadas
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchReserva = async () => {
+    const fetchData = async () => {
       try {
+        // 1️⃣ Cargar la reserva
         const res = await axios.get(`http://localhost:8000/api/reservas/${id}`);
         setReserva(res.data);
+
+        // 2️⃣ Cargar respuestas personalizadas
+        const resp = await axios.get(
+          `http://localhost:8000/api/personalizacion/reserva/${id}`
+        );
+        setRespuestas(resp.data || []);
+
       } catch (err) {
         console.error(err);
         setError("No se pudo cargar la reserva");
@@ -30,7 +39,8 @@ export default function ViewReserva() {
         setLoading(false);
       }
     };
-    fetchReserva();
+
+    fetchData();
   }, [id]);
 
   if (loading)
@@ -76,15 +86,9 @@ export default function ViewReserva() {
           <h4 className="fw-bold text-success mb-4">Detalle de Reserva</h4>
 
           <ListGroup variant="flush">
-            <ListGroup.Item>
-              <strong>ID:</strong> {reserva.id_reserva}
-            </ListGroup.Item>
-            <ListGroup.Item>
-              <strong>Turista:</strong> {reserva.turista}
-            </ListGroup.Item>
-            <ListGroup.Item>
-              <strong>Excursión:</strong> {reserva.excursion}
-            </ListGroup.Item>
+            <ListGroup.Item><strong>ID:</strong> {reserva.id_reserva}</ListGroup.Item>
+            <ListGroup.Item><strong>Turista:</strong> {reserva.turista}</ListGroup.Item>
+            <ListGroup.Item><strong>Excursión:</strong> {reserva.excursion}</ListGroup.Item>
             <ListGroup.Item>
               <strong>Fecha Excursión:</strong>{" "}
               {new Date(reserva.fecha_excursion).toLocaleDateString()}
@@ -103,6 +107,23 @@ export default function ViewReserva() {
               {new Date(reserva.fecha_reserva).toLocaleDateString()}
             </ListGroup.Item>
           </ListGroup>
+
+          {/* 🔥 SECCIÓN DE RESPUESTAS PERSONALIZADAS */}
+          <hr className="my-4" />
+
+          <h5 className="fw-bold text-primary mb-3">Preguntas Respondidas</h5>
+
+          {respuestas.length === 0 ? (
+            <p className="text-muted">El turista no completó preguntas personalizadas.</p>
+          ) : (
+            <ListGroup variant="flush">
+              {respuestas.map((r) => (
+                <ListGroup.Item key={r.id_respuesta}>
+                  <strong>{r.texto_pregunta}:</strong> {r.valor_respuesta || "—"}
+                </ListGroup.Item>
+              ))}
+            </ListGroup>
+          )}
         </Card.Body>
       </Card>
     </Container>
