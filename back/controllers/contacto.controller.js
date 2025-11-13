@@ -3,14 +3,15 @@ import nodemailer from "nodemailer";
 export const enviarContacto = async (req, res) => {
   const { nombre, email, asunto, mensaje } = req.body;
 
-  // Validación básica
   if (!nombre || !email || !asunto || !mensaje) {
     return res.status(400).json({ message: "Todos los campos son obligatorios." });
   }
 
   try {
     const transporter = nodemailer.createTransport({
-      service: "gmail",
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
@@ -36,7 +37,7 @@ ${mensaje}
 
     res.status(200).json({ message: "Correo enviado correctamente" });
   } catch (error) {
-    console.error("Error al enviar contacto:", error);
+    console.error("Error al enviar contacto:", error.message, error.stack);
     res.status(500).json({ message: "Error al enviar el mensaje" });
   }
 };
