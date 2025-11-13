@@ -2,6 +2,7 @@
   "brand": "Tucumán Tourism",
   "home": "HOME",
   "catalog": "CATALOG",
+  "contact": "CONTACT US",
   "login": "Log in",
   "register": "Sign up",
   "cart": "Cart",
@@ -58,6 +59,34 @@
     "admin": {
       "titulo": "Access the admin panel",
       "link": "Admin panel"
+    }
+  },
+  "contactUs": {
+    "title": "Send us a message",
+    "name": "Name",
+    "email": "Email",
+    "subject": "Subject",
+    "message": "Send Message",
+    "placeholder": {
+      "name": "Your full name",
+      "email": "example@email.com",
+      "subject": "What would you like to ask us about?",
+      "message": "Write your question or comment..."
+    },
+    "button": "Send message",
+    "validation": {
+      "name": "Name is required and must be under 100 characters.",
+      "email": "Enter a valid email (max 100 characters).",
+      "subject": "Subject is required (max 150 characters).",
+      "message": "Message is required (max 1000 characters)."
+    },
+    "alert": {
+      "incompleteTitle": "Incomplete form",
+      "incompleteText": "Please complete all fields correctly.",
+      "successTitle": "Message sent",
+      "successText": "Thank you for contacting us. We’ll reply soon.",
+      "errorTitle": "Error",
+      "errorText": "Message could not be sent. Please try again later."
     }
   },
   "catalogo": {
