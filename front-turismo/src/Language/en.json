@@ -128,6 +128,47 @@
     "loading": "Registering...",
     "haveAccount": "Already have an account?",
     "login": "Log in"
+  },
+   "excursionDetalle": {
+    "loading": "Loading excursion...",
+    "loadError": "Failed to load excursion information.",
+    "notFound": "Excursion not found."
+  },
+  "mapa": {
+    "titulo": "Route Map",
+    "sin_mapa": "🗺️ The map will be available soon."
+  },
+   "tabs": {
+    "itinerario": "Itinerary",
+    "incluye": "What's Included",
+    "punto_partida": "Starting Point",
+    "no_disponible": "Information not available."
+  },
+  "reviews": {
+    "title": "Reviews from other travelers",
+    "noReviews": "There are no reviews yet for this tour."
+  },
+  "sidebar": {
+    "from": "From",
+    "availableDates": "Available dates",
+    "spots": "spots",
+    "noDates": "No available dates",
+    "people": "People",
+    "addToCart": "Add to cart",
+    "noDatesAvailable": "No dates available",
+
+    "loginRequiredTitle": "You must log in",
+    "loginRequiredText": "Please log in to add this tour to your cart.",
+    "noDatesTitle": "No available dates",
+    "noDatesText": "There are no available dates for this excursion.",
+    "selectDateTitle": "Select a date",
+    "selectDateText": "Please choose a date before continuing.",
+    "notEnoughSpotsTitle": "Not enough spots",
+    "notEnoughSpotsText": "Only {{cupo}} spots remaining."
+  },
+  "currency": {
+    "ars": "ARS",
+    "usd": "USD"
   }
 
 }

@@ -128,6 +128,47 @@
     "loading": "Registrando...",
     "haveAccount": "¿Ya tenés cuenta?",
     "login": "Iniciar sesión"
+  },
+  "excursionDetalle": {
+    "loading": "Cargando excursión...",
+    "loadError": "No se pudo cargar la información de la excursión.",
+    "notFound": "Excursión no encontrada."
+  },
+  "mapa": {
+    "titulo": "Mapa del recorrido",
+    "sin_mapa": "🗺️ El mapa estará disponible próximamente."
+  },
+  "tabs": {
+    "itinerario": "Itinerario",
+    "incluye": "Qué incluye",
+    "punto_partida": "Punto de partida",
+    "no_disponible": "Información no disponible."
+  },
+  "reviews": {
+    "title": "Opiniones de otros viajeros",
+    "noReviews": "Aún no hay reseñas para esta excursión."
+  },
+  "sidebar": {
+    "from": "Desde",
+    "availableDates": "Fechas disponibles",
+    "spots": "lugares",
+    "noDates": "Sin fechas disponibles",
+    "people": "Personas",
+    "addToCart": "Agregar al carrito",
+    "noDatesAvailable": "No hay fechas disponibles",
+
+    "loginRequiredTitle": "Tenés que iniciar sesión",
+    "loginRequiredText": "Iniciá sesión para poder agregar al carrito.",
+    "noDatesTitle": "Sin fechas disponibles",
+    "noDatesText": "No hay fechas disponibles para esta excursión.",
+    "selectDateTitle": "Seleccioná una fecha",
+    "selectDateText": "Elegí una fecha antes de continuar.",
+    "notEnoughSpotsTitle": "Cupo insuficiente",
+    "notEnoughSpotsText": "Solo quedan {{cupo}} lugares disponibles."
+  },
+  "currency": {
+    "ars": "ARS",
+    "usd": "USD"
   }
 
 }

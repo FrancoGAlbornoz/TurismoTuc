@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import { Container, Row, Col, Spinner, Alert } from "react-bootstrap";
+import { useTranslation } from "react-i18next";
 import useTuristaStore from "../../store/useTuristaStore";
 
 import ExcursionHero from "../../Components/publicComponents/DetalleExcursion/ExcursionHero";
@@ -20,6 +21,7 @@ export default function DetalleExcursion() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const { turista } = useTuristaStore();
+  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchExcursion = async () => {
@@ -52,6 +54,7 @@ export default function DetalleExcursion() {
     return (
       <div className="d-flex justify-content-center align-items-center vh-100">
         <Spinner animation="border" variant="success" />
+        <div className="text-success mt-2">{t("excursionDetalle.loading")}</div> 
       </div>
     );
   }
@@ -69,7 +72,7 @@ export default function DetalleExcursion() {
   if (!excursion) {
     return (
       <Container className="py-5 text-center">
-        <Alert variant="warning">Excursión no encontrada.</Alert>
+        <Alert variant="warning">{t("excursionDetalle.notFound")}</Alert>
       </Container>
     );
   }
