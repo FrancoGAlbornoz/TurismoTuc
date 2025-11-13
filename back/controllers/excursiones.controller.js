@@ -573,7 +573,7 @@ export const getExcursionesPorGuia = async (req, res) => {
          (
            SELECT MIN(fecha)
            FROM FechasExcursion f
-           WHERE f.id_excursion = e.id_excursion AND f.estado = 'activa'
+           WHERE f.id_excursion = e.id_excursion AND f.estado = 'abierta'
          ) AS proxima_fecha
        FROM Excursiones e
        WHERE e.id_guia = ? AND e.eliminado = 0`,

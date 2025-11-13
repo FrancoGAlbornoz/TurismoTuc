@@ -68,7 +68,11 @@ export default function MainExcursionesGuia() {
                       {e.estado}
                     </span>
                   </td>
-                  <td>{new Date(e.fecha_creacion).toLocaleDateString()}</td>
+                  <td>
+                    {e.proxima_fecha
+                      ? new Date(e.proxima_fecha).toLocaleDateString("es-AR")
+                      : "Sin fecha asignada"}
+                  </td>
                   <td>
                     <Button
                       variant="outline-primary"
