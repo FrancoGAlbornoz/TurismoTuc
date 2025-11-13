@@ -44,28 +44,37 @@ export const getTuristaById = (req, res) => {
 };
 
 // Crear un nuevo turista (uso interno del panel)
-export const createTurista = (req, res) => {
+
+
+export const createTurista = async (req, res) => {
   const { nombre, apellido, dni, email, telefono, direccion, nacionalidad } = req.body;
 
   if (!nombre || !apellido || !dni)
     return res.status(400).json({ message: "Faltan datos obligatorios (nombre, apellido o DNI)" });
 
-  const sql = `
-    INSERT INTO Turistas (nombre, apellido, dni, email, telefono, direccion, nacionalidad)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `;
-  const values = [nombre, apellido, dni, email, telefono, direccion, nacionalidad];
+  try {
+    const hashedPassword = await bcrypt.hash(dni, 10); // 🔐 contraseña = DNI encriptado
 
-  pool.query(sql, values, (err, result) => {
-    if (err) {
-      console.error("Error al crear turista:", err);
-      if (err.code === "ER_DUP_ENTRY") {
-        return res.status(400).json({ message: "El DNI ingresado ya existe" });
+    const sql = `
+      INSERT INTO Turistas (nombre, apellido, dni, email, telefono, direccion, nacionalidad, password)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+    const values = [nombre, apellido, dni, email, telefono, direccion, nacionalidad, hashedPassword];
+
+    pool.query(sql, values, (err, result) => {
+      if (err) {
+        console.error("Error al crear turista:", err);
+        if (err.code === "ER_DUP_ENTRY") {
+          return res.status(400).json({ message: "El DNI ingresado ya existe" });
+        }
+        return res.status(500).json({ message: "Error al crear turista" });
       }
-      return res.status(500).json({ message: "Error al crear turista" });
-    }
-    res.status(201).json({ message: "Turista agregado correctamente", id: result.insertId });
-  });
+      res.status(201).json({ message: "Turista agregado correctamente", id: result.insertId });
+    });
+  } catch (err) {
+    console.error("Error al encriptar contraseña:", err);
+    res.status(500).json({ message: "Error interno al crear turista" });
+  }
 };
 
 // 🔹 Modificar un turista existente (versión actualizada)
