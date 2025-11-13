@@ -6,6 +6,7 @@ import {
   createTurista,
   updateTurista,
   deleteTurista,
+  buscarTuristaPorDNI
 } from "../controllers/turistas.controller.js";
 // Importar la función para obtener reservas de turistas
 import { getReservasByTurista } from "../controllers/turistas.controller.js";
@@ -14,6 +15,7 @@ const router = express.Router();
 
 // Turistas
 router.get("/", getTuristas);
+router.get("/buscar", buscarTuristaPorDNI);
 router.get("/:id/reservas", getReservasByTurista); // 👈 debe ir antes de /:id
 router.get("/:id", getTuristaById);
 router.post("/", createTurista);

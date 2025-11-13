@@ -8,6 +8,7 @@ export const enviarContacto = async (req, res) => {
   }
 
   try {
+    //process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
       port: 587,
@@ -16,6 +17,9 @@ export const enviarContacto = async (req, res) => {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
+    //   tls: {
+    //   rejectUnauthorized: false
+    // }
     });
 
     await transporter.sendMail({

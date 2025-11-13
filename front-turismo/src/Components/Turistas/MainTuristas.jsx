@@ -3,10 +3,13 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Card, Button, Table, Spinner } from "react-bootstrap";
 import Swal from "sweetalert2";
+import { useDebounce } from "../../hooks/useDeBounce";
 
 export default function MainTuristas() {
   const [turistas, setTuristas] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [dniBuscar, setDniBuscar] = useState("");
+  const debouncedDni = useDebounce(dniBuscar, 500);
   const navigate = useNavigate();
 
   const fetchTuristas = async () => {
@@ -20,6 +23,29 @@ export default function MainTuristas() {
       setLoading(false);
     }
   };
+
+  const buscarPorDNI = async (dni) => {
+    if (!dni) {
+      fetchTuristas(); // Si el input está vacío, mostramos todos
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await axios.get(
+        `http://localhost:8000/api/turistas/buscar?dni=${dni}`
+      );
+      setTuristas(res.data);
+    } catch (err) {
+      console.error("Error al buscar por DNI:", err);
+      setTuristas([]); // limpiar tabla si no hay resultados
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    buscarPorDNI(debouncedDni);
+  }, [debouncedDni]);
 
   useEffect(() => {
     fetchTuristas();
@@ -59,14 +85,27 @@ export default function MainTuristas() {
       <Card className="shadow-sm">
         <Card.Body>
           <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
-            <h5 className="fw-bold text-success mb-2 mb-md-0">Gestión de Turistas</h5>
-            <Button
-              variant="success"
-              size="sm"
-              onClick={() => navigate("/dashboard-admin/turistas/create")}
-            >
-              <i className="bi bi-plus-circle me-1"></i> Agregar Turista
-            </Button>
+            <h5 className="fw-bold text-success mb-2 mb-md-0">
+              Gestión de Turistas
+            </h5>
+            <div className="d-flex align-items-center gap-2">
+              {/* Input de búsqueda por DNI */}
+              <input
+                type="text"
+                className="form-control form-control-sm"
+                placeholder="Buscar por DNI..."
+                value={dniBuscar}
+                onChange={(e) => setDniBuscar(e.target.value)}
+                style={{ maxWidth: "200px" }}
+              />
+              <Button
+                variant="success"
+                size="sm"
+                onClick={() => navigate("/dashboard-admin/turistas/create")}
+              >
+                <i className="bi bi-plus-circle me-1"></i> Agregar Turista
+              </Button>
+            </div>
           </div>
 
           {loading ? (
@@ -91,7 +130,9 @@ export default function MainTuristas() {
                   turistas.map((t) => (
                     <tr key={t.id_turista}>
                       <td>{t.id_turista}</td>
-                      <td>{t.nombre} {t.apellido}</td>
+                      <td>
+                        {t.nombre} {t.apellido}
+                      </td>
                       <td>{t.dni}</td>
                       <td>{t.email}</td>
                       <td>{t.telefono}</td>
@@ -100,7 +141,11 @@ export default function MainTuristas() {
                           <Button
                             variant="outline-secondary"
                             size="sm"
-                            onClick={() => navigate(`/dashboard-admin/turistas/view/${t.id_turista}`)}
+                            onClick={() =>
+                              navigate(
+                                `/dashboard-admin/turistas/view/${t.id_turista}`
+                              )
+                            }
                           >
                             <i className="bi bi-eye"></i>
                           </Button>
@@ -108,7 +153,11 @@ export default function MainTuristas() {
                           <Button
                             variant="outline-primary"
                             size="sm"
-                            onClick={() => navigate(`/dashboard-admin/turistas/edit/${t.id_turista}`)}
+                            onClick={() =>
+                              navigate(
+                                `/dashboard-admin/turistas/edit/${t.id_turista}`
+                              )
+                            }
                           >
                             <i className="bi bi-pencil"></i>
                           </Button>

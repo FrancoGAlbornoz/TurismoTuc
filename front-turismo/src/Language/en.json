@@ -2,11 +2,12 @@
   "brand": "Tucumán Tourism",
   "home": "HOME",
   "catalog": "CATALOG",
+  "contact": "CONTACT US",
   "login": "Log in",
   "register": "Sign up",
   "cart": "Cart",
   "hello": "Hi, {{name}}!",
-  "profile": "My profile",
+  "myprofile": "My profile",
   "logout": "Log out",
   "contact_whatsapp": "Contact via WhatsApp",
    "explora_categoria": "Explore by category",
@@ -58,6 +59,34 @@
     "admin": {
       "titulo": "Access the admin panel",
       "link": "Admin panel"
+    }
+  },
+  "contactUs": {
+    "title": "Send us a message",
+    "name": "Name",
+    "email": "Email",
+    "subject": "Subject",
+    "message": "Send Message",
+    "placeholder": {
+      "name": "Your full name",
+      "email": "example@email.com",
+      "subject": "What would you like to ask us about?",
+      "message": "Write your question or comment..."
+    },
+    "button": "Send message",
+    "validation": {
+      "name": "Name is required and must be under 100 characters.",
+      "email": "Enter a valid email (max 100 characters).",
+      "subject": "Subject is required (max 150 characters).",
+      "message": "Message is required (max 1000 characters)."
+    },
+    "alert": {
+      "incompleteTitle": "Incomplete form",
+      "incompleteText": "Please complete all fields correctly.",
+      "successTitle": "Message sent",
+      "successText": "Thank you for contacting us. We’ll reply soon.",
+      "errorTitle": "Error",
+      "errorText": "Message could not be sent. Please try again later."
     }
   },
   "catalogo": {
@@ -153,7 +182,7 @@
     "availableDates": "Available dates",
     "spots": "spots",
     "noDates": "No available dates",
-    "people": "People",
+    "people": "Number People",
     "addToCart": "Add to cart",
     "noDatesAvailable": "No dates available",
 
@@ -166,9 +195,54 @@
     "notEnoughSpotsTitle": "Not enough spots",
     "notEnoughSpotsText": "Only {{cupo}} spots remaining."
   },
-  "currency": {
+  "excursionGallery": {
+    "galleryTitle": "Image Gallery",
+    "galleryEmpty" : "No images available for this excursion." 
+  },
+  "reseñaCarrusel": {
+    "title": "What our travelers say",
+    "noReviews": "There are no reviews yet for this tour."
+  },
+  "currency" : {
     "ars": "ARS",
     "usd": "USD"
+  },
+  "profile": {
+  "title": "My Profile",
+  "personalData": "Personal Information",
+  "name": "First Name",
+  "lastname": "Last Name",
+  "dni": "ID",
+  "email": "Email",
+  "phone": "Phone",
+  "address": "Address",
+  "nationality": "Nationality",
+  "save": "Save changes",
+  "cancel": "Cancel",
+  "edit": "Edit information",
+  "reservations": "My Reservations",
+  "location": "Location",
+  "departureDate": "Departure Date",
+  "people": "Number of People",
+  "totalAmount": "Total Amount",
+  "status": "Status",
+  "statuses": {
+    "confirmada": "Confirmed",
+    "pendiente": "Pending",
+    "finalizada": "Completed",
+    "cancelada": "Cancelled"
+  },
+  "ratePrompt": "You can now rate your experience! ⭐",
+  "rateButton": "Rate Excursion",
+  "noReservations": "You don't have any reservations yet.",
+  "errors": {
+    "fetchReservations": "Could not load your reservations.",
+    "notLoggedIn": "You must log in to access your profile."
+  },
+  "alerts": {
+    "updated": "✅ Profile updated successfully.",
+    "updateError": "❌ Could not update profile."
+    }
   }
 
 }

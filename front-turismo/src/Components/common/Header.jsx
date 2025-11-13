@@ -108,7 +108,7 @@ export default function Header() {
               </li>
               <li className="nav-item">
                 <NavLink className="nav-link fw-semibold" to="/contacto">
-                  Contacto
+                  {t("contact")}
                 </NavLink>
               </li>
             </ul>
@@ -159,7 +159,7 @@ export default function Header() {
                         onClick={() => navigate("/perfil-turista")}
                       >
                         <FaUserCircle className="me-2 text-primary" />
-                        {t("profile") || "Mi perfil"}
+                        {t("myprofile") || "Mi perfil"}
                       </Dropdown.Item>
                       <Dropdown.Divider />
                       <Dropdown.Item

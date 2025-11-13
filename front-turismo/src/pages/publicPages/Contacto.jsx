@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Form, Button, Card, Row, Col } from "react-bootstrap";
+import { useTranslation } from "react-i18next";
 import Swal from "sweetalert2";
 import axios from "axios";
 import {
@@ -11,6 +12,8 @@ import {
 } from "react-icons/fa";
 
 export default function Contacto() {
+  const { t } = useTranslation();
+
   const [form, setForm] = useState({
     nombre: "",
     email: "",
@@ -62,8 +65,8 @@ export default function Contacto() {
     if (hasErrors) {
       Swal.fire({
         icon: "warning",
-        title: "Formulario incompleto",
-        text: "Por favor completá todos los campos correctamente.",
+        title: t("contactUs.alert.incompleteTitle"),
+        text: t("contactUs.alert.incompleteText"),
       });
       return;
     }
@@ -72,18 +75,18 @@ export default function Contacto() {
       await axios.post("http://localhost:8000/api/contacto", form);
       Swal.fire({
         icon: "success",
-        title: "Mensaje enviado",
-        text: "Gracias por contactarnos. Te responderemos pronto.",
+        title: t("contactUs.alert.successTitle"),
+        text: t("contactUs.alert.successText"),
       });
       setForm({ nombre: "", email: "", asunto: "", mensaje: "" });
       setErrors({ nombre: false, email: false, asunto: false, mensaje: false });
     } catch (error) {
       const msg =
         error?.response?.data?.message ||
-        "No se pudo enviar el mensaje. Intentalo más tarde.";
+        t("contactUs.alert.errorText");
       Swal.fire({
         icon: "error",
-        title: "Error",
+        title: t("contactUs.alert.errorTitle"),
         text: msg,
       });
     }
@@ -92,102 +95,75 @@ export default function Contacto() {
   return (
     <div className="container py-5">
       <Card className="shadow-sm border-0 rounded-4 p-4">
-        <h4 className="fw-bold mb-4 text-center">📬 Contactanos</h4>
-        <Form noValidate onSubmit={handleSubmit}>
+        <h4 className="fw-bold mb-4 text-center">{t("contactUs.title")}</h4>
+
+        <Form noValidate  onSubmit={handleSubmit}>
           <Row className="gy-3">
             <Col xs={12} md={6}>
               <Form.Group>
                 <Form.Label>
-                  <FaUser className="me-2" /> Nombre
+                  <FaUser className="me-2" /> {t("contactUs.name")}
                 </Form.Label>
                 <Form.Control
                   type="text"
                   name="nombre"
-                  value={form.nombre}
                   onChange={handleChange}
-                  maxLength={100}
-                  isInvalid={errors.nombre}
-                  isValid={form.nombre && !errors.nombre}
-                  placeholder="Tu nombre completo"
+                  placeholder={t("contactUs.placeholder.name")}
                   required
                 />
-                <Form.Control.Feedback type="invalid">
-                  El nombre es obligatorio y debe tener menos de 100 caracteres.
-                </Form.Control.Feedback>
               </Form.Group>
             </Col>
 
             <Col xs={12} md={6}>
               <Form.Group>
                 <Form.Label>
-                  <FaEnvelope className="me-2" /> Email
+                  <FaEnvelope className="me-2" /> {t("contactUs.email")}
                 </Form.Label>
                 <Form.Control
                   type="email"
                   name="email"
-                  value={form.email}
                   onChange={handleChange}
-                  maxLength={100}
-                  isInvalid={errors.email}
-                  isValid={form.email && !errors.email}
-                  placeholder="ejemplo@correo.com"
+                  placeholder={t("contactUs.placeholder.email")}
                   required
                 />
-                <Form.Control.Feedback type="invalid">
-                  Ingresá un email válido (máx. 100 caracteres).
-                </Form.Control.Feedback>
               </Form.Group>
             </Col>
 
             <Col xs={12}>
               <Form.Group>
                 <Form.Label>
-                  <FaPen className="me-2" /> Asunto
+                  <FaPen className="me-2" /> {t("contactUs.subject")}
                 </Form.Label>
                 <Form.Control
                   type="text"
                   name="asunto"
-                  value={form.asunto}
                   onChange={handleChange}
-                  maxLength={150}
-                  isInvalid={errors.asunto}
-                  isValid={form.asunto && !errors.asunto}
-                  placeholder="¿Sobre qué querés consultarnos?"
+                  placeholder={t("contactUs.placeholder.subject")}
                   required
                 />
-                <Form.Control.Feedback type="invalid">
-                  El asunto es obligatorio (máx. 150 caracteres).
-                </Form.Control.Feedback>
               </Form.Group>
             </Col>
 
             <Col xs={12}>
               <Form.Group>
                 <Form.Label>
-                  <FaCommentDots className="me-2" /> Mensaje
+                  <FaCommentDots className="me-2" /> {t("contactUs.message")}
                 </Form.Label>
                 <Form.Control
                   as="textarea"
                   rows={4}
                   name="mensaje"
-                  value={form.mensaje}
                   onChange={handleChange}
-                  maxLength={1000}
-                  isInvalid={errors.mensaje}
-                  isValid={form.mensaje && !errors.mensaje}
-                  placeholder="Escribí tu consulta o comentario..."
+                  placeholder={t("contactUs.placeholder.message")}
                   required
                 />
-                <Form.Control.Feedback type="invalid">
-                  El mensaje es obligatorio (máx. 1000 caracteres).
-                </Form.Control.Feedback>
               </Form.Group>
             </Col>
 
             <Col xs={12} className="text-center mt-4">
               <Button variant="success" type="submit" className="px-4 fw-semibold">
                 <FaPaperPlane className="me-2" />
-                Enviar mensaje
+                {t("contactUs.message")}
               </Button>
             </Col>
           </Row>

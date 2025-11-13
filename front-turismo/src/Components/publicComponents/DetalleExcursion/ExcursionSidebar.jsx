@@ -1,7 +1,7 @@
 import { Card, Button, Form } from "react-bootstrap";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { getLocalizedPrice , i18n} from "../../../language/index";
+import { getLocalizedPrice , i18n} from "../../../Language/index";
 import Swal from "sweetalert2";
 import useTuristaStore from "../../../store/useTuristaStore";
 import useCarritoStore from "../../../store/useCarritoStore";
@@ -67,7 +67,7 @@ export default function ExcursionSidebar({ excursion, fechas }) {
       <Card.Body>
         {/* Precio */}
         <div className="d-flex justify-content-between align-items-center mb-3">
-          <h5 className="fw-bold text-teal mb-0">Desde</h5>
+          <h5 className="fw-bold text-teal mb-0">{t("sidebar.from")}</h5>
           <h4 className="fw-bold text-success mb-0">
             {getLocalizedPrice(excursion.precio_base, t)}
           </h4>
@@ -75,7 +75,7 @@ export default function ExcursionSidebar({ excursion, fechas }) {
 
         {/* Fechas disponibles */}
         <Form.Group className="mb-3">
-          <Form.Label className="fw-semibold">Fechas disponibles</Form.Label>
+          <Form.Label className="fw-semibold">{t("sidebar.availableDates")}</Form.Label>
 
           {fechas && fechas.length > 0 ? (
             <Form.Select
@@ -102,7 +102,7 @@ export default function ExcursionSidebar({ excursion, fechas }) {
 
         {/* Personas */}
         <Form.Group className="mb-3">
-          <Form.Label className="fw-semibold">Personas</Form.Label>
+          <Form.Label className="fw-semibold">{t("sidebar.people")}</Form.Label>
           <Form.Control
             type="number"
             min="1"
@@ -118,7 +118,7 @@ export default function ExcursionSidebar({ excursion, fechas }) {
             className="w-100 fw-semibold py-2 mb-2"
             onClick={handleAgregar}
           >
-            Agregar al carrito
+            {t("sidebar.addToCart")}
           </Button>
         ) : (
           <Button
