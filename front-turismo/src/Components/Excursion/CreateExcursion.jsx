@@ -67,7 +67,7 @@ export default function CreateExcursion() {
 
       await Swal.fire({
         icon: "success",
-        title: "Excursión creada correctamente ✅",
+        title: "Excursión creada correctamente",
         showConfirmButton: false,
         timer: 2000,
       });
@@ -77,7 +77,7 @@ export default function CreateExcursion() {
       console.error("Error al crear excursión:", err);
       Swal.fire({
         icon: "error",
-        title: "Error al crear excursión ❌",
+        title: "Error al crear excursión",
         text: "Por favor, revisa los datos ingresados.",
       });
     }

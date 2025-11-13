@@ -3,6 +3,7 @@ import HeroBanner from "../../Components/publicComponents/Home/HeroBanner";
 import CategoryGrid from "../../Components/publicComponents/Home/CategoryGrid";
 import SearchResults from "../../Components/publicComponents/Home/SearchResults";
 import PromoSection from "../../Components/publicComponents/Home/PromoSection";
+import CarrouselPromo from "../../Components/publicComponents/Home/CarrouselPromo"; 
 
 export default function Home() {
   const [resultados, setResultados] = useState([]);
@@ -20,6 +21,7 @@ export default function Home() {
       />
       <CategoryGrid />
       <PromoSection />
+      <CarrouselPromo />
     </>
   );
 }
