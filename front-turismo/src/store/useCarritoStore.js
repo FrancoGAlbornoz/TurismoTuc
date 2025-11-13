@@ -13,9 +13,7 @@ const useCarritoStore = create((set, get) => ({
   fetchCarrito: async () => {
     const { turista, initSession } = useTuristaStore.getState();
 
-    if (!turista) {
-      await initSession();
-    }
+    if (!turista) await initSession();
 
     const turistaActual = useTuristaStore.getState().turista;
     const idTurista =
@@ -38,7 +36,12 @@ const useCarritoStore = create((set, get) => ({
         `http://localhost:8000/api/carrito/${carrito.id_carrito}/items`
       );
 
-      set({ carrito, items: resItems.data || [] });
+      const data = resItems.data || [];
+      set({ carrito, items: data });
+
+      // 💾 Guardar en localStorage
+      localStorage.setItem("carrito", JSON.stringify(carrito));
+      localStorage.setItem("items_carrito", JSON.stringify(data));
     } catch (err) {
       console.error("Error al obtener carrito:", err);
     }
@@ -98,6 +101,10 @@ const useCarritoStore = create((set, get) => ({
       set((state) => ({
         items: state.items.filter((i) => i.id_item !== id_item),
       }));
+      localStorage.setItem(
+        "items_carrito",
+        JSON.stringify(get().items.filter((i) => i.id_item !== id_item))
+      );
     } catch (err) {
       console.error("Error al eliminar item:", err);
       Swal.fire({
@@ -129,13 +136,14 @@ const useCarritoStore = create((set, get) => ({
 
       const { nuevaCantidad: cant, nuevoSubtotal } = res.data;
 
-      set((state) => ({
-        items: state.items.map((i) =>
-          i.id_item === id_item
-            ? { ...i, cantidad_personas: cant, subtotal: nuevoSubtotal }
-            : i
-        ),
-      }));
+      const nuevosItems = get().items.map((i) =>
+        i.id_item === id_item
+          ? { ...i, cantidad_personas: cant, subtotal: nuevoSubtotal }
+          : i
+      );
+
+      set({ items: nuevosItems });
+      localStorage.setItem("items_carrito", JSON.stringify(nuevosItems));
     } catch (err) {
       console.error("Error al actualizar cantidad:", err);
       Swal.fire({
@@ -159,7 +167,11 @@ const useCarritoStore = create((set, get) => ({
   // =============================
   // Vaciar carrito
   // =============================
-  clearCarrito: () => set({ carrito: null, items: [] }),
+  clearCarrito: () => {
+    set({ carrito: null, items: [] });
+    localStorage.removeItem("carrito");
+    localStorage.removeItem("items_carrito");
+  },
 }));
 
 export default useCarritoStore;

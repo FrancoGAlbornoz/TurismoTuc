@@ -12,6 +12,7 @@ import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import "../../styles/components/common/header.css";
 import { Dropdown, Button } from "react-bootstrap";
+import Swal from "sweetalert2";
 import logo from "../../public/LOGOTURISMO.png";
 
 export default function Header() {
@@ -32,6 +33,23 @@ export default function Header() {
   const toggleLanguage = () => {
     const newLang = i18n.language === "es" ? "en" : "es";
     i18n.changeLanguage(newLang);
+  };
+
+  const handleLogout = async () => {
+    const confirmacion = await Swal.fire({
+      title: "¿Cerrar sesión?",
+      text: "¿Estás seguro de que deseas cerrar sesión?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Confirmar",
+      cancelButtonText: "Cancelar",
+      reverseButtons: true, // ✅ Esto invierte el orden de los botones
+    });
+  
+    if (confirmacion.isConfirmed) {
+      clearTurista();
+      navigate("/");
+    }
   };
 
   return (
@@ -88,6 +106,11 @@ export default function Header() {
                   {t("catalog")}
                 </NavLink>
               </li>
+              <li className="nav-item">
+                <NavLink className="nav-link fw-semibold" to="/contacto">
+                  Contacto
+                </NavLink>
+              </li>
             </ul>
 
             {/* 🔹 Derecha */}
@@ -140,10 +163,7 @@ export default function Header() {
                       </Dropdown.Item>
                       <Dropdown.Divider />
                       <Dropdown.Item
-                        onClick={() => {
-                          clearTurista();
-                          navigate("/");
-                        }}
+                        onClick={handleLogout}
                         className="text-danger"
                       >
                         <FaSignOutAlt className="me-2" />

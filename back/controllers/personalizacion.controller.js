@@ -40,6 +40,33 @@ export const createCategoria = (req, res) => {
 };
 
 // =============================
+// ELIMINAR CATEGORÍA (soft delete)
+// =============================
+export const deleteCategoria = (req, res) => {
+  const { id } = req.params;
+
+  const sql = `
+    UPDATE CategoriasPersonalizacion
+    SET eliminado = 1, fecha_eliminacion = NOW()
+    WHERE id_categoria = ?
+  `;
+
+  pool.query(sql, [id], (err, result) => {
+    if (err) {
+      console.error("Error al eliminar categoría:", err);
+      return res.status(500).json({ message: "Error al eliminar categoría" });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: "Categoría no encontrada" });
+    }
+
+    res.json({ message: "Categoría eliminada correctamente" });
+  });
+};
+
+
+// =============================
 // PREGUNTAS
 // =============================
 
@@ -162,5 +189,34 @@ export const addRespuestaPersonalizacion = (req, res) => {
       return res.status(500).json({ message: "Error al guardar respuesta" });
     }
     res.status(201).json({ message: "Respuesta registrada correctamente", id: result.insertId });
+  });
+};
+
+
+
+
+// ======================================
+// GUARDAR RESPUESTAS PERSONALIZADAS
+// ======================================
+export const guardarRespuestas = (req, res) => {
+  const { id_reserva, respuestas } = req.body;
+
+  if (!id_reserva || !Array.isArray(respuestas)) {
+    return res.status(400).json({ message: "Datos incompletos" });
+  }
+
+  const sql = `
+    INSERT INTO RespuestasPersonalizacion (id_reserva, id_pregunta, valor_respuesta)
+    VALUES ?
+  `;
+
+  const values = respuestas.map((r) => [id_reserva, r.id_pregunta, r.valor_respuesta || ""]);
+
+  pool.query(sql, [values], (err, result) => {
+    if (err) {
+      console.error("Error al guardar respuestas:", err);
+      return res.status(500).json({ message: "Error al guardar respuestas" });
+    }
+    res.json({ message: "Respuestas guardadas correctamente" });
   });
 };
