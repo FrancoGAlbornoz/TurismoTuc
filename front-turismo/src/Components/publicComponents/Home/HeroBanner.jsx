@@ -8,7 +8,6 @@ export default function HeroBanner({ setResultados, setBusquedaRealizada }) {
   const [query, setQuery] = useState("");
 
   const handleBuscar = async () => {
-    // Si está vacío, limpiar resultados y salir
     if (!query.trim()) {
       setResultados([]);
       setBusquedaRealizada(false);
@@ -16,17 +15,12 @@ export default function HeroBanner({ setResultados, setBusquedaRealizada }) {
     }
 
     try {
-      setBusquedaRealizada(true); // 👈 marcar que se realizó búsqueda
-
-      // Ajustá el endpoint según tu backend
-      const res = await axios.get(
-        `http://localhost:8000/api/excursiones?q=${query}`
-      );
-
+      setBusquedaRealizada(true);
+      const res = await axios.get(`http://localhost:8000/api/excursiones?q=${query}`);
       setResultados(res.data);
     } catch (err) {
       console.error("Error al buscar excursiones:", err);
-      setResultados([]); // si hay error, no romper el render
+      setResultados([]);
       setBusquedaRealizada(true);
     }
   };
@@ -34,28 +28,40 @@ export default function HeroBanner({ setResultados, setBusquedaRealizada }) {
   return (
     <section className="hero-section position-relative">
       {/* 🎥 Video de fondo */}
-      <video className="hero-video" autoPlay muted loop playsInline>
-        <source src="src/public/banner.mp4" type="video/mp4" />
-        {t("hero.no_support")}
+      <video
+        autoPlay
+        muted
+        loop
+        playsInline
+        className="hero-video"
+      >
+        <source src="https://www.tucumanturismo.gob.ar/video/Tucuman_Tiene_Todo.mp4" type="video/mp4" />
+        Tu navegador no soporta el video.
       </video>
 
       {/* 🧾 Contenido encima del video */}
-      <div className="hero-overlay text-white text-center d-flex flex-column justify-content-center align-items-center px-3">
-        <h1 className="display-5 fw-bold">{t("hero.title")}</h1>
-        <p className="lead">{t("hero.subtitle")}</p>
+      <div className="hero-overlay d-flex justify-content-center align-items-center text-white text-center px-3">
+        <div className="container">
+          <div className="row justify-content-center">
+            <div className="col-lg-8 col-md-10">
+              <h1 className="fw-bold display-5 mb-3">{t("hero.title")}</h1>
+              <p className="lead mb-4">{t("hero.subtitle")}</p>
 
-        <div className="input-group mt-4" style={{ maxWidth: "500px" }}>
-          <input
-            type="text"
-            className="form-control"
-            placeholder={t("hero.placeholder")}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleBuscar()}
-          />
-          <button className="btn btn-warning" onClick={handleBuscar}>
-            {t("hero.button")}
-          </button>
+              <div className="input-group">
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder={t("hero.placeholder")}
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleBuscar()}
+                />
+                <button className="btn btn-warning" onClick={handleBuscar}>
+                  {t("hero.button")}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
