@@ -108,7 +108,7 @@ export default function Header() {
               </li>
               <li className="nav-item">
                 <NavLink className="nav-link fw-semibold" to="/contacto">
-                  Contacto
+                  {t("contact")}
                 </NavLink>
               </li>
             </ul>

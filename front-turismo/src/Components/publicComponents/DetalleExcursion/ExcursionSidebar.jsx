@@ -1,7 +1,7 @@
 import { Card, Button, Form } from "react-bootstrap";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { getLocalizedPrice , i18n} from "../../../language/index";
+import { getLocalizedPrice , i18n} from "../../../Language/index";
 import Swal from "sweetalert2";
 import useTuristaStore from "../../../store/useTuristaStore";
 import useCarritoStore from "../../../store/useCarritoStore";

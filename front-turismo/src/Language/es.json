@@ -2,6 +2,7 @@
   "brand": "Turismo Tucumán",
   "home": "INICIO",
   "catalog": "CATÁLOGO",
+  "contact": "CONTÁCTANOS",
   "login": "Iniciar sesión",
   "register": "Registrate",
   "cart": "Carrito",
@@ -58,6 +59,34 @@
     "admin": {
       "titulo": "Panel de administración",
       "link": "Administrar"
+    }
+  },
+  "contactUs": {
+    "title": "Envía un mensaje",
+    "name": "Nombre",
+    "email": "Email",
+    "subject": "Asunto",
+    "message": "Enviar Mensaje",
+    "placeholder": {
+      "name": "Tu nombre completo",
+      "email": "ejemplo@correo.com",
+      "subject": "¿Sobre qué querés consultarnos?",
+      "message": "Escribí tu consulta o comentario..."
+    },
+    "button": "Enviar mensaje",
+    "validation": {
+      "name": "El nombre es obligatorio y debe tener menos de 100 caracteres.",
+      "email": "Ingresá un email válido (máx. 100 caracteres).",
+      "subject": "El asunto es obligatorio (máx. 150 caracteres).",
+      "message": "El mensaje es obligatorio (máx. 1000 caracteres)."
+    },
+    "alert": {
+      "incompleteTitle": "Formulario incompleto",
+      "incompleteText": "Por favor completá todos los campos correctamente.",
+      "successTitle": "Mensaje enviado",
+      "successText": "Gracias por contactarnos. Te responderemos pronto.",
+      "errorTitle": "Error",
+      "errorText": "No se pudo enviar el mensaje. Intentalo más tarde."
     }
   },
   "catalogo": {
