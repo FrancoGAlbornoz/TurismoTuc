@@ -7,7 +7,7 @@
   "register": "Sign up",
   "cart": "Cart",
   "hello": "Hi, {{name}}!",
-  "profile": "My profile",
+  "myprofile": "My profile",
   "logout": "Log out",
   "contact_whatsapp": "Contact via WhatsApp",
    "explora_categoria": "Explore by category",
@@ -198,6 +198,43 @@
   "currency": {
     "ars": "ARS",
     "usd": "USD"
+  },
+  "profile": {
+  "title": "My Profile",
+  "personalData": "Personal Information",
+  "name": "First Name",
+  "lastname": "Last Name",
+  "dni": "ID",
+  "email": "Email",
+  "phone": "Phone",
+  "address": "Address",
+  "nationality": "Nationality",
+  "save": "Save changes",
+  "cancel": "Cancel",
+  "edit": "Edit information",
+  "reservations": "My Reservations",
+  "location": "Location",
+  "departureDate": "Departure Date",
+  "people": "Number of People",
+  "totalAmount": "Total Amount",
+  "status": "Status",
+  "statuses": {
+    "confirmada": "Confirmed",
+    "pendiente": "Pending",
+    "finalizada": "Completed",
+    "cancelada": "Cancelled"
+  },
+  "ratePrompt": "You can now rate your experience! ⭐",
+  "rateButton": "Rate Excursion",
+  "noReservations": "You don't have any reservations yet.",
+  "errors": {
+    "fetchReservations": "Could not load your reservations.",
+    "notLoggedIn": "You must log in to access your profile."
+  },
+  "alerts": {
+    "updated": "✅ Profile updated successfully.",
+    "updateError": "❌ Could not update profile."
+    }
   }
 
 }

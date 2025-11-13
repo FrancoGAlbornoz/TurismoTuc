@@ -159,7 +159,7 @@ export default function Header() {
                         onClick={() => navigate("/perfil-turista")}
                       >
                         <FaUserCircle className="me-2 text-primary" />
-                        {t("profile") || "Mi perfil"}
+                        {t("myprofile") || "Mi perfil"}
                       </Dropdown.Item>
                       <Dropdown.Divider />
                       <Dropdown.Item

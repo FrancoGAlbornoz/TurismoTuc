@@ -7,7 +7,7 @@
   "register": "Registrate",
   "cart": "Carrito",
   "hello": "¡Hola, {{name}}!",
-  "profile": "Mi perfil",
+  "myprofile": "Mi perfil",
   "logout": "Cerrar sesión",
   "contact_whatsapp": "Contactar por WhatsApp",
   "explora_categoria": "Explorá por categoría",
@@ -198,6 +198,43 @@
   "currency": {
     "ars": "ARS",
     "usd": "USD"
+  },
+  "profile": {
+  "title": "Mi perfil",
+  "personalData": "Datos personales",
+  "name": "Nombre",
+  "lastname": "Apellido",
+  "dni": "DNI",
+  "email": "Correo electrónico",
+  "phone": "Teléfono",
+  "address": "Dirección",
+  "nationality": "Nacionalidad",
+  "save": "Guardar cambios",
+  "cancel": "Cancelar",
+  "edit": "Editar datos",
+  "reservations": "Mis reservas",
+  "location": "Ubicación",
+  "departureDate": "Fecha de salida",
+  "people": "Cantidad de personas",
+  "totalAmount": "Monto total",
+  "status": "Estado",
+  "statuses": {
+    "confirmada": "Confirmada",
+    "pendiente": "Pendiente",
+    "finalizada": "Finalizada",
+    "cancelada": "Cancelada"
+  },
+  "ratePrompt": "¡Ya podés calificar tu experiencia! ⭐",
+  "rateButton": "Calificar excursión",
+  "noReservations": "No tenés reservas registradas.",
+  "errors": {
+    "fetchReservations": "No se pudieron cargar tus reservas.",
+    "notLoggedIn": "Debés iniciar sesión para acceder a tu perfil."
+  },
+  "alerts": {
+    "updated": " Datos actualizados correctamente.",
+    "updateError": " No se pudo actualizar el perfil."
+    }
   }
 
 }
