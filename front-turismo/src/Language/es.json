@@ -182,7 +182,7 @@
     "availableDates": "Fechas disponibles",
     "spots": "lugares",
     "noDates": "Sin fechas disponibles",
-    "people": "Personas",
+    "people": "Numero de Personas",
     "addToCart": "Agregar al carrito",
     "noDatesAvailable": "No hay fechas disponibles",
 
@@ -194,6 +194,14 @@
     "selectDateText": "Elegí una fecha antes de continuar.",
     "notEnoughSpotsTitle": "Cupo insuficiente",
     "notEnoughSpotsText": "Solo quedan {{cupo}} lugares disponibles."
+  },
+  "excursionGallery": {
+    "galleryTitle": "Galería de imágenes",
+    "galleryEmpty": "No hay imágenes disponibles para esta excursión."
+  },
+  "reseñaCarrusel": {
+    "title": "Qué dicen nuestros viajeros",
+    "noReviews": "Aún no hay reseñas para esta excursión."
   },
   "currency": {
     "ars": "ARS",

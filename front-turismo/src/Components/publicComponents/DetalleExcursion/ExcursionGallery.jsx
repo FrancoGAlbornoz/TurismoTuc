@@ -1,12 +1,16 @@
 import { Carousel, Row, Col, Card } from "react-bootstrap";
 import "../../../styles/publicComponents/detalleex.css";
+import i18n from "../../../Language/index";
+import { useTranslation } from "react-i18next";
+
 
 export default function ExcursionGallery({ excursion }) {
   const imagenes = excursion?.imagenes || [];
+  const {t} = useTranslation(); 
 
   return (
     <section className="excursion-gallery mt-5 mb-4">
-      <h5 className="fw-bold text-teal mb-3">Galería de imágenes</h5>
+      <h5 className="fw-bold text-teal mb-3">{t("excursionGallery.galleryTitle")}</h5>
 
       {imagenes.length > 0 ? (
         <Carousel
@@ -28,7 +32,7 @@ export default function ExcursionGallery({ excursion }) {
         </Carousel>
       ) : (
         <p className="text-muted">
-          No hay imágenes disponibles para esta excursión.
+          {t("excursionGallery.galleryEmpty")}
         </p>
       )}
     </section>

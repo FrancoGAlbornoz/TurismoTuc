@@ -23,8 +23,8 @@ export default function ReseñasCarousel({ id_excursion }) {
   if (reseñas.length === 0)
     return (
       <Container className="reseñas-carousel">
-        <h4 className="mb-3 text-teal">Opiniones de otros viajeros</h4>
-        <p className="text-muted">Aún no hay reseñas para esta excursión.</p>
+        <h4 className="mb-3 text-teal">{t("reseñaCarrusel.title")}</h4>
+        <p className="text-muted">{t("reseñaCarrusel.noReviews")}</p>
       </Container>
     );
 

@@ -43,9 +43,42 @@ export const getTuristaById = (req, res) => {
   });
 };
 
+/* ============================================================
+   🔍 BUSCAR TURISTA POR DNI
+   ============================================================ */
+export const buscarTuristaPorDNI = (req, res) => {
+  const { dni } = req.query; // ✅ usamos query params: /buscar?dni=12345678
+
+  if (!dni) {
+    return res.status(400).json({ message: "Se requiere el parámetro 'dni'" });
+  }
+
+  const sql = `
+    SELECT id_turista, nombre, apellido, CONCAT(nombre, ' ', apellido) AS nombre_completo, dni, email, telefono, direccion, nacionalidad
+    FROM Turistas
+    WHERE dni LIKE ? AND eliminado = 0
+    ORDER BY nombre ASC
+  `;
+
+  // Uso de '%' para búsqueda parcial
+  const searchDNI = `%${dni}%`;
+
+  pool.query(sql, [searchDNI], (err, results) => {
+    if (err) {
+      console.error("Error al buscar turista por DNI:", err);
+      return res.status(500).json({ message: "Error al buscar turista", error: err.message });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: "No se encontraron turistas con ese DNI" });
+    }
+
+    res.json(results);
+  });
+};
+
+
 // Crear un nuevo turista (uso interno del panel)
-
-
 export const createTurista = async (req, res) => {
   const { nombre, apellido, dni, email, telefono, direccion, nacionalidad } = req.body;
 
