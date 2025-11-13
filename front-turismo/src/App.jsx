@@ -20,6 +20,7 @@ import ForgotPassword from "./pages/publicPages/ForgotPassword";
 import ResetPassword from "./pages/publicPages/ResetPassword";
 import Error from "./pages/Error";
 import CalificarExcursion from "./pages/publicPages/CalificarExcursion";
+import PreguntasPersonalizadas from "./pages/publicPages/PregPerzonalizadas";
 
 // 🔒 Autenticación y paneles internos
 import Login from "./pages/Login";
@@ -124,6 +125,17 @@ function App() {
             </>
           }
         />
+
+        <Route
+          path="/reserva/:id_reserva/personalizacion/:id_excursion" element={
+            <>
+              <Header />
+              <PreguntasPersonalizadas />
+              <Footer />
+            </>
+          }
+        />
+
         <Route
           path="/contacto"
           element={

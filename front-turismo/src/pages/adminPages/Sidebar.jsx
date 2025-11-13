@@ -9,7 +9,8 @@ import {
   FaHome,
   FaSignOutAlt,
   FaGlobeAmericas,
-  FaMoneyBillWave, // 💰 Nuevo ícono para Pagos
+  FaMoneyBillWave,
+  FaQuestion, 
 } from "react-icons/fa";
 import useUserStore from "../../store/useUserStore";
 import "../../styles/components/sidebar.css";
@@ -29,6 +30,7 @@ export default function Sidebar() {
 
     { to: "/dashboard-admin/reseñas", label: "Reseñas", icon: <FaComments /> },
     { to: "/dashboard-admin/usuarios", label: "Usuarios", icon: <FaUserTie /> },
+    { to: "/dashboard-admin/preguntas", label: "Preguntas", icon: <FaQuestion /> },
   ];
 
   const handleLogout = () => {

@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { Card, Button, Form, Alert, Spinner } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
 import axios from "axios";
-import useCarritoStore from "../../../store/useCarritoStore"; // ✅ default import
+import useCarritoStore from "../../../store/useCarritoStore";
 
 export default function CheckoutPago({ turista, onNext }) {
   const [metodo, setMetodo] = useState("");
@@ -9,31 +11,39 @@ export default function CheckoutPago({ turista, onNext }) {
   const [procesandoPago, setProcesandoPago] = useState(false);
   const [msgError, setMsgError] = useState("");
   const [msgInfo, setMsgInfo] = useState("");
+  const navigate = useNavigate();
 
   const [idCarrito, setIdCarrito] = useState(null);
   const [item, setItem] = useState(null);
 
-  // 1) Traer carrito abierto del turista y sus ítems
+  // 🔹 Traer carrito abierto del turista y sus ítems
   useEffect(() => {
     const cargarCarrito = async () => {
       try {
         setMsgError("");
         const id_turista = turista.id_turista || turista.id;
 
-        // carrito del turista
         const carRes = await axios.get(
           `http://localhost:8000/api/carrito/${id_turista}`
         );
-        const id_carrito = carRes.data?.id_carrito ?? carRes.data?.id;
+
+        if (!carRes.data) {
+          setMsgInfo("Tu carrito está vacío.");
+          useCarritoStore.getState().clearCarrito();
+          return;
+        }
+
+        const id_carrito = carRes.data.id_carrito;
         setIdCarrito(id_carrito);
 
-        // ítems del carrito
         const itemsRes = await axios.get(
           `http://localhost:8000/api/carrito/${id_carrito}/items`
         );
 
         if (!itemsRes.data || itemsRes.data.length === 0) {
-          setMsgInfo("Tu carrito está vacío. Volvé al catálogo y agregá una excursión.");
+          setMsgInfo(
+            "Tu carrito está vacío. Volvé al catálogo y agregá una excursión."
+          );
           return;
         }
 
@@ -47,6 +57,7 @@ export default function CheckoutPago({ turista, onNext }) {
     cargarCarrito();
   }, [turista]);
 
+  // 🧩 Crear reserva
   const crearReserva = async () => {
     if (!item) {
       setMsgError("No hay ítems en el carrito.");
@@ -63,6 +74,7 @@ export default function CheckoutPago({ turista, onNext }) {
     return res.data;
   };
 
+  // 💳 Pago Payway
   const pagarPayway = async (id_reserva) => {
     const res = await axios.post(
       "http://localhost:8000/api/pagos/payway/iniciar",
@@ -71,6 +83,7 @@ export default function CheckoutPago({ turista, onNext }) {
     return res.data;
   };
 
+  // 💸 Pago transferencia
   const pagarTransferencia = async (id_reserva) => {
     const res = await axios.post(
       "http://localhost:8000/api/pagos/transferencia",
@@ -82,6 +95,9 @@ export default function CheckoutPago({ turista, onNext }) {
     return res.data;
   };
 
+  // ===========================
+  // 🟢 Confirmar y procesar pago
+  // ===========================
   const handleConfirmar = async () => {
     try {
       if (!metodo) {
@@ -97,34 +113,54 @@ export default function CheckoutPago({ turista, onNext }) {
       setMsgError("");
       setMsgInfo("Procesando tu pago...");
 
-      // simulamos demora de pasarela
       await new Promise((r) => setTimeout(r, 2000));
 
-      // 1) crear reserva
+      // 1️⃣ Crear reserva
       const reserva = await crearReserva();
       const id_reserva = reserva.id_reserva;
+      const id_excursion = item.id_excursion;
+      const id_turista = turista.id_turista || turista.id;
 
-      // 2) pagar
-      let pago;
+      // 2️⃣ Procesar pago
       if (metodo === "Payway") {
-        pago = await pagarPayway(id_reserva);
+        await pagarPayway(id_reserva);
       } else {
-        pago = await pagarTransferencia(id_reserva);
+        await pagarTransferencia(id_reserva);
       }
 
-      // 3) vaciar carrito en el store ✅
-      useCarritoStore.getState().clearCarrito();
+      // 3️⃣ Vaciar carrito en backend y frontend
+      try {
+        await axios.delete(
+          `http://localhost:8000/api/carrito/vaciar/${id_turista}`
+        );
+      } catch (error) {
+        console.warn("⚠️ No se pudo limpiar el carrito en el backend:", error);
+      }
 
-      // 4) mini delay para que se vea más real
-      await new Promise((r) => setTimeout(r, 800));
+      const carritoStore = useCarritoStore.getState();
+      carritoStore.clearCarrito(); // 🔹 limpia Zustand + localStorage
 
-      // 5) pasar al paso de confirmación
-      onNext({
-      id_reserva: reserva.id_reserva,
-      monto_total: reserva.monto_total ?? pago.data?.amount ?? 0,
-      metodo,
-      estado_reserva: reserva.estado_reserva ?? "confirmada",
+      // 4️⃣ SweetAlert + refuerzo limpieza antes de navegar
+      await Swal.fire({
+        title: "🌿 ¡Un último paso para que tu excursión sea perfecta!",
+        text: "Queremos conocer algunos detalles para adaptar tu experiencia.",
+        icon: "success",
+        confirmButtonText: "Completar ahora",
+        confirmButtonColor: "#0e7667",
+        background: "#f9f9f9",
+        backdrop: `
+          rgba(0,0,0,0.4)
+          url("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZDFwcTl4MW16ZzFiN2tsc2V4ZjFzNWJpbGlzOGdsb3lpMWVxN2R2YSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/26xBukhP3V2oe3f3O/giphy.gif")
+          center
+          no-repeat
+        `,
       });
+
+      // 🧹 Refuerzo adicional (por si el usuario navega atrás)
+      carritoStore.clearCarrito();
+
+      // 5️⃣ Redirigir al formulario de personalización
+      navigate(`/reserva/${id_reserva}/personalizacion/${id_excursion}`);
     } catch (err) {
       console.error("Error en el proceso de pago:", err);
       const apiMsg = err?.response?.data?.message;
@@ -135,6 +171,9 @@ export default function CheckoutPago({ turista, onNext }) {
     }
   };
 
+  // ===========================
+  // 🧱 Render
+  // ===========================
   return (
     <Card className="p-4 shadow-sm">
       <h4 className="mb-3">Elegí cómo pagar</h4>
@@ -162,12 +201,12 @@ export default function CheckoutPago({ turista, onNext }) {
               <strong>Personas:</strong> {item.cantidad_personas}
             </p>
             <p className="mb-1">
-              <strong>Precio por persona:</strong>{" "}
-              ${item.precio_unitario?.toLocaleString("es-AR") ?? "—"}
+              <strong>Precio por persona:</strong> $
+              {item.precio_unitario?.toLocaleString("es-AR") ?? "—"}
             </p>
             <p className="mb-0">
-              <strong>Total:</strong>{" "}
-              ${item.subtotal?.toLocaleString("es-AR") ?? "—"}
+              <strong>Total:</strong> $
+              {item.subtotal?.toLocaleString("es-AR") ?? "—"}
             </p>
           </div>
         </Alert>
