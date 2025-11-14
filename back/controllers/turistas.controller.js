@@ -8,21 +8,62 @@ import jwt from "jsonwebtoken";
 
 // Listar todos los turistas activos
 export const getTuristas = (req, res) => {
-  const sql = `
-    SELECT id_turista, nombre, apellido, CONCAT(nombre, ' ', apellido) AS nombre_completo, dni, email, telefono, direccion, nacionalidad
+  const { filtro, page = 1, limit = 10} = req.query;
+  const condiciones = [];
+
+  if (filtro === "activas") condiciones.push("eliminado = 0");
+  if (filtro === "eliminadas") condiciones.push("eliminado = 1");
+
+  const whereClause = condiciones.length > 0 ? `WHERE ${condiciones.join(" AND ")}` : "";
+
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+
+  const baseQuery = `
     FROM Turistas
-    WHERE eliminado = 0
-    ORDER BY dni ASC
+    ${whereClause}
   `;
 
-  pool.query(sql, (err, results) => {
+  const sqlCount = `SELECT COUNT(*) AS total ${baseQuery}`;
+  const sqlData = `
+    SELECT 
+      id_turista, 
+      CONCAT(nombre, ' ', apellido) AS nombre_completo, 
+      nombre, 
+      apellido, 
+      dni, 
+      email, 
+      telefono
+    ${baseQuery}
+    ORDER BY dni ASC
+    LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)};
+  `;
+
+  // Ejecutamos ambas consultas
+  pool.query(sqlCount, (err, countResult) => {
     if (err) {
-      console.error("Error al obtener turistas:", err);
-      return res.status(500).json({ message: "Error al obtener turistas" });
+      console.error("Error al contar turistas:", err);
+      return res.status(500).json({ message: "Error al contar turistas" });
     }
-    res.json(results);
+
+    const total = countResult[0].total;
+    const totalPages = Math.ceil(total / limit);
+
+    pool.query(sqlData, (err, dataResult) => {
+      if (err) {
+        console.error("Error al obtener turistas:", err);
+        return res.status(500).json({ message: "Error al obtener turistas" });
+      }
+
+      res.json({
+        data: dataResult,
+        total,
+        totalPages,
+        currentPage: parseInt(page),
+      });
+    });
   });
 };
+
 
 // Obtener un turista por ID
 export const getTuristaById = (req, res) => {
@@ -47,7 +88,7 @@ export const getTuristaById = (req, res) => {
    🔍 BUSCAR TURISTA POR DNI
    ============================================================ */
 export const buscarTuristaPorDNI = (req, res) => {
-  const { dni } = req.query; // ✅ usamos query params: /buscar?dni=12345678
+  const { dni } = req.query;
 
   if (!dni) {
     return res.status(400).json({ message: "Se requiere el parámetro 'dni'" });
@@ -61,7 +102,7 @@ export const buscarTuristaPorDNI = (req, res) => {
   `;
 
   // Uso de '%' para búsqueda parcial
-  const searchDNI = `%${dni}%`;
+  const searchDNI = `${dni}%`;
 
   pool.query(sql, [searchDNI], (err, results) => {
     if (err) {
