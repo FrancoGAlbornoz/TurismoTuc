@@ -1,22 +1,29 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Card, Table, Button, Alert, Badge } from "react-bootstrap";
-
+import { Card, Table, Button, Alert, Badge, Pagination } from "react-bootstrap";
 
 export default function MainResenias() {
   const [reseñas, setReseñas] = useState([]);
   const [error, setError] = useState("");
   const [mensaje, setMensaje] = useState("");
+  const [ordenCalificacion, setOrdenCalificacion] = useState(null); // null = sin ordenar
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [limit] = useState(5); // reseñas por página
   const navigate = useNavigate();
 
   // =============================
-  // CARGAR RESEÑAS
+  // CARGAR RESEÑAS CON PAGINACIÓN
   // =============================
-  const fetchReseñas = async () => {
+  const fetchReseñas = async (page = 1) => {
     try {
-      const res = await axios.get("http://localhost:8000/api/resenias");
-      setReseñas(res.data);
+      const res = await axios.get(`http://localhost:8000/api/resenias`, {
+        params: { page, limit },
+      });
+      setReseñas(res.data.data);
+      setTotalPages(res.data.totalPages);
+      setCurrentPage(res.data.currentPage);
     } catch (err) {
       console.error("Error al obtener reseñas:", err);
       setError("No se pudieron cargar las reseñas.");
@@ -24,29 +31,26 @@ export default function MainResenias() {
   };
 
   useEffect(() => {
-    fetchReseñas();
-  }, []);
+    fetchReseñas(currentPage);
+  }, [currentPage]);
 
   // =============================
-  // PUBLICAR RESEÑA
+  // ORDENAR CALIFICACIÓN
   // =============================
-  const handlePublicar = async (id) => {
-    try {
-      const confirmacion = window.confirm("¿Deseas publicar esta reseña?");
-      if (!confirmacion) return;
-
-      await axios.put(`http://localhost:8000/api/resenias/${id}`, {
-        estado: "publicada",
-      });
-
-      setMensaje("✅ Reseña publicada correctamente.");
-      fetchReseñas();
-      setTimeout(() => setMensaje(""), 2500);
-    } catch (err) {
-      console.error("Error al publicar reseña:", err);
-      setError("No se pudo publicar la reseña.");
-    }
+  const toggleOrdenCalificacion = () => {
+    if (ordenCalificacion === null) setOrdenCalificacion("desc");
+    else if (ordenCalificacion === "desc") setOrdenCalificacion("asc");
+    else setOrdenCalificacion("desc");
   };
+
+  const reseñasOrdenadas = [...reseñas];
+  if (ordenCalificacion) {
+    reseñasOrdenadas.sort((a, b) =>
+      ordenCalificacion === "asc"
+        ? a.calificacion - b.calificacion
+        : b.calificacion - a.calificacion
+    );
+  }
 
   // =============================
   // ELIMINAR RESEÑA
@@ -58,7 +62,7 @@ export default function MainResenias() {
 
       await axios.delete(`http://localhost:8000/api/resenias/${id}`);
       setMensaje("🗑️ Reseña eliminada correctamente.");
-      fetchReseñas();
+      fetchReseñas(currentPage);
       setTimeout(() => setMensaje(""), 2500);
     } catch (err) {
       console.error("Error al eliminar reseña:", err);
@@ -67,12 +71,78 @@ export default function MainResenias() {
   };
 
   // =============================
+  // PAGINACIÓN TIPO MAINRESERVAS
+  // =============================
+  const renderPagination = () => {
+    const pages = [];
+    const maxPagesToShow = 5;
+    let startPage = Math.max(currentPage - 2, 1);
+    let endPage = Math.min(startPage + maxPagesToShow - 1, totalPages);
+
+    if (endPage - startPage < maxPagesToShow - 1) {
+      startPage = Math.max(endPage - maxPagesToShow + 1, 1);
+    }
+
+    for (let number = startPage; number <= endPage; number++) {
+      pages.push(
+        <Pagination.Item
+          key={number}
+          active={number === currentPage}
+          onClick={() => setCurrentPage(number)}
+        >
+          {number}
+        </Pagination.Item>
+      );
+    }
+
+    return (
+      <Pagination className="justify-content-center mt-3">
+        <Pagination.Prev
+          onClick={() => currentPage > 1 && setCurrentPage(currentPage - 1)}
+          disabled={currentPage === 1}
+        />
+        {startPage > 1 && <Pagination.Ellipsis disabled />}
+        {pages}
+        {endPage < totalPages && <Pagination.Ellipsis disabled />}
+        <Pagination.Next
+          onClick={() => currentPage < totalPages && setCurrentPage(currentPage + 1)}
+          disabled={currentPage === totalPages}
+        />
+      </Pagination>
+    );
+  };
+
+  // =============================
+  // ICONO ORDEN CALIFICACIÓN
+  // =============================
+  const getIconoOrden = () => {
+    if (ordenCalificacion === "asc") return "bi-sort-numeric-up";
+    if (ordenCalificacion === "desc") return "bi-sort-numeric-down";
+    return "bi-sort";
+  };
+
+  // =============================
   // RENDER
   // =============================
   return (
-    <Card className="shadow-sm">
+    <Card className="shadow-sm mt-5">
       <Card.Body className="p-3">
-        <h5 className="fw-bold text-success mb-3">Gestión de Reseñas</h5>
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <h5 className="fw-bold text-success mb-0">Gestión de Reseñas</h5>
+          <Button
+            variant="outline-primary"
+            size="sm"
+            onClick={toggleOrdenCalificacion}
+            className="d-flex align-items-center gap-1"
+          >
+            <i className={`bi ${getIconoOrden()}`}></i>
+            {ordenCalificacion === "asc"
+              ? "Calificación ↑"
+              : ordenCalificacion === "desc"
+              ? "Calificación ↓"
+              : "Ordenar por calificación"}
+          </Button>
+        </div>
 
         {error && <Alert variant="danger" className="py-2">{error}</Alert>}
         {mensaje && <Alert variant="success" className="py-2">{mensaje}</Alert>}
@@ -91,8 +161,8 @@ export default function MainResenias() {
             </tr>
           </thead>
           <tbody>
-            {reseñas.length > 0 ? (
-              reseñas.map((r) => (
+            {reseñasOrdenadas.length > 0 ? (
+              reseñasOrdenadas.map((r) => (
                 <tr key={r.id_resena}>
                   <td>{r.id_resena}</td>
                   <td>{r.excursion}</td>
@@ -114,21 +184,12 @@ export default function MainResenias() {
                       <Button
                         variant="outline-primary"
                         size="sm"
-                        onClick={() => navigate(`/dashboard-admin/reseñas/edit/${r.id_resena}`)}
+                        onClick={() =>
+                          navigate(`/dashboard-admin/reseñas/edit/${r.id_resena}`)
+                        }
                       >
                         <i className="bi bi-pencil"></i>
                       </Button>
-
-                      {r.estado === "pendiente" && (
-                        <Button
-                          variant="outline-success"
-                          size="sm"
-                          onClick={() => handlePublicar(r.id_resena)}
-                        >
-                          <i className="bi bi-check-circle"></i>
-                        </Button>
-                      )}
-
                       <Button
                         variant="outline-danger"
                         size="sm"
@@ -149,6 +210,8 @@ export default function MainResenias() {
             )}
           </tbody>
         </Table>
+
+        {renderPagination()}
       </Card.Body>
     </Card>
   );

@@ -48,8 +48,8 @@ export default function ReservasMain() {
         params,
       });
 
-      console.log("Actual filtro:", filtro);
-      console.log("Actual estado:", estadoreserva);
+      // console.log("Actual filtro:", filtro);
+      // console.log("Actual estado:", estadoreserva);
       //console.log("reponse:", res.data);
       setReservas(res.data.data);
       setTotalPaginas(res.data.totalPages);
