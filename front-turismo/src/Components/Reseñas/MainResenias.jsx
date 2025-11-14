@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Card, Table, Button, Alert, Badge, Pagination } from "react-bootstrap";
+import { Card, Table, Button, Alert, Badge } from "react-bootstrap";
+import PaginationComponent from "../Filtros/Paginacion"; // <-- importamos
 
 export default function MainResenias() {
   const [reseñas, setReseñas] = useState([]);
@@ -10,7 +11,7 @@ export default function MainResenias() {
   const [ordenCalificacion, setOrdenCalificacion] = useState(null); // null = sin ordenar
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [limit] = useState(5); // reseñas por página
+  const [limit] = useState(2); // items por página
   const navigate = useNavigate();
 
   // =============================
@@ -18,12 +19,13 @@ export default function MainResenias() {
   // =============================
   const fetchReseñas = async (page = 1) => {
     try {
-      const res = await axios.get(`http://localhost:8000/api/resenias`, {
+      const res = await axios.get("http://localhost:8000/api/resenias", {
         params: { page, limit },
       });
+
       setReseñas(res.data.data);
-      setTotalPages(res.data.totalPages);
       setCurrentPage(res.data.currentPage);
+      setTotalPages(res.data.totalPages);
     } catch (err) {
       console.error("Error al obtener reseñas:", err);
       setError("No se pudieron cargar las reseñas.");
@@ -46,9 +48,7 @@ export default function MainResenias() {
   const reseñasOrdenadas = [...reseñas];
   if (ordenCalificacion) {
     reseñasOrdenadas.sort((a, b) =>
-      ordenCalificacion === "asc"
-        ? a.calificacion - b.calificacion
-        : b.calificacion - a.calificacion
+      ordenCalificacion === "asc" ? a.calificacion - b.calificacion : b.calificacion - a.calificacion
     );
   }
 
@@ -71,49 +71,7 @@ export default function MainResenias() {
   };
 
   // =============================
-  // PAGINACIÓN TIPO MAINRESERVAS
-  // =============================
-  const renderPagination = () => {
-    const pages = [];
-    const maxPagesToShow = 5;
-    let startPage = Math.max(currentPage - 2, 1);
-    let endPage = Math.min(startPage + maxPagesToShow - 1, totalPages);
-
-    if (endPage - startPage < maxPagesToShow - 1) {
-      startPage = Math.max(endPage - maxPagesToShow + 1, 1);
-    }
-
-    for (let number = startPage; number <= endPage; number++) {
-      pages.push(
-        <Pagination.Item
-          key={number}
-          active={number === currentPage}
-          onClick={() => setCurrentPage(number)}
-        >
-          {number}
-        </Pagination.Item>
-      );
-    }
-
-    return (
-      <Pagination className="justify-content-center mt-3">
-        <Pagination.Prev
-          onClick={() => currentPage > 1 && setCurrentPage(currentPage - 1)}
-          disabled={currentPage === 1}
-        />
-        {startPage > 1 && <Pagination.Ellipsis disabled />}
-        {pages}
-        {endPage < totalPages && <Pagination.Ellipsis disabled />}
-        <Pagination.Next
-          onClick={() => currentPage < totalPages && setCurrentPage(currentPage + 1)}
-          disabled={currentPage === totalPages}
-        />
-      </Pagination>
-    );
-  };
-
-  // =============================
-  // ICONO ORDEN CALIFICACIÓN
+  // RENDER
   // =============================
   const getIconoOrden = () => {
     if (ordenCalificacion === "asc") return "bi-sort-numeric-up";
@@ -121,14 +79,12 @@ export default function MainResenias() {
     return "bi-sort";
   };
 
-  // =============================
-  // RENDER
-  // =============================
   return (
     <Card className="shadow-sm mt-5">
       <Card.Body className="p-3">
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h5 className="fw-bold text-success mb-0">Gestión de Reseñas</h5>
+
           <Button
             variant="outline-primary"
             size="sm"
@@ -190,6 +146,7 @@ export default function MainResenias() {
                       >
                         <i className="bi bi-pencil"></i>
                       </Button>
+
                       <Button
                         variant="outline-danger"
                         size="sm"
@@ -211,7 +168,12 @@ export default function MainResenias() {
           </tbody>
         </Table>
 
-        {renderPagination()}
+        {/* ================= PAGINACIÓN ================= */}
+        <PaginationComponent
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={(page) => setCurrentPage(page)}
+        />
       </Card.Body>
     </Card>
   );

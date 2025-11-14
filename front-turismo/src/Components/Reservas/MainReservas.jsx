@@ -75,7 +75,7 @@ export default function ReservasMain() {
       const res = await axios.get("http://localhost:8000/api/reservas", {
         params,
       });
-      setReservas(data);
+      setReservas(res.data);
     } catch (err) {
       console.error("Error al obtener reservas:", err);
       setError("No se pudieron cargar las reservas.");
