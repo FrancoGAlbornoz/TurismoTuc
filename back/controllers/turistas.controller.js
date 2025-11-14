@@ -10,9 +10,11 @@ import jwt from "jsonwebtoken";
 export const getTuristas = (req, res) => {
   const { filtro, page = 1, limit = 10} = req.query;
   const condiciones = [];
+  const params = [];
 
   if (filtro === "activas") condiciones.push("eliminado = 0");
   if (filtro === "eliminadas") condiciones.push("eliminado = 1");
+
 
   const whereClause = condiciones.length > 0 ? `WHERE ${condiciones.join(" AND ")}` : "";
 
@@ -37,6 +39,9 @@ export const getTuristas = (req, res) => {
     ORDER BY dni ASC
     LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)};
   `;
+
+  // Agregamos los parámetros de paginación
+  params.push(parseInt(limit), offset);
 
   // Ejecutamos ambas consultas
   pool.query(sqlCount, (err, countResult) => {
@@ -88,33 +93,41 @@ export const getTuristaById = (req, res) => {
    🔍 BUSCAR TURISTA POR DNI
    ============================================================ */
 export const buscarTuristaPorDNI = (req, res) => {
-  const { dni } = req.query;
+  const { dni, page = 1, limit = 10 } = req.query;
 
   if (!dni) {
     return res.status(400).json({ message: "Se requiere el parámetro 'dni'" });
   }
 
-  const sql = `
-    SELECT id_turista, nombre, apellido, CONCAT(nombre, ' ', apellido) AS nombre_completo, dni, email, telefono, direccion, nacionalidad
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+  const searchDNI = `${dni}%`;
+
+  const sqlCount = `SELECT COUNT(*) AS total FROM Turistas WHERE dni LIKE ? AND eliminado = 0`;
+  const sqlData = `
+    SELECT id_turista, nombre, apellido, CONCAT(nombre, ' ', apellido) AS nombre_completo,
+           dni, email, telefono, direccion, nacionalidad
     FROM Turistas
     WHERE dni LIKE ? AND eliminado = 0
     ORDER BY nombre ASC
+    LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}
   `;
 
-  // Uso de '%' para búsqueda parcial
-  const searchDNI = `${dni}%`;
+  pool.query(sqlCount, [searchDNI], (err, countResult) => {
+    if (err) return res.status(500).json({ message: "Error al contar turistas", error: err.message });
 
-  pool.query(sql, [searchDNI], (err, results) => {
-    if (err) {
-      console.error("Error al buscar turista por DNI:", err);
-      return res.status(500).json({ message: "Error al buscar turista", error: err.message });
-    }
+    const total = countResult[0].total;
+    const totalPages = Math.ceil(total / limit);
 
-    if (results.length === 0) {
-      return res.status(404).json({ message: "No se encontraron turistas con ese DNI" });
-    }
+    pool.query(sqlData, [searchDNI], (err, dataResult) => {
+      if (err) return res.status(500).json({ message: "Error al buscar turistas", error: err.message });
 
-    res.json(results);
+      res.json({
+        data: dataResult,
+        total,
+        totalPages,
+        currentPage: parseInt(page),
+      });
+    });
   });
 };
 

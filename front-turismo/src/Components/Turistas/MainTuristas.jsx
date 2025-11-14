@@ -20,11 +20,11 @@ export default function MainTuristas() {
   const navigate = useNavigate();
 
   // Función para obtener turistas
-  const fetchTuristas = async (page = 1) => {
+  const fetchTuristas = async () => {
     setLoading(true);
     try {
       const res = await axios.get(
-        `http://localhost:8000/api/turistas?filtro=${filtro}&page=${page}&limit=${porPagina}`
+        `http://localhost:8000/api/turistas?filtro=${filtro}&page=${paginaActual}&limit=${porPagina}`
       );
       setTuristas(res.data.data || []);
       setTotalPaginas(res.data.totalPages || 1);
@@ -65,12 +65,13 @@ export default function MainTuristas() {
   };
 
   useEffect(() => {
-    setPaginaActual(1);
-  }, [filtro]);
-  
-  useEffect(() => {
-    buscarPorDNI(debouncedDni, 1);
-  }, [debouncedDni]);
+  setPaginaActual(1);
+  if (debouncedDni) {
+    buscarPorDNI(debouncedDni, 1, filtro);
+  } else {
+    fetchTuristas(1, filtro);
+  }
+}, [debouncedDni, filtro]);
 
   useEffect(() => {
     fetchTuristas(paginaActual);
@@ -90,6 +91,7 @@ export default function MainTuristas() {
 
     try {
       await axios.delete(`http://localhost:8000/api/turistas/${id}`);
+      fetchTuristas(paginaActual);
       Swal.fire({
         icon: "success",
         title: "Turista eliminado",
@@ -97,7 +99,6 @@ export default function MainTuristas() {
         timer: 2000,
         showConfirmButton: false,
       });
-      // Refrescar la página actual
       buscarPorDNI(debouncedDni, paginaActual);
     } catch (err) {
       console.error("Error al eliminar turista:", err);
@@ -114,14 +115,6 @@ export default function MainTuristas() {
               Gestión de Turistas
             </h5>
             <div className="d-flex align-items-center gap-2">
-              <input
-                type="text"
-                className="form-control form-control-sm"
-                placeholder="Buscar por DNI..."
-                value={dniBuscar}
-                onChange={(e) => setDniBuscar(e.target.value)}
-                style={{ maxWidth: "200px" }}
-              />
               <Button
                 as={Link}
                 to="/dashboard-admin/turistas/create"
@@ -130,7 +123,15 @@ export default function MainTuristas() {
               >
                 <i className="bi bi-plus-circle me-1"></i> Crear Turista
               </Button>
-
+              <input
+                type="text"
+                className="form-control form-control-sm"
+                placeholder="Buscar por DNI..."
+                value={dniBuscar}
+                onChange={(e) => setDniBuscar(e.target.value)}
+                style={{ maxWidth: "200px" }}
+              />
+              
               {/* Dropdown: Filtrar activas / eliminadas / todas */}
               <Dropdown align="end">
                 <Dropdown.Toggle variant="outline-primary" size="sm">
