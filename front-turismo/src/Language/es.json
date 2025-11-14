@@ -13,17 +13,17 @@
   "explora_categoria": "Explorá por categoría",
   "hero": {
     "title": "Descubrí Tucumán",
-    "subtitle": "Excursiones exclusivas: naturaleza, cultura y sabores. Reservá fácil, sin crear cuenta.",
+    "subtitle": "Excursiones exclusivas: naturaleza, cultura y sabores.",
     "placeholder": "Buscar destino o excursión",
     "button": "Buscar",
     "no_support": "Tu navegador no soporta video HTML5."
   },
   "promo": {
     "titulo": "¿Por qué elegirnos?",
-    "descripcion": "Reservá sin crear cuenta, accedé a experiencias únicas y recibí atención personalizada.",
+    "descripcion": "Accedé a experiencias únicas y recibí atención personalizada.",
     "card1": {
-      "titulo": "Sin registro",
-      "texto": "Reservá en segundos sin crear usuario."
+      "titulo": "Facil registro",
+      "texto": "Reservá en segundos al crear usuario."
     },
     "card2": {
       "titulo": "Experiencias únicas",

@@ -17,6 +17,7 @@ export default function HeroBanner({ setResultados, setBusquedaRealizada }) {
     try {
       setBusquedaRealizada(true);
       const res = await axios.get(`http://localhost:8000/api/excursiones?q=${query}`);
+      console.log("RESULTADOS BUSQUEDA:", res.data);
       setResultados(res.data);
     } catch (err) {
       console.error("Error al buscar excursiones:", err);
@@ -24,6 +25,7 @@ export default function HeroBanner({ setResultados, setBusquedaRealizada }) {
       setBusquedaRealizada(true);
     }
   };
+  
 
   return (
     <section className="hero-section position-relative">

@@ -22,7 +22,6 @@ export default function Footer() {
             <ul className="list-unstyled small">
               <li><a href="/catalogo">{t("footer.enlaces.catalogo")}</a></li>
               <li><a href="/contacto">{t("footer.enlaces.contacto")}</a></li>
-              <li><a href="/politicas">{t("footer.enlaces.politicas")}</a></li>
             </ul>
           </div>
 

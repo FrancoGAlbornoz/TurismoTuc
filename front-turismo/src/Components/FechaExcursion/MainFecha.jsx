@@ -25,40 +25,44 @@ export default function MainFechasExcursion() {
     fetchFechas();
   }, []);
 
-  const handleDelete = async (id_fecha) => {
-    const confirmar = await Swal.fire({
-      title: "¿Eliminar fecha?",
-      text: "Esta acción no se puede deshacer.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Sí, eliminar",
-      cancelButtonText: "Cancelar",
+  const handleCerrar = async (id_fecha) => {
+  const confirmar = await Swal.fire({
+    title: "¿Cerrar fecha?",
+    text: "No se eliminará, pero ya no podrá reservarse.",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Cerrar fecha",
+    cancelButtonText: "Cancelar",
+  });
+
+  if (!confirmar.isConfirmed) return;
+
+  try {
+    const res = await axios.delete(`http://localhost:8000/api/excursiones/fechas/${id_fecha}`);
+    console.log(res);
+    Swal.fire({
+      icon: "success",
+      title: "Fecha cerrada",
+      text: "La fecha ya no estará disponible para reservas.",
+      timer: 2000,
+      showConfirmButton: false,
     });
 
-    if (!confirmar.isConfirmed) return;
+    fetchFechas();
+  } catch (err) {
+    Swal.fire("Error", "No se pudo cerrar la fecha.", err);
+  }
+};
 
-    try {
-      const res = await axios.delete(`http://localhost:8000/api/excursiones/fechas/${id_fecha}`);
-      await Swal.fire({
-        icon: "success",
-        title: "Fecha eliminada",
-        text: res.data.message,
-        timer: 2000,
-        showConfirmButton: false,
-      });
-      fetchFechas();
-    } catch (err) {
-      console.error("Error al eliminar fecha:", err);
-      Swal.fire("Error", "No se pudo eliminar la fecha.", "error");
-    }
-  };
 
   return (
     <div className="container-fluid py-4">
       <Card className="shadow-sm">
         <Card.Body>
           <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
-            <h5 className="fw-bold text-primary mb-2 mb-md-0">Fechas de Excursiones</h5>
+            <h5 className="fw-bold text-primary mb-2 mb-md-0">
+              Fechas de Excursiones
+            </h5>
             <Button
               variant="primary"
               size="sm"
@@ -77,7 +81,13 @@ export default function MainFechasExcursion() {
             excursiones.map((e) => (
               <div key={e.id_excursion} className="mb-4">
                 <h6 className="fw-bold text-success">{e.titulo}</h6>
-                <Table bordered responsive hover size="sm" className="align-middle">
+                <Table
+                  bordered
+                  responsive
+                  hover
+                  size="sm"
+                  className="align-middle"
+                >
                   <thead className="table-light">
                     <tr>
                       <th>Fecha</th>
@@ -97,7 +107,13 @@ export default function MainFechasExcursion() {
                           <td>{f.cupo_maximo}</td>
                           <td>{f.cupo_disponible}</td>
                           <td>
-                            <span className={`badge ${f.estado === "abierta" ? "bg-success" : "bg-secondary"}`}>
+                            <span
+                              className={`badge ${
+                                f.estado === "abierta"
+                                  ? "bg-success"
+                                  : "bg-secondary"
+                              }`}
+                            >
                               {f.estado}
                             </span>
                           </td>
@@ -106,14 +122,18 @@ export default function MainFechasExcursion() {
                               <Button
                                 variant="outline-primary"
                                 size="sm"
-                                onClick={() => navigate(`/dashboard-admin/fechas/edit/${f.id_fecha}`)}
+                                onClick={() =>
+                                  navigate(
+                                    `/dashboard-admin/fechas/edit/${f.id_fecha}`
+                                  )
+                                }
                               >
                                 <i className="bi bi-pencil"></i>
                               </Button>
                               <Button
                                 variant="outline-danger"
                                 size="sm"
-                                onClick={() => handleDelete(f.id_fecha)}
+                                onClick={() => handleCerrar(f.id_fecha)}
                               >
                                 <i className="bi bi-trash"></i>
                               </Button>
