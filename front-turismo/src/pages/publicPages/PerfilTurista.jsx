@@ -9,6 +9,7 @@ import {
   Button,
   Form,
 } from "react-bootstrap";
+import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import axios from "axios";
@@ -74,22 +75,37 @@ export default function PerfilTurista() {
   };
 
   // 🔹 Guardar cambios
-  const handleGuardar = async () => {
-    try {
-      const res = await axios.put(
-        `http://localhost:8000/api/turistas/${turista.id}`,
-        formData,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+  // 🔹 Guardar cambios
+const handleGuardar = async () => {
+  try {
+    const res = await axios.put(
+      `http://localhost:8000/api/turistas/${turista.id}`,
+      formData,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
-      setTurista(res.data);
-      setEditMode(false);
-      alert(t("profile.alerts.updated"));
-    } catch (err) {
-      console.error("Error al actualizar perfil:", err);
-      alert(t("profile.alerts.updateError"));
-    }
-  };
+    setTurista(res.data);
+    setEditMode(false);
+
+    Swal.fire({
+      title: "✔ Datos actualizados",
+      text: "Tu información personal se guardó correctamente.",
+      icon: "success",
+      confirmButtonColor: "#0e7667",
+    });
+
+  } catch (err) {
+    console.error("Error al actualizar perfil:", err);
+
+    Swal.fire({
+      title: "⚠ Error",
+      text: "No se pudieron actualizar los datos. Inténtalo nuevamente.",
+      icon: "error",
+      confirmButtonColor: "#b91c1c",
+    });
+  }
+};
+
 
   if (!turista) {
     return (

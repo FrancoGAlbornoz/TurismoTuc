@@ -56,7 +56,6 @@ export default function Login() {
 
         if (rol === "administrador") navigate("/dashboard-admin");
         else if (rol === "guia turistico" || rol === "guía turístico") navigate("/dashboard-guia");
-        else if (rol === "personal de ventas") navigate("/dashboard-empleados");
         else {
           clearUser();
           setError("No tiene permisos para acceder al panel.");

@@ -13,17 +13,17 @@
    "explora_categoria": "Explore by category",
   "hero": {
     "title": "Discover Tucumán",
-    "subtitle": "Exclusive excursions: nature, culture and flavors. Book easily, no account needed.",
+    "subtitle": "Exclusive excursions: nature, culture and flavors.",
     "placeholder": "Search destination or excursion",
     "button": "Search",
     "no_support": "Your browser does not support HTML5 video."
   },
   "promo": {
     "titulo": "Why choose us?",
-    "descripcion": "Book without signing up, enjoy unique experiences, and get personalized service.",
+    "descripcion": "Enjoy unique experiences, and get personalized service.",
     "card1": {
-      "titulo": "No registration",
-      "texto": "Book in seconds without creating an account."
+      "titulo": "Easy registration",
+      "texto": "Book in seconds by creating an account."
     },
     "card2": {
       "titulo": "Unique experiences",

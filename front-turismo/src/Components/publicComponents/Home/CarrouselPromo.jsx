@@ -1,65 +1,74 @@
-import { useTranslation } from "react-i18next";
+import { useEffect, useState } from "react";
+import { Carousel } from "react-bootstrap";
+import { Link } from "react-router-dom";
+import axios from "axios";
 
-export default function PromoSection() {
-  const { t } = useTranslation();
+export default function CarrouselExcursiones() {
+  const [excursiones, setExcursiones] = useState([]);
+
+  useEffect(() => {
+    const fetchExcursiones = async () => {
+      try {
+        const res = await axios.get("http://localhost:8000/api/excursiones");
+        setExcursiones(res.data);
+      } catch (err) {
+        console.error("Error cargando carrusel:", err);
+      }
+    };
+
+    fetchExcursiones();
+  }, []);
+
+  if (excursiones.length === 0) return null;
 
   return (
-    <section className="bg-light py-5">
-      <div className="container text-center">
-        <div
-          id="promoCarousel"
-          className="carousel slide"
-          data-bs-ride="carousel"
-          data-bs-interval="4000"
-        >
-          <div className="carousel-inner">
-            {/* Imagen 1 */}
-            <div className="carousel-item active">
-              <img
-                src="https://www.tucumanturismo.gob.ar/images/banner-video.webp"
-                className="d-block w-100 rounded shadow-sm"
-                alt={t("promo.card1.alt")}
-              />
-            </div>
+    <div style={{ width: "100%", overflow: "hidden" }}>
+      <Carousel interval={3500} fade controls indicators>
 
-            {/* Imagen 2 */}
-            <div className="carousel-item">
-              <img
-                src="https://dzt7ishbk7o3v.cloudfront.net/posts/pictures/227/content_Banner_Sitio.png"
-                className="d-block w-100 rounded shadow-sm"
-                alt={t("promo.card2.alt")}
-              />
-            </div>
+        {excursiones.map((exc) => (
+          <Carousel.Item key={exc.id_excursion}>
+            <Link
+              to={`/excursion/${exc.id_excursion}`}
+              className="text-decoration-none"
+            >
+              <div
+                style={{
+                  width: "100%",
+                  height: "420px",
+                  position: "relative",
+                  overflow: "hidden",
+                }}
+              >
+                {/* Imagen full width */}
+                <img
+                  src={exc.imagen_url || "/img/no-image.jpg"}
+                  alt={exc.titulo}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    filter: "brightness(0.7)",
+                  }}
+                />
 
-            {/* Imagen 3 */}
-            <div className="carousel-item">
-              <img
-                src="https://template.canva.com/EAGHLWRVtxU/2/0/1600w-M-9JhSgttXk.jpg"
-                className="d-block w-100 rounded shadow-sm"
-                alt={t("promo.card3.alt")}
-              />
+                {/* Texto arriba */}
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: "40px",
+                    left: "50px",
+                    color: "white",
+                    textShadow: "0px 0px 12px rgba(0,0,0,0.9)",
+                  }}
+                >
+                  <h2 className="fw-bold">{exc.titulo}</h2>
+                </div>
+              </div>
+            </Link>
+          </Carousel.Item>
+        ))}
 
-            </div>
-
-            {/* Imagen 4 */}
-            <div className="carousel-item">
-              <img
-                src="https://www.tucumanturismo.gob.ar/images/banners/artesano.jpg"
-                className="d-block w-100 rounded shadow-sm"
-                alt={t("promo.card4.alt")}
-              />
-            </div>
-          </div>
-
-          {/* Indicadores */}
-          <div className="carousel-indicators">
-            <button type="button" data-bs-target="#promoCarousel" data-bs-slide-to="0" className="active" aria-label="1"></button>
-            <button type="button" data-bs-target="#promoCarousel" data-bs-slide-to="1" aria-label="2"></button>
-            <button type="button" data-bs-target="#promoCarousel" data-bs-slide-to="2" aria-label="3"></button>
-            <button type="button" data-bs-target="#promoCarousel" data-bs-slide-to="3" aria-label="4"></button>
-          </div>
-        </div>
-      </div>
-    </section>
+      </Carousel>
+    </div>
   );
 }

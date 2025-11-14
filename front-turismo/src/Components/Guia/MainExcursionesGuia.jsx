@@ -50,7 +50,6 @@ export default function MainExcursionesGuia() {
             <tr>
               <th>Título</th>
               <th>Ubicación</th>
-              <th>Precio</th>
               <th>Estado</th>
               <th>Fecha</th>
               <th>Acciones</th>
@@ -62,13 +61,16 @@ export default function MainExcursionesGuia() {
                 <tr key={e.id_excursion}>
                   <td>{e.titulo}</td>
                   <td>{e.ubicacion}</td>
-                  <td>${e.precio_base}</td>
                   <td>
                     <span className={`badge ${e.estado === "activa" ? "bg-success" : "bg-secondary"}`}>
                       {e.estado}
                     </span>
                   </td>
-                  <td>{new Date(e.fecha_creacion).toLocaleDateString()}</td>
+                  <td>
+                    {e.proxima_fecha
+                      ? new Date(e.proxima_fecha).toLocaleDateString("es-AR")
+                      : "Sin fecha asignada"}
+                  </td>
                   <td>
                     <Button
                       variant="outline-primary"
