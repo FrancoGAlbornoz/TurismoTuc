@@ -412,16 +412,23 @@ export const updateFechaExcursion = (req, res) => {
 // Eliminar (baja lógica) una fecha de excursión
 export const deleteFechaExcursion = (req, res) => {
   const { id } = req.params;
-  const sql = "DELETE FROM FechasExcursion WHERE id_fecha = ?";
+
+  const sql = `
+    UPDATE FechasExcursion
+    SET estado = 'cerrada', eliminado = 1, fecha_eliminacion = NOW()
+    WHERE id_fecha = ?
+  `;
+
   pool.query(sql, [id], (err, result) => {
     if (err) {
-      console.error("Error al eliminar fecha:", err);
-      return res.status(500).json({ message: "Error al eliminar la fecha" });
+      console.error("Error al cerrar fecha:", err);
+      return res.status(500).json({ message: "Error al cerrar la fecha" });
     }
-    if (result.affectedRows === 0) {
+
+    if (result.affectedRows === 0)
       return res.status(404).json({ message: "Fecha no encontrada" });
-    }
-    res.json({ message: "Fecha eliminada correctamente" });
+
+    res.json({ message: "Fecha cerrada correctamente" });
   });
 };
 
