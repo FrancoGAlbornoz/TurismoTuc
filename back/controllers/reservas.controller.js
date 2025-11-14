@@ -426,8 +426,7 @@ export const getParticipantesPorExcursion = (req, res) => {
   });
 };
 
-// =============================
-// BUSCAR RESERVAS POR DNI
+
 // =============================
 // Buscar reservas por DNI
 export const buscarReservasPorDNI = (req, res) => {

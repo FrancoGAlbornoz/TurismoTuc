@@ -81,6 +81,7 @@ export default function Contacto() {
       setForm({ nombre: "", email: "", asunto: "", mensaje: "" });
       setErrors({ nombre: false, email: false, asunto: false, mensaje: false });
     } catch (error) {
+      console.error("Error al enviar contacto:", error.message, error.stack);
       const msg =
         error?.response?.data?.message ||
         t("contactUs.alert.errorText");

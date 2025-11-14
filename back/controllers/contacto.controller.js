@@ -4,22 +4,22 @@ export const enviarContacto = async (req, res) => {
   const { nombre, email, asunto, mensaje } = req.body;
 
   if (!nombre || !email || !asunto || !mensaje) {
-    return res.status(400).json({ message: "Todos los campos son obligatorios." });
+    return res
+      .status(400)
+      .json({ message: "Todos los campos son obligatorios." });
   }
 
   try {
     //process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
     const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 587,
-      secure: false,
+      service: "gmail",
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
-    //   tls: {
-    //   rejectUnauthorized: false
-    // }
+      // tls: {
+      //   rejectUnauthorized: false,
+      // },
     });
 
     await transporter.sendMail({
