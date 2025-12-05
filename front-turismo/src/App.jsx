@@ -1,27 +1,76 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useEffect, useState } from "react";
+import useTuristaStore from "./store/useTuristaStore";
 
+// 🧩 Componentes comunes
 import Header from "./Components/common/Header";
 import Footer from "./Components/common/Footer";
+
+// 🌍 Páginas públicas
 import Home from "./pages/publicPages/Home";
-import Login from "./pages/Login";
-import Dashboard from "./pages/adminPages/Dashboard";
 import Catalogo from "./pages/publicPages/Catalogo";
 import DetalleExcursion from "./pages/publicPages/DetalleExcursion";
-
+import LoginTurista from "./pages/publicPages/LoginTurista";
+import RegisterTurista from "./pages/publicPages/RegisterTurista";
+import PerfilTurista from "./pages/publicPages/PerfilTurista";
+import Carrito from "./pages/publicPages/Carrito";
+import Checkout from "./pages/publicPages/Checkout";
+import Contacto from "./pages/publicPages/Contacto";
+import ForgotPassword from "./pages/publicPages/ForgotPassword";
+import ResetPassword from "./pages/publicPages/ResetPassword";
 import Error from "./pages/Error";
+import CalificarExcursion from "./pages/publicPages/CalificarExcursion";
+import PreguntasPersonalizadas from "./pages/publicPages/PregPerzonalizadas";
+
+// 🔒 Autenticación y paneles internos
+import Login from "./pages/Login";
 import ProtectedRoute from "./Components/ProtectedRoute";
+import Dashboard from "./pages/adminPages/Dashboard";
+import DashboardGuia from "./pages/adminPages/GuiaPanel/DashboardGuia";
 
 function App() {
+  const { initSession, hydrated } = useTuristaStore();
+  const [sessionReady, setSessionReady] = useState(false);
+
+  useEffect(() => {
+    const iniciar = async () => {
+      await initSession();
+      setSessionReady(true);
+    };
+    iniciar();
+  }, [initSession]);
+
+  if (!hydrated || !sessionReady) {
+    return (
+      <div className="d-flex flex-column align-items-center justify-content-center vh-100">
+        <div className="spinner-border text-success" role="status"></div>
+        <p className="mt-3">Cargando sesión...</p>
+      </div>
+    );
+  }
+
   return (
     <BrowserRouter>
       <Routes>
-        {/* Rutas públicas (con Header y Footer) */}
+        {/* =========================
+             RUTAS PÚBLICAS
+        ========================== */}
         <Route
           path="/"
           element={
             <>
               <Header />
               <Home />
+              <Footer />
+            </>
+          }
+        />
+        <Route
+          path="/calificar/:id_reserva"
+          element={
+            <>
+              <Header />
+              <CalificarExcursion />
               <Footer />
             </>
           }
@@ -37,6 +86,16 @@ function App() {
           }
         />
         <Route
+          path="/perfil-turista"
+          element={
+            <>
+              <Header />
+              <PerfilTurista />
+              <Footer />
+            </>
+          }
+        />
+        <Route
           path="/excursion/:id"
           element={
             <>
@@ -46,7 +105,91 @@ function App() {
             </>
           }
         />
-        
+        <Route
+          path="/carrito"
+          element={
+            <>
+              <Header />
+              <Carrito />
+              <Footer />
+            </>
+          }
+        />
+        <Route
+          path="/checkout"
+          element={
+            <>
+              <Header />
+              <Checkout />
+              <Footer />
+            </>
+          }
+        />
+
+        <Route
+          path="/reserva/:id_reserva/personalizacion/:id_excursion" element={
+            <>
+              <Header />
+              <PreguntasPersonalizadas />
+              <Footer />
+            </>
+          }
+        />
+
+        <Route
+          path="/contacto"
+          element={
+            <>
+              <Header />
+              <Contacto />
+              <Footer />
+            </>
+          }
+        />
+        <Route
+          path="/login-turista"
+          element={
+            <>
+              <Header />
+              <LoginTurista />
+              <Footer />
+            </>
+          }
+        />
+        <Route
+          path="/register-turista"
+          element={
+            <>
+              <Header />
+              <RegisterTurista />
+              <Footer />
+            </>
+          }
+        />
+        <Route
+          path="/forgot-password"
+          element={
+            <>
+              <Header />
+              <ForgotPassword />
+              <Footer />
+            </>
+          }
+        />
+        <Route
+          path="/reset-password/:token"
+          element={
+            <>
+              <Header />
+              <ResetPassword />
+              <Footer />
+            </>
+          }
+        />
+
+        {/* =========================
+             RUTAS ADMINISTRATIVAS
+        ========================== */}
         <Route
           path="/admin"
           element={
@@ -57,8 +200,6 @@ function App() {
             </>
           }
         />
-
-        {/* Rutas del panel admin (SIN Header ni Footer) */}
         <Route
           path="/dashboard-admin/*"
           element={
@@ -67,8 +208,18 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/dashboard-guia/*"
+          element={
+            <ProtectedRoute allowedRoles={["Guía turístico"]}>
+              <DashboardGuia />
+            </ProtectedRoute>
+          }
+        />
 
-        {/* Página de error */}
+        {/* =========================
+             PÁGINA DE ERROR
+        ========================== */}
         <Route
           path="*"
           element={

@@ -2,25 +2,43 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import { Container, Row, Col, Spinner, Alert } from "react-bootstrap";
+import { useTranslation } from "react-i18next";
+import useTuristaStore from "../../store/useTuristaStore";
 
 import ExcursionHero from "../../Components/publicComponents/DetalleExcursion/ExcursionHero";
 import ExcursionTabs from "../../Components/publicComponents/DetalleExcursion/ExcursionTabs";
 import ExcursionMap from "../../Components/publicComponents/DetalleExcursion/ExcursionMap";
 import ExcursionGallery from "../../Components/publicComponents/DetalleExcursion/ExcursionGallery";
 import ExcursionSidebar from "../../Components/publicComponents/DetalleExcursion/ExcursionSidebar";
+import ReseñasCarousel from "../../Components/publicComponents/DetalleExcursion/ReseñasCarrousel";
 
-import "../../styles/publicComponents/detalleex.css"
+import "../../styles/publicComponents/detalleex.css";
+
 export default function DetalleExcursion() {
   const { id } = useParams();
   const [excursion, setExcursion] = useState(null);
+  const [fechas, setFechas] = useState([]); // 👈 nuevo estado
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { turista } = useTuristaStore();
+  const { t } = useTranslation();
 
   useEffect(() => {
     const fetchExcursion = async () => {
       try {
-        const res = await axios.get(`http://localhost:8000/api/excursiones/${id}`);
-        setExcursion(res.data);
+        // Datos principales
+        const resExc = await axios.get(`http://localhost:8000/api/excursiones/${id}`);
+        const excursionData = resExc.data;
+
+        // Imágenes
+        const resImgs = await axios.get(`http://localhost:8000/api/excursiones/${id}/multimedia`);
+        excursionData.imagenes = resImgs.data || [];
+
+        // Fechas disponibles 👇
+        const resFechas = await axios.get(`http://localhost:8000/api/excursiones/${id}/fechas`);
+        setFechas(resFechas.data || []);
+
+        setExcursion(excursionData);
       } catch (err) {
         console.error("Error al obtener excursión:", err);
         setError("No se pudo cargar la información de la excursión.");
@@ -36,6 +54,7 @@ export default function DetalleExcursion() {
     return (
       <div className="d-flex justify-content-center align-items-center vh-100">
         <Spinner animation="border" variant="success" />
+        <div className="text-success mt-2">{t("excursionDetalle.loading")}</div> 
       </div>
     );
   }
@@ -53,7 +72,7 @@ export default function DetalleExcursion() {
   if (!excursion) {
     return (
       <Container className="py-5 text-center">
-        <Alert variant="warning">Excursión no encontrada.</Alert>
+        <Alert variant="warning">{t("excursionDetalle.notFound")}</Alert>
       </Container>
     );
   }
@@ -61,20 +80,18 @@ export default function DetalleExcursion() {
   return (
     <div className="detalle-excursion-page bg-light py-4">
       <Container>
-        {/* Hero principal */}
-        <ExcursionHero excursion={excursion} />
-
+        <ExcursionHero excursion={excursion} imagenes={excursion.imagenes} />
         <Row className="mt-4">
-          {/* Columna izquierda: Tabs, Mapa, Galería */}
           <Col xs={12} md={8} lg={9} className="mb-4">
             <ExcursionTabs excursion={excursion} />
             <ExcursionMap excursion={excursion} />
             <ExcursionGallery excursion={excursion} />
+            <ReseñasCarousel id_excursion={id} />
           </Col>
 
-          {/* Columna derecha: Sidebar */}
           <Col xs={12} md={4} lg={3}>
-            <ExcursionSidebar excursion={excursion} />
+            {/* 👇 ahora le pasamos las fechas también */}
+            <ExcursionSidebar excursion={excursion} fechas={fechas} turista={turista} />
           </Col>
         </Row>
       </Container>

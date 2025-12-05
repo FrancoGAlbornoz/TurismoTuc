@@ -1,27 +1,74 @@
-// controllers/turistasController.js
 import { pool } from "../config/DB.js";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
-// =============================
-// TURISTAS
-// =============================
+/* ============================================================
+   👥 GESTIÓN DE TURISTAS
+   ============================================================ */
 
 // Listar todos los turistas activos
 export const getTuristas = (req, res) => {
-  const sql = `
-    SELECT id_turista, nombre, apellido, dni, email, telefono, direccion, nacionalidad
+  const { filtro, page = 1, limit = 10} = req.query;
+  const condiciones = [];
+  const params = [];
+
+  if (filtro === "activas") condiciones.push("eliminado = 0");
+  if (filtro === "eliminadas") condiciones.push("eliminado = 1");
+
+
+  const whereClause = condiciones.length > 0 ? `WHERE ${condiciones.join(" AND ")}` : "";
+
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+
+  const baseQuery = `
     FROM Turistas
-    WHERE eliminado = 0
-    ORDER BY nombre ASC
+    ${whereClause}
   `;
 
-  pool.query(sql, (err, results) => {
+  const sqlCount = `SELECT COUNT(*) AS total ${baseQuery}`;
+  const sqlData = `
+    SELECT 
+      id_turista, 
+      CONCAT(nombre, ' ', apellido) AS nombre_completo, 
+      nombre, 
+      apellido, 
+      dni, 
+      email, 
+      telefono
+    ${baseQuery}
+    ORDER BY dni ASC
+    LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)};
+  `;
+
+  // Agregamos los parámetros de paginación
+  params.push(parseInt(limit), offset);
+
+  // Ejecutamos ambas consultas
+  pool.query(sqlCount, (err, countResult) => {
     if (err) {
-      console.error("Error al obtener turistas:", err);
-      return res.status(500).json({ message: "Error al obtener turistas" });
+      console.error("Error al contar turistas:", err);
+      return res.status(500).json({ message: "Error al contar turistas" });
     }
-    res.json(results);
+
+    const total = countResult[0].total;
+    const totalPages = Math.ceil(total / limit);
+
+    pool.query(sqlData, (err, dataResult) => {
+      if (err) {
+        console.error("Error al obtener turistas:", err);
+        return res.status(500).json({ message: "Error al obtener turistas" });
+      }
+
+      res.json({
+        data: dataResult,
+        total,
+        totalPages,
+        currentPage: parseInt(page),
+      });
+    });
   });
 };
+
 
 // Obtener un turista por ID
 export const getTuristaById = (req, res) => {
@@ -42,55 +89,134 @@ export const getTuristaById = (req, res) => {
   });
 };
 
-// Crear un nuevo turista
-export const createTurista = (req, res) => {
+/* ============================================================
+   🔍 BUSCAR TURISTA POR DNI
+   ============================================================ */
+export const buscarTuristaPorDNI = (req, res) => {
+  const { dni, page = 1, limit = 10 } = req.query;
+
+  if (!dni) {
+    return res.status(400).json({ message: "Se requiere el parámetro 'dni'" });
+  }
+
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+  const searchDNI = `${dni}%`;
+
+  const sqlCount = `SELECT COUNT(*) AS total FROM Turistas WHERE dni LIKE ? AND eliminado = 0`;
+  const sqlData = `
+    SELECT id_turista, nombre, apellido, CONCAT(nombre, ' ', apellido) AS nombre_completo,
+           dni, email, telefono, direccion, nacionalidad
+    FROM Turistas
+    WHERE dni LIKE ? AND eliminado = 0
+    ORDER BY nombre ASC
+    LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}
+  `;
+
+  pool.query(sqlCount, [searchDNI], (err, countResult) => {
+    if (err) return res.status(500).json({ message: "Error al contar turistas", error: err.message });
+
+    const total = countResult[0].total;
+    const totalPages = Math.ceil(total / limit);
+
+    pool.query(sqlData, [searchDNI], (err, dataResult) => {
+      if (err) return res.status(500).json({ message: "Error al buscar turistas", error: err.message });
+
+      res.json({
+        data: dataResult,
+        total,
+        totalPages,
+        currentPage: parseInt(page),
+      });
+    });
+  });
+};
+
+
+// Crear un nuevo turista (uso interno del panel)
+export const createTurista = async (req, res) => {
   const { nombre, apellido, dni, email, telefono, direccion, nacionalidad } = req.body;
 
   if (!nombre || !apellido || !dni)
     return res.status(400).json({ message: "Faltan datos obligatorios (nombre, apellido o DNI)" });
 
-  const sql = `
-    INSERT INTO Turistas (nombre, apellido, dni, email, telefono, direccion, nacionalidad)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
-  `;
-  const values = [nombre, apellido, dni, email, telefono, direccion, nacionalidad];
+  try {
+    const hashedPassword = await bcrypt.hash(dni, 10); // 🔐 contraseña = DNI encriptado
 
-  pool.query(sql, values, (err, result) => {
-    if (err) {
-      console.error("Error al crear turista:", err);
-      if (err.code === "ER_DUP_ENTRY") {
-        return res.status(400).json({ message: "El DNI ingresado ya existe" });
+    const sql = `
+      INSERT INTO Turistas (nombre, apellido, dni, email, telefono, direccion, nacionalidad, password)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+    const values = [nombre, apellido, dni, email, telefono, direccion, nacionalidad, hashedPassword];
+
+    pool.query(sql, values, (err, result) => {
+      if (err) {
+        console.error("Error al crear turista:", err);
+        if (err.code === "ER_DUP_ENTRY") {
+          return res.status(400).json({ message: "El DNI ingresado ya existe" });
+        }
+        return res.status(500).json({ message: "Error al crear turista" });
       }
-      return res.status(500).json({ message: "Error al crear turista" });
-    }
-    res.status(201).json({ message: "Turista agregado correctamente", id: result.insertId });
-  });
+      res.status(201).json({ message: "Turista agregado correctamente", id: result.insertId });
+    });
+  } catch (err) {
+    console.error("Error al encriptar contraseña:", err);
+    res.status(500).json({ message: "Error interno al crear turista" });
+  }
 };
 
-// Modificar un turista existente
-export const updateTurista = (req, res) => {
+// 🔹 Modificar un turista existente (versión actualizada)
+// 🔹 Modificar un turista existente (versión consistente con login)
+export const updateTurista = async (req, res) => {
   const { id } = req.params;
   const { nombre, apellido, dni, email, telefono, direccion, nacionalidad } = req.body;
 
-  const sql = `
-    UPDATE Turistas
-    SET nombre=?, apellido=?, dni=?, email=?, telefono=?, direccion=?, nacionalidad=?
-    WHERE id_turista=? AND eliminado=0
-  `;
-  const values = [nombre, apellido, dni, email, telefono, direccion, nacionalidad, id];
+  try {
+    const [result] = await pool
+      .promise()
+      .query(
+        `
+        UPDATE Turistas
+        SET nombre=?, apellido=?, dni=?, email=?, telefono=?, direccion=?, nacionalidad=?
+        WHERE id_turista=? AND eliminado=0
+      `,
+        [nombre, apellido, dni, email, telefono, direccion, nacionalidad, id]
+      );
 
-  pool.query(sql, values, (err, result) => {
-    if (err) {
-      console.error("Error al actualizar turista:", err);
-      if (err.code === "ER_DUP_ENTRY") {
-        return res.status(400).json({ message: "El DNI ingresado ya existe" });
-      }
-      return res.status(500).json({ message: "Error al actualizar turista" });
-    }
     if (result.affectedRows === 0)
       return res.status(404).json({ message: "Turista no encontrado" });
-    res.json({ message: "Turista actualizado correctamente" });
-  });
+
+    // 🔹 Obtener el turista actualizado y devolverlo al front
+    const [rows] = await pool
+      .promise()
+      .query(
+        `SELECT id_turista, nombre, apellido, dni, email, telefono, direccion, nacionalidad 
+         FROM Turistas WHERE id_turista = ?`,
+        [id]
+      );
+
+    if (rows.length === 0)
+      return res.status(404).json({ message: "Turista no encontrado tras actualizar" });
+
+    const turista = rows[0];
+
+    // 🔹 Normalizamos el formato igual que el login
+    res.json({
+      id: turista.id_turista, // 👈 clave consistente
+      nombre: turista.nombre,
+      apellido: turista.apellido,
+      dni: turista.dni,
+      email: turista.email,
+      telefono: turista.telefono,
+      direccion: turista.direccion,
+      nacionalidad: turista.nacionalidad,
+    });
+  } catch (err) {
+    console.error("Error al actualizar turista:", err);
+    if (err.code === "ER_DUP_ENTRY") {
+      return res.status(400).json({ message: "El DNI o Email ingresado ya existe" });
+    }
+    res.status(500).json({ message: "Error interno al actualizar turista" });
+  }
 };
 
 // Baja lógica
@@ -112,9 +238,9 @@ export const deleteTurista = (req, res) => {
   });
 };
 
-// =============================
-// RESERVAS DE UN TURISTA
-// =============================
+/* ============================================================
+   📅 RESERVAS DE UN TURISTA
+   ============================================================ */
 export const getReservasByTurista = (req, res) => {
   const { id } = req.params;
 
@@ -139,9 +265,98 @@ export const getReservasByTurista = (req, res) => {
 
   pool.query(sql, [id], (err, results) => {
     if (err) {
-      console.error("❌ Error al obtener reservas del turista:", err.sqlMessage);
-      return res.status(500).json({ message: "Error al obtener reservas del turista", error: err.sqlMessage });
+      console.error("Error al obtener reservas del turista:", err.message);
+      return res.status(500).json({ message: "Error al obtener reservas del turista", error: err.message });
     }
     res.json(results);
   });
+};
+
+/* ============================================================
+   🔐 AUTENTICACIÓN (REGISTER / LOGIN)
+   ============================================================ */
+
+// Registro de turista (desde el portal público)
+export const registerTurista = async (req, res) => {
+  const { nombre, apellido, dni, email, telefono, direccion, nacionalidad, password } = req.body;
+
+  if (!nombre || !apellido || !dni || !email || !password) {
+    return res.status(400).json({ message: "Faltan datos obligatorios" });
+  }
+
+  try {
+    const [existe] = await pool.promise().query("SELECT id_turista FROM Turistas WHERE email = ?", [email]);
+    console.log("🟢 Nuevo turista registrado:", { nombre, apellido, dni, email, telefono, direccion, nacionalidad });
+
+    if (existe.length > 0) {
+      return res.status(400).json({ message: "El email ya está registrado" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const sql = `
+      INSERT INTO Turistas (nombre, apellido, dni, email, password, telefono, direccion, nacionalidad)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+    const values = [nombre, apellido, dni, email, hashedPassword, telefono, direccion, nacionalidad];
+    await pool.promise().query(sql, values);
+
+    res.status(201).json({ message: "Turista registrado correctamente" });
+  } catch (err) {
+    console.error("Error al registrar turista:", err);
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
+};
+
+// Login de turista
+export const loginTurista = async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password)
+    return res.status(400).json({ message: "Faltan datos" });
+
+  try {
+    const [rows] = await pool
+      .promise()
+      .query(
+        `SELECT id_turista, nombre, apellido, dni, email, telefono, direccion, nacionalidad, password 
+         FROM Turistas 
+         WHERE email = ? AND eliminado = 0`,
+        [email]
+      );
+
+    if (rows.length === 0)
+      return res.status(401).json({ message: "Turista no encontrado" });
+
+    const turista = JSON.parse(JSON.stringify(rows[0]));
+    const validPassword = await bcrypt.compare(password, turista.password);
+    if (!validPassword)
+      return res.status(401).json({ message: "Contraseña incorrecta" });
+
+    const token = jwt.sign(
+      { id: turista.id_turista, email: turista.email },
+      process.env.JWT_SECRET || "clave_supersecreta",
+      { expiresIn: "2h" }
+    );
+
+    console.log("🟢 Turista logueado:", turista);
+
+    res.json({
+      message: "Login exitoso",
+      token,
+      turista: {
+        id_turista: turista.id_turista,
+        nombre: turista.nombre,
+        apellido: turista.apellido,
+        dni: turista.dni,
+        email: turista.email,
+        telefono: turista.telefono,
+        direccion: turista.direccion,
+        nacionalidad: turista.nacionalidad,
+      },
+    });
+  } catch (err) {
+    console.error("Error al iniciar sesión:", err);
+    res.status(500).json({ message: "Error interno del servidor" });
+  }
 };

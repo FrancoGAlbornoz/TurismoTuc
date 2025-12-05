@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { Card, Button, Badge, Table, Spinner } from "react-bootstrap";
 
 export default function ViewExcursion() {
   const { id } = useParams();
@@ -15,11 +16,15 @@ export default function ViewExcursion() {
         const resExc = await axios.get(`http://localhost:8000/api/excursiones/${id}`);
         setExcursion(resExc.data);
 
+        if (Array.isArray(resExc.data.imagenes)) {
+          setImagenes(resExc.data.imagenes);
+        } else {
+          const resImgs = await axios.get(`http://localhost:8000/api/excursiones/${id}/multimedia`);
+          setImagenes(resImgs.data);
+        }
+
         const resFechas = await axios.get(`http://localhost:8000/api/excursiones/${id}/fechas`);
         setFechas(resFechas.data);
-
-        const resImgs = await axios.get(`http://localhost:8000/api/multimedia/excursion/${id}`);
-        setImagenes(resImgs.data);
       } catch (err) {
         console.error("Error al cargar datos:", err);
       }
@@ -27,41 +32,99 @@ export default function ViewExcursion() {
     fetchData();
   }, [id]);
 
-  if (!excursion) return <p className="text-center mt-4">Cargando excursión...</p>;
+  if (!excursion) {
+    return (
+      <div className="text-center py-5">
+        <Spinner animation="border" variant="success" />
+        <p className="mt-3">Cargando excursión...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="container py-4">
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <h4 className="fw-bold">{excursion.titulo}</h4>
-        <button className="btn btn-outline-secondary btn-sm" onClick={() => navigate(-1)}>← Volver</button>
-      </div>
+        <div className="col-12 col-md-6 mb-2 mb-md-0">
+          <Button variant="outline-secondary" size="sm" onClick={() => navigate(-1)}>
+            ← Volver
+          </Button>
+          <br />
+        </div>
+        <br />
+      <Card className="shadow-sm mb-4">
+        
+        <Card.Body>
+          <div className="row mb-3 align-items-center">
 
-      <div className="mb-3"><strong>Ubicación:</strong> {excursion.ubicacion}</div>
-      <div className="mb-3"><strong>Precio base:</strong> ${excursion.precio_base}</div>
-      <div className="mb-3"><strong>Estado:</strong> {excursion.estado}</div>
-      <div className="mb-3"><strong>Descripción:</strong><p>{excursion.descripcion}</p></div>
+            <div className="col-12 col-md-6 text-md-end">
+              <h4 className="fw-bold text-success mb-0">{excursion.titulo}</h4>
+            </div>
+          </div>
 
-      {/* ✅ Mostrar categorías */}
-      <div className="mb-3">
-        <strong>Categorías:</strong>{" "}
-        {excursion.categorias?.length > 0 ? (
-          excursion.categorias.map((cat) => (
-            <span key={cat.id_categoria_excursion} className="badge bg-info me-1">
-              {cat.nombre_categoria}
-            </span>
-          ))
-        ) : (
-          <span className="text-muted">Sin categoría</span>
-        )}
-      </div>
+          <div className="row mb-3">
+            <div className="col-md-6"><strong>Ubicación:</strong> {excursion.ubicacion}</div>
+            <div className="col-md-6"><strong>Precio base:</strong> ${excursion.precio_base}</div>
+          </div>
+
+          <div className="row mb-3">
+            <div className="col-md-6">
+              <strong>Estado:</strong>{" "}
+              <Badge bg={excursion.estado === "activa" ? "success" : "warning"}>
+                {excursion.estado}
+              </Badge>
+            </div>
+            <div className="col-md-6">
+              <strong>Guía asignado:</strong>{" "}
+              {excursion.nombre_guia ? (
+                <span
+                  className="text-primary text-decoration-underline"
+                  role="button"
+                  onClick={() => navigate(`/dashboard-admin/usuarios/view/${excursion.id_guia}`)}
+                >
+                  {excursion.nombre_guia} {excursion.apellido_guia}
+                </span>
+              ) : (
+                <span className="text-muted">Sin guía</span>
+              )}
+            </div>
+          </div>
+
+          <div className="mb-3">
+            <strong>Descripción:</strong>
+            <p className="mb-0">{excursion.descripcion}</p>
+          </div>
+
+          <div className="mb-3">
+            <strong>Categorías:</strong>{" "}
+            {excursion.categorias?.length > 0 ? (
+              excursion.categorias.map((cat) => (
+                <Badge key={cat.id_categoria_excursion} bg="info" className="me-1">
+                  {cat.nombre_categoria}
+                </Badge>
+              ))
+            ) : (
+              <span className="text-muted">Sin categoría</span>
+            )}
+          </div>
+        </Card.Body>
+      </Card>
 
       {imagenes.length > 0 && (
         <div className="mb-4">
-          <h6 className="fw-bold">Imágenes</h6>
-          <div className="d-flex flex-wrap gap-3">
+          <h5 className="fw-bold">Galería</h5>
+          <div className="row g-3">
             {imagenes.map((img) => (
-              <div key={img.id_multimedia}>
-                <img src={img.url} alt="Imagen" className="img-thumbnail" style={{ maxHeight: "200px" }} />
+              <div key={img.id_multimedia} className="col-6 col-sm-4 col-md-3">
+                <Card className="shadow-sm h-100">
+                  <Card.Img
+                    variant="top"
+                    src={img.url}
+                    alt={img.descripcion || "Imagen de excursión"}
+                    style={{ height: "140px", objectFit: "cover" }}
+                  />
+                  <Card.Body className="p-2 text-center">
+                    <small className="text-muted">Imagen de excursión</small>
+                  </Card.Body>
+                </Card>
               </div>
             ))}
           </div>
@@ -69,12 +132,12 @@ export default function ViewExcursion() {
       )}
 
       <hr />
-      <h5 className="fw-bold">Fechas disponibles</h5>
+      <h5 className="fw-bold mb-3">Fechas disponibles</h5>
       {fechas.length === 0 ? (
         <p>No hay fechas registradas.</p>
       ) : (
-        <table className="table table-sm table-bordered">
-          <thead>
+        <Table responsive bordered size="sm">
+          <thead className="table-light">
             <tr>
               <th>Fecha</th>
               <th>Hora</th>
@@ -94,7 +157,7 @@ export default function ViewExcursion() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </Table>
       )}
     </div>
   );

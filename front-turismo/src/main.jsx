@@ -7,6 +7,7 @@ import './index.css'
 import "./styles/global/global.css";
 import "./styles/components/sidebar.css";
 import "./styles/components/dashboardhome.css";
+import "./Language/index";
 import App from './App.jsx'
 
 createRoot(document.getElementById('root')).render(

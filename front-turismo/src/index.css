@@ -17,3 +17,10 @@ body {
   padding: 0;
   box-sizing: border-box;
 }
+
+/* Media queries globales */
+@media (max-width: 768px) {
+  :root {
+    --font-size-base: 14px;
+  }
+}

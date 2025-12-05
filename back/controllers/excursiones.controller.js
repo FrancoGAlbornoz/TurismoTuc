@@ -1,4 +1,5 @@
 import { pool } from "../config/DB.js";
+import nodemailer from "nodemailer";
 
 // =============================
 // EXCURSIONES
@@ -6,17 +7,28 @@ import { pool } from "../config/DB.js";
 
 // Obtener todas las excursiones con sus categorías
 export const getExcursiones = (req, res) => {
-  const { ubicacion, precio_min, precio_max, duracion, estado, q } = req.query;
+  const { ubicacion, precio_min, precio_max, duracion, estado, q, categoria } = req.query;
 
   let sql = `
     SELECT e.id_excursion, e.titulo, e.descripcion, e.precio_base, e.duracion,
            e.ubicacion, e.incluye, e.politicas, e.estado, e.fecha_creacion,
-           c.id_categoria_excursion, c.nombre_categoria
+           e.id_guia, u.nombre AS nombre_guia, u.apellido AS apellido_guia,
+           c.id_categoria_excursion, c.nombre_categoria,
+           (
+             SELECT m.url 
+             FROM Multimedia m 
+             WHERE m.id_excursion = e.id_excursion 
+               AND m.eliminado = 0 
+             ORDER BY m.id_multimedia ASC 
+             LIMIT 1
+           ) AS imagen_url
     FROM Excursiones e
+    LEFT JOIN Usuarios u ON e.id_guia = u.id_usuario
     LEFT JOIN ExcursionCategorias ec ON e.id_excursion = ec.id_excursion
     LEFT JOIN CategoriasExcursion c ON ec.id_categoria_excursion = c.id_categoria_excursion
     WHERE e.eliminado = 0
   `;
+
   const values = [];
 
   if (q) {
@@ -49,6 +61,11 @@ export const getExcursiones = (req, res) => {
     values.push(estado);
   }
 
+  if (categoria) {
+    sql += " AND c.nombre_categoria = ?";
+    values.push(categoria);
+  }
+
   sql += " ORDER BY e.fecha_creacion DESC";
 
   pool.query(sql, values, (err, results) => {
@@ -71,6 +88,10 @@ export const getExcursiones = (req, res) => {
           politicas: row.politicas,
           estado: row.estado,
           fecha_creacion: row.fecha_creacion,
+          id_guia: row.id_guia,
+          nombre_guia: row.nombre_guia,
+          apellido_guia: row.apellido_guia,
+          imagen_url: row.imagen_url,
           categorias: [],
         };
       }
@@ -86,29 +107,32 @@ export const getExcursiones = (req, res) => {
   });
 };
 
-// Obtener una excursión por ID con sus categorías
 export const getExcursionById = (req, res) => {
   const { id } = req.params;
 
-  const sql = `
+  const sqlExcursion = `
     SELECT e.id_excursion, e.titulo, e.descripcion, e.precio_base, e.duracion,
            e.ubicacion, e.incluye, e.politicas, e.estado, e.fecha_creacion,
+           e.id_guia, u.nombre AS nombre_guia, u.apellido AS apellido_guia,
            c.id_categoria_excursion, c.nombre_categoria
     FROM Excursiones e
+    LEFT JOIN Usuarios u ON e.id_guia = u.id_usuario
     LEFT JOIN ExcursionCategorias ec ON e.id_excursion = ec.id_excursion
     LEFT JOIN CategoriasExcursion c ON ec.id_categoria_excursion = c.id_categoria_excursion
     WHERE e.id_excursion = ? AND e.eliminado = 0
   `;
 
-  pool.query(sql, [id], (err, results) => {
+  pool.query(sqlExcursion, [id], (err, results) => {
     if (err) {
       console.error("Error al obtener excursión:", err);
       return res.status(500).json({ message: "Error al obtener excursión" });
     }
+
     if (results.length === 0)
       return res.status(404).json({ message: "Excursión no encontrada" });
 
-    const base = {
+    // Estructura base
+    const excursion = {
       id_excursion: results[0].id_excursion,
       titulo: results[0].titulo,
       descripcion: results[0].descripcion,
@@ -119,34 +143,67 @@ export const getExcursionById = (req, res) => {
       politicas: results[0].politicas,
       estado: results[0].estado,
       fecha_creacion: results[0].fecha_creacion,
+      id_guia: results[0].id_guia,
+      nombre_guia: results[0].nombre_guia,
+      apellido_guia: results[0].apellido_guia,
       categorias: [],
+      imagenes: [],
     };
 
+    // Agregar categorías
     results.forEach((row) => {
       if (row.id_categoria_excursion && row.nombre_categoria) {
-        base.categorias.push({
+        excursion.categorias.push({
           id_categoria_excursion: row.id_categoria_excursion,
           nombre_categoria: row.nombre_categoria,
         });
       }
     });
 
-    res.json(base);
+    // Traer imágenes relacionadas
+    const sqlImgs = `
+      SELECT id_multimedia, url, descripcion, tipo
+      FROM Multimedia
+      WHERE id_excursion = ? AND eliminado = 0
+    `;
+
+    pool.query(sqlImgs, [id], (errImgs, imgs) => {
+      if (errImgs) {
+        console.error("Error al obtener imágenes:", errImgs);
+        return res.status(500).json({ message: "Error al obtener imágenes" });
+      }
+
+      // Si no hay imágenes, dejamos el array vacío
+      excursion.imagenes = imgs || [];
+      res.json(excursion);
+    });
   });
 };
 
-// Crear una nueva excursión con categoría
+
+
+
 export const createExcursion = (req, res) => {
-  const { titulo, descripcion, precio_base, duracion, ubicacion, incluye, politicas, id_categoria_excursion } = req.body;
+  const {
+    titulo,
+    descripcion,
+    precio_base,
+    duracion,
+    ubicacion,
+    incluye,
+    politicas,
+    id_categoria_excursion,
+    id_guia, // ✅ nuevo campo
+  } = req.body;
 
   if (!titulo || !precio_base)
     return res.status(400).json({ message: "Faltan datos obligatorios" });
 
   const sql = `INSERT INTO Excursiones 
-              (titulo, descripcion, precio_base, duracion, ubicacion, incluye, politicas)
-               VALUES (?, ?, ?, ?, ?, ?, ?)`;
+              (titulo, descripcion, precio_base, duracion, ubicacion, incluye, politicas, id_guia)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)`; // ✅ agregamos id_guia
 
-  const values = [titulo, descripcion, precio_base, duracion, ubicacion, incluye, politicas];
+  const values = [titulo, descripcion, precio_base, duracion, ubicacion, incluye, politicas, id_guia];
 
   pool.query(sql, values, (err, result) => {
     if (err) {
@@ -174,14 +231,39 @@ export const createExcursion = (req, res) => {
 // Actualizar una excursión existente
 export const updateExcursion = (req, res) => {
   const { id } = req.params;
-  const { titulo, descripcion, precio_base, duracion, ubicacion, incluye, politicas, estado } = req.body;
+  const {
+    titulo,
+    descripcion,
+    precio_base,
+    duracion,
+    ubicacion,
+    incluye,
+    politicas,
+    estado,
+    id_guia,
+  } = req.body;
 
-  const sql = `UPDATE Excursiones
-               SET titulo=?, descripcion=?, precio_base=?, duracion=?, ubicacion=?, 
-                   incluye=?, politicas=?, estado=?
-               WHERE id_excursion=? AND eliminado=0`;
+  const guia = id_guia === "" ? null : id_guia; // ✅ convierte '' a NULL
 
-  const values = [titulo, descripcion, precio_base, duracion, ubicacion, incluye, politicas, estado, id];
+  const sql = `
+    UPDATE Excursiones
+    SET titulo=?, descripcion=?, precio_base=?, duracion=?, ubicacion=?, 
+        incluye=?, politicas=?, estado=?, id_guia=?
+    WHERE id_excursion=? AND eliminado=0
+  `;
+
+  const values = [
+    titulo,
+    descripcion,
+    precio_base,
+    duracion,
+    ubicacion,
+    incluye,
+    politicas,
+    estado,
+    guia,
+    id,
+  ];
 
   pool.query(sql, values, (err, result) => {
     if (err) {
@@ -190,9 +272,11 @@ export const updateExcursion = (req, res) => {
     }
     if (result.affectedRows === 0)
       return res.status(404).json({ message: "Excursión no encontrada" });
+
     res.json({ message: "Excursión actualizada correctamente" });
   });
 };
+
 
 // Eliminar (baja lógica) una excursión
 export const deleteExcursion = (req, res) => {
@@ -212,45 +296,6 @@ export const deleteExcursion = (req, res) => {
     res.json({ message: "Excursión eliminada (baja lógica) correctamente" });
   });
 };
-export const updateCategoriaExcursion = (req, res) => {
-  const { id_excursion, id_categoria_excursion } = req.body;
-
-  if (!id_excursion || !id_categoria_excursion)
-    return res.status(400).json({ message: "Faltan datos obligatorios" });
-
-  // 1. Eliminar todas las categorías actuales
-  const deleteSql = `DELETE FROM ExcursionCategorias WHERE id_excursion = ?`;
-
-  pool.query(deleteSql, [id_excursion], (err) => {
-    if (err) {
-      console.error("Error al eliminar categorías anteriores:", err);
-      return res.status(500).json({ message: "Error al limpiar categorías anteriores" });
-    }
-
-    // 2. Insertar la nueva categoría
-    const insertSql = `INSERT INTO ExcursionCategorias (id_excursion, id_categoria_excursion) VALUES (?, ?)`;
-
-    pool.query(insertSql, [id_excursion, id_categoria_excursion], (err2) => {
-      if (err2) {
-        console.error("Error al insertar nueva categoría:", err2);
-        return res.status(500).json({ message: "Error al actualizar categoría" });
-      }
-
-      res.json({ message: "Categoría actualizada correctamente" });
-    });
-  });
-};
-
-export const getCategoriasExcursion = (req, res) => {
-  const sql = `SELECT id_categoria_excursion, nombre_categoria FROM CategoriasExcursion`;
-  pool.query(sql, (err, results) => {
-    if (err) {
-      console.error("Error al obtener categorías:", err);
-      return res.status(500).json({ message: "Error al obtener categorías" });
-    }
-    res.json(results);
-  });
-};
 
 // =============================
 // FECHAS DE EXCURSIÓN
@@ -260,10 +305,14 @@ export const getCategoriasExcursion = (req, res) => {
 export const getFechasByExcursion = (req, res) => {
   const { id_excursion } = req.params;
 
-  const sql = `SELECT id_fecha, fecha, hora_salida, cupo_maximo, cupo_disponible, estado
-               FROM FechasExcursion
-               WHERE id_excursion = ? AND eliminado = 0
-               ORDER BY fecha ASC`;
+  const sql = `
+    SELECT id_fecha, fecha, hora_salida, cupo_maximo, cupo_disponible, estado
+    FROM FechasExcursion
+    WHERE id_excursion = ? 
+      AND eliminado = 0
+      AND cupo_disponible > 0   -- 👈 solo fechas con lugares
+    ORDER BY fecha ASC
+  `;
 
   pool.query(sql, [id_excursion], (err, results) => {
     if (err) {
@@ -274,9 +323,27 @@ export const getFechasByExcursion = (req, res) => {
   });
 };
 
-// Crear una nueva fecha para una excursión
+
+export const getFechaById = (req, res) => {
+  const { id } = req.params;
+  const sql = "SELECT * FROM FechasExcursion WHERE id_fecha = ?";
+  pool.query(sql, [id], (err, result) => {
+    if (err) {
+      console.error("Error al obtener fecha:", err);
+      return res.status(500).json({ message: "Error al obtener la fecha" });
+    }
+    if (result.length === 0) {
+      return res.status(404).json({ message: "Fecha no encontrada" });
+    }
+    res.json(result[0]);
+  });
+};
+
+
 export const createFechaExcursion = (req, res) => {
   const { id_excursion, fecha, hora_salida, cupo_maximo } = req.body;
+
+  console.log("Datos recibidos:", req.body); // 👈 Agregá esto
 
   if (!id_excursion || !fecha || !cupo_maximo)
     return res.status(400).json({ message: "Faltan datos obligatorios" });
@@ -288,7 +355,7 @@ export const createFechaExcursion = (req, res) => {
 
   pool.query(sql, values, (err, result) => {
     if (err) {
-      console.error("Error al crear fecha:", err);
+      console.error("Error al crear fecha:", err); // 👈 Este log es clave
       return res.status(500).json({ message: "Error al crear fecha" });
     }
     res.status(201).json({ message: "Fecha agregada correctamente", id: result.insertId });
@@ -346,17 +413,288 @@ export const updateFechaExcursion = (req, res) => {
 export const deleteFechaExcursion = (req, res) => {
   const { id } = req.params;
 
-  const sql = `UPDATE FechasExcursion
-               SET eliminado=1, fecha_eliminacion=NOW()
-               WHERE id_fecha=?`;
+  const sql = `
+    UPDATE FechasExcursion
+    SET estado = 'cerrada', eliminado = 1, fecha_eliminacion = NOW()
+    WHERE id_fecha = ?
+  `;
 
   pool.query(sql, [id], (err, result) => {
     if (err) {
-      console.error("Error al eliminar fecha:", err);
-      return res.status(500).json({ message: "Error al eliminar fecha" });
+      console.error("Error al cerrar fecha:", err);
+      return res.status(500).json({ message: "Error al cerrar la fecha" });
     }
+
     if (result.affectedRows === 0)
       return res.status(404).json({ message: "Fecha no encontrada" });
-    res.json({ message: "Fecha eliminada (baja lógica) correctamente" });
+
+    res.json({ message: "Fecha cerrada correctamente" });
   });
+};
+
+
+export const getGuias = (req, res) => {
+  const sql = `
+    SELECT id_usuario, nombre, apellido
+    FROM Usuarios
+    WHERE id_rol = (
+      SELECT id_rol FROM Roles WHERE nombre_rol = 'Guía turístico'
+    ) AND estado = 'activo'
+  `;
+
+  pool.query(sql, (err, results) => {
+    if (err) {
+      console.error("Error al obtener guías turísticos:", err);
+      return res.status(500).json({ message: "Error al obtener guías turísticos" });
+    }
+    res.json(results);
+  });
+};
+
+export const getExcursionesConFechas = (req, res) => {
+  const sql = `
+    SELECT e.id_excursion, e.titulo, e.ubicacion, e.precio_base, e.estado,
+           f.id_fecha, f.fecha, f.hora_salida, f.cupo_maximo, f.cupo_disponible, f.estado AS estado_fecha
+    FROM Excursiones e
+    LEFT JOIN FechasExcursion f ON e.id_excursion = f.id_excursion AND f.eliminado = 0
+    WHERE e.eliminado = 0
+    ORDER BY e.fecha_creacion DESC, f.fecha ASC
+  `;
+
+  pool.query(sql, (err, results) => {
+    if (err) {
+      console.error("Error al obtener excursiones con fechas:", err);
+      return res.status(500).json({ message: "Error al obtener excursiones con fechas" });
+    }
+
+    const agrupadas = {};
+    results.forEach((row) => {
+      if (!agrupadas[row.id_excursion]) {
+        agrupadas[row.id_excursion] = {
+          id_excursion: row.id_excursion,
+          titulo: row.titulo,
+          ubicacion: row.ubicacion,
+          precio_base: row.precio_base,
+          estado: row.estado,
+          fechas: [],
+        };
+      }
+
+      if (row.id_fecha) {
+        agrupadas[row.id_excursion].fechas.push({
+          id_fecha: row.id_fecha,
+          fecha: row.fecha,
+          hora_salida: row.hora_salida,
+          cupo_maximo: row.cupo_maximo,
+          cupo_disponible: row.cupo_disponible,
+          estado: row.estado_fecha,
+        });
+      }
+    });
+
+    res.json(Object.values(agrupadas));
+  });
+};
+
+
+// =============================
+// MULTIMEDIA (IMÁGENES DE EXCURSIONES)
+// =============================
+
+// Obtener todas las imágenes de una excursión
+export const getMultimediaByExcursion = (req, res) => {
+  const { id_excursion } = req.params;
+
+  const sql = `
+    SELECT id_multimedia, tipo, url, descripcion
+    FROM Multimedia
+    WHERE id_excursion = ? AND eliminado = 0
+  `;
+
+  pool.query(sql, [id_excursion], (err, results) => {
+    if (err) {
+      console.error("Error al obtener multimedia:", err);
+      return res.status(500).json({ message: "Error al obtener imágenes" });
+    }
+    res.json(results);
+  });
+};
+
+// Crear una nueva imagen (por URL) asociada a una excursión
+export const createMultimedia = (req, res) => {
+  const { id_excursion, url, descripcion, tipo } = req.body;
+
+  if (!id_excursion || !url) {
+    return res.status(400).json({ message: "Faltan datos obligatorios (id_excursion o url)" });
+  }
+
+  const sql = `
+    INSERT INTO Multimedia (id_excursion, tipo, url, descripcion)
+    VALUES (?, ?, ?, ?)
+  `;
+
+  pool.query(sql, [id_excursion, tipo || "foto", url, descripcion || null], (err, result) => {
+    if (err) {
+      console.error("Error al crear multimedia:", err);
+      return res.status(500).json({ message: "Error al crear multimedia" });
+    }
+
+    res.status(201).json({
+      message: "Imagen agregada correctamente",
+      id_multimedia: result.insertId,
+    });
+  });
+};
+
+// Eliminar (baja lógica) una imagen de una excursión
+
+export const deleteMultimedia = (req, res) => {
+  const { id } = req.params;
+  const sql = `UPDATE Multimedia SET eliminado = 1, fecha_eliminacion = NOW() WHERE id_multimedia = ?`;
+
+  pool.query(sql, [id], (err, result) => {
+    if (err) {
+      console.error("Error al eliminar imagen:", err);
+      return res.status(500).json({ message: "Error al eliminar imagen" });
+    }
+    if (result.affectedRows === 0)
+      return res.status(404).json({ message: "Imagen no encontrada" });
+
+    res.json({ message: "Imagen eliminada correctamente" });
+  });
+};
+
+// =============================
+// OTROS
+// =============================
+export const getExcursionesPorGuia = async (req, res) => {
+  const { id_guia } = req.params;
+
+  try {
+    const [rows] = await pool.promise().query(
+      `SELECT 
+         e.id_excursion,
+         e.titulo,
+         e.ubicacion,
+         e.estado,
+         (
+           SELECT MIN(fecha)
+           FROM FechasExcursion f
+           WHERE f.id_excursion = e.id_excursion AND f.estado = 'abierta'
+         ) AS proxima_fecha
+       FROM Excursiones e
+       WHERE e.id_guia = ? AND e.eliminado = 0`,
+      [id_guia]
+    );
+
+    res.json(rows);
+  } catch (err) {
+    console.error("❌ Error al obtener excursiones del guía:", err);
+    res.status(500).json({ message: "Error interno al obtener excursiones" });
+  }
+};
+
+
+
+export const getParticipantesByExcursion = (req, res) => {
+  const { id } = req.params;
+
+  const sql = `
+    SELECT 
+      t.id_usuario AS id_turista,
+      t.nombre,
+      t.apellido,
+      t.email,
+      r.id_reserva,
+      r.cantidad_personas,
+      r.estado_reserva,
+      DATE_FORMAT(f.fecha, '%Y-%m-%d') AS fecha_salida,
+      f.hora_salida
+    FROM Reservas r
+    JOIN Usuarios t ON r.id_turista = t.id_usuario
+    JOIN FechasExcursion f ON r.id_fecha = f.id_fecha
+    WHERE f.id_excursion = ? AND r.eliminado = 0
+    ORDER BY f.fecha ASC
+  `;
+
+  pool.query(sql, [id], (err, results) => {
+    if (err) {
+      console.error("Error al obtener participantes:", err.message);
+      return res.status(500).json({ message: "Error al obtener participantes", error: err.message });
+    }
+    res.json(results);
+  });
+};
+
+
+export const notificarGuia = async (req, res) => {
+  const { id_excursion } = req.params;
+  const { fecha, id_fecha } = req.body;
+
+  try {
+    // Obtener datos de la excursión y del guía
+    const [rows] = await pool.promise().query(
+      `SELECT e.titulo, e.ubicacion, u.email, u.nombre
+       FROM Excursiones e
+       JOIN Usuarios u ON e.id_guia = u.id_usuario
+       WHERE e.id_excursion = ?`,
+      [id_excursion]
+    );
+
+    if (rows.length === 0 || !rows[0].email) {
+      return res.status(404).json({ message: "No se encontró el email del guía" });
+    }
+
+    const { titulo, ubicacion, email, nombre } = rows[0];
+    const fechaFormateada = new Date(fecha).toLocaleDateString("es-AR");
+
+    // Configurar transporte de correo
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    // Enviar correo con diseño HTML
+    await transporter.sendMail({
+      from: `"MAAVYT Panel" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: "Nueva excursión asignada",
+      html: `
+        <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9;">
+          <h2 style="color: #2c3e50;">📌 Nueva excursión asignada</h2>
+          <p>Hola <strong>${nombre}</strong>,</p>
+          <p>Se te ha asignado una nueva excursión. Aquí están los detalles:</p>
+          <table style="border-collapse: collapse; width: 100%; margin-top: 10px;">
+            <tr>
+              <td style="padding: 8px; border: 1px solid #ccc;"><strong>Título</strong></td>
+              <td style="padding: 8px; border: 1px solid #ccc;">${titulo}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; border: 1px solid #ccc;"><strong>Ubicación</strong></td>
+              <td style="padding: 8px; border: 1px solid #ccc;">${ubicacion}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px; border: 1px solid #ccc;"><strong>Fecha</strong></td>
+              <td style="padding: 8px; border: 1px solid #ccc;">${fechaFormateada}</td>
+            </tr>
+          </table>
+          <p style="margin-top: 20px;">Por favor, ingresá al panel para ver más detalles o confirmar tu disponibilidad.</p>
+          <a href="https://maavyt.com/panel" style="display: inline-block; margin-top: 10px; padding: 10px 15px; background-color: #28a745; color: white; text-decoration: none; border-radius: 5px;">Ir al panel</a>
+          <p style="margin-top: 30px; font-size: 12px; color: #888;">Este mensaje fue generado automáticamente por el sistema MAAVYT.</p>
+        </div>
+      `,
+    });
+
+    await pool.promise().query(
+      `UPDATE FechasExcursion SET notificado = 1 WHERE id_fecha = ?`,
+      [id_fecha]);
+
+    res.json({ message: "Correo enviado y fecha marcada como notificada" });
+  } catch (err) {
+    console.error("❌ Error al notificar guía:", err);
+    res.status(500).json({ message: "Error al enviar correo" });
+  }
 };

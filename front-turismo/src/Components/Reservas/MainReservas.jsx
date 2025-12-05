@@ -5,6 +5,7 @@ import Swal from "sweetalert2";
 import { Card, Button, Table, Dropdown, Spinner, Alert } from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { useDebounce } from "../../hooks/useDeBounce";
 
 export default function ReservasMain() {
   const [reservas, setReservas] = useState([]);
@@ -20,6 +21,14 @@ export default function ReservasMain() {
   );
   const [openCalendar, setOpenCalendar] = useState(false); // para mostrar/ocultar el calendario
 
+  const [dniBuscar, setDniBuscar] = useState("");
+  const debouncedDni = useDebounce(dniBuscar, 500);
+
+  //Paginación
+  const [paginaActual, setPaginaActual] = useState(1);
+  const [totalPaginas, setTotalPaginas] = useState(1);
+  const porPagina = 10;
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -31,6 +40,8 @@ export default function ReservasMain() {
       estadoreserva,
       fechaDesde,
       fechaHasta,
+      page: paginaActual,
+      limit: porPagina,
     };
     try {
       const res = await axios.get("http://localhost:8000/api/reservas", {
@@ -40,7 +51,8 @@ export default function ReservasMain() {
       console.log("Actual filtro:", filtro);
       console.log("Actual estado:", estadoreserva);
       //console.log("reponse:", res.data);
-      setReservas(res.data);
+      setReservas(res.data.data);
+      setTotalPaginas(res.data.totalPages);
     } catch (err) {
       console.error("Error al obtener reservas:", err);
       setError("No se pudieron cargar las reservas.");
@@ -49,9 +61,38 @@ export default function ReservasMain() {
     }
   };
 
+  const getReservasConFechas = async (desde, hasta) => {
+    setLoading(true);
+    setError(null);
+    const params = {
+      filtro,
+      estadoreserva,
+      fechaDesde: desde,
+      fechaHasta: hasta,
+    };
+
+    try {
+      const res = await axios.get("http://localhost:8000/api/reservas", {
+        params,
+      });
+      setReservas(data);
+    } catch (err) {
+      console.error("Error al obtener reservas:", err);
+      setError("No se pudieron cargar las reservas.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Efecto 1: reinicia la paginación cuando cambian los filtros o fechas
+  useEffect(() => {
+    setPaginaActual(1);
+  }, [filtro, estadoreserva, fechaDesde, fechaHasta]);
+
+  // Efecto 2: carga las reservas cuando cambia la página o filtros
   useEffect(() => {
     getReservas();
-  }, [filtro, estadoreserva]);
+  }, [filtro, estadoreserva, fechaDesde, fechaHasta, paginaActual]);
 
   const handleDelete = async (id) => {
     const confirm = await Swal.fire({
@@ -97,6 +138,34 @@ export default function ReservasMain() {
     }
   };
 
+  // 🔎 Buscar reservas por DNI en el backend
+  const buscarPorDNI = async (dni) => {
+    if (!dni) {
+      // si el input queda vacío, mostrar todas las reservas otra vez
+      getReservas();
+      return;
+    }
+
+    try {
+      const res = await axios.get(
+        `http://localhost:8000/api/reservas/buscar?dni=${dni}`
+      );
+      setReservas(res.data);
+    } catch (err) {
+      console.error("Error al buscar por DNI:", err);
+      setReservas([]); // limpiar tabla si no hay resultados o error
+    }
+  };
+
+  // 🕒 Efecto de búsqueda en tiempo real con debounce
+  useEffect(() => {
+    if (debouncedDni.trim() === "") {
+      getReservas(); // si el campo está vacío → mostrar todas
+    } else {
+      buscarPorDNI(debouncedDni); // si hay algo → buscar por DNI
+    }
+  }, [debouncedDni]);
+
   if (loading)
     return <div className="text-center mt-3">Cargando reservas...</div>;
   if (error) return <div className="alert alert-danger mt-3">{error}</div>;
@@ -106,8 +175,24 @@ export default function ReservasMain() {
       <Card.Body className="p-3">
         {/* Encabezado */}
         <div className="d-flex justify-content-between align-items-center mb-3">
-          <h5 className="fw-bold text-success mb-0">Gestión de Reservas</h5>
+          <div>
+            <h5 className="fw-bold text-success mb-2">
+              Gestión de Reservas{" "}
+              <small className="text-muted">({estadoreserva})</small>
+            </h5>
 
+            {/* 🔍 Input de búsqueda en tiempo real */}
+            <input
+              type="text"
+              className="form-control form-control-sm"
+              placeholder="Buscar por DNI..."
+              value={dniBuscar}
+              onChange={(e) => setDniBuscar(e.target.value)}
+              style={{ maxWidth: "200px" }}
+            />
+          </div>
+
+          
           <div className="d-flex align-items-center gap-2">
             {/* Botón Crear Reserva */}
             <Button
@@ -122,7 +207,7 @@ export default function ReservasMain() {
             {/* Dropdown: Filtrar activas / eliminadas / todas */}
             <Dropdown align="end">
               <Dropdown.Toggle variant="outline-primary" size="sm">
-                <i className="bi bi-funnel"></i> Filtrar activas
+                <i className="bi bi-funnel"></i> Filtrar Eliminados
               </Dropdown.Toggle>
 
               <Dropdown.Menu>
@@ -174,6 +259,7 @@ export default function ReservasMain() {
               </Dropdown.Toggle>
 
               <Dropdown.Menu className="p-3" style={{ minWidth: "280px" }}>
+                {/* Este mes */}
                 <Dropdown.Item
                   onClick={() => {
                     const hoy = new Date();
@@ -191,23 +277,30 @@ export default function ReservasMain() {
                     )
                       .toISOString()
                       .split("T")[0];
+
                     setFechaDesde(primerDia);
                     setFechaHasta(ultimoDia);
-                    getReservas();
+                    getReservasConFechas(primerDia, ultimoDia);
                   }}
                 >
                   <i className="bi bi-calendar-month text-primary me-2"></i>{" "}
                   Este mes
                 </Dropdown.Item>
 
+                {/* Este año */}
                 <Dropdown.Item
                   onClick={() => {
                     const hoy = new Date();
-                    const primerDia = `${hoy.getFullYear()}-01-01`;
-                    const ultimoDia = `${hoy.getFullYear()}-12-31`;
+                    const primerDia = new Date(hoy.getFullYear(), 0, 1)
+                      .toISOString()
+                      .split("T")[0];
+                    const ultimoDia = new Date(hoy.getFullYear(), 11, 31)
+                      .toISOString()
+                      .split("T")[0];
+
                     setFechaDesde(primerDia);
                     setFechaHasta(ultimoDia);
-                    getReservas();
+                    getReservasConFechas(primerDia, ultimoDia);
                   }}
                 >
                   <i className="bi bi-calendar3 text-success me-2"></i> Este año
@@ -288,7 +381,8 @@ export default function ReservasMain() {
         <Table hover responsive className="align-middle">
           <thead className="table-light">
             <tr>
-              <th>ID</th>
+              {/* <th>ID</th> */}
+              <th>DNI</th>
               <th>Turista</th>
               <th>Excursión</th>
               <th>Fecha Excursión</th>
@@ -303,7 +397,8 @@ export default function ReservasMain() {
             {reservas.length > 0 ? (
               reservas.map((r) => (
                 <tr key={r.id_reserva}>
-                  <td>{r.id_reserva}</td>
+                  {/* <td>{r.id_reserva}</td> */}
+                  <td>{r.dni_turista}</td>
                   <td>{r.turista}</td>
                   <td>{r.excursion}</td>
                   <td>{new Date(r.fecha_excursion).toLocaleDateString()}</td>
@@ -376,6 +471,67 @@ export default function ReservasMain() {
             )}
           </tbody>
         </Table>
+        {/* Paginación con Bootstrap */}
+        {totalPaginas > 1 && (
+          <div className="d-flex justify-content-center mt-3">
+            <nav>
+              <ul className="pagination pagination-sm mb-0">
+                {/* Flecha izquierda */}
+                <li
+                  className={`page-item ${
+                    paginaActual === 1 ? "disabled" : ""
+                  }`}
+                >
+                  <button
+                    className="page-link"
+                    onClick={() =>
+                      setPaginaActual((prev) => Math.max(prev - 1, 1))
+                    }
+                  >
+                    &laquo;
+                  </button>
+                </li>
+
+                {/* Números de página */}
+                {Array.from({ length: totalPaginas }, (_, i) => i + 1).map(
+                  (num) => (
+                    <li
+                      key={num}
+                      className={`page-item ${
+                        paginaActual === num ? "active" : ""
+                      }`}
+                    >
+                      <button
+                        className="page-link"
+                        onClick={() => setPaginaActual(num)}
+                      >
+                        {num}
+                      </button>
+                    </li>
+                  )
+                )}
+
+                {/* Flecha derecha */}
+                <li
+                  className={`page-item ${
+                    paginaActual === totalPaginas ? "disabled" : ""
+                  }`}
+                >
+                  <button
+                    className="page-link"
+                    onClick={() =>
+                      setPaginaActual((prev) =>
+                        Math.min(prev + 1, totalPaginas)
+                      )
+                    }
+                  >
+                    &raquo;
+                  </button>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        )}
       </Card.Body>
     </Card>
   );

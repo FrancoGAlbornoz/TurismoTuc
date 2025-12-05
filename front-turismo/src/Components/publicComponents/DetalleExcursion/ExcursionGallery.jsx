@@ -1,40 +1,39 @@
-import { Carousel } from "react-bootstrap";
-import "../../../styles/publicComponents/detalleex.css"
+import { Carousel, Row, Col, Card } from "react-bootstrap";
+import "../../../styles/publicComponents/detalleex.css";
+import i18n from "../../../Language/index";
+import { useTranslation } from "react-i18next";
+
 
 export default function ExcursionGallery({ excursion }) {
-  // Por ahora simulamos un array de imágenes (en el futuro vendrá del backend)
-  const imagenes = excursion.imagenes || [
-    excursion.imagen_url,
-    "/placeholder1.jpg",
-    "/placeholder2.jpg",
-  ];
+  const imagenes = excursion?.imagenes || [];
+  const {t} = useTranslation(); 
 
   return (
     <section className="excursion-gallery mt-5 mb-4">
-      <h5 className="fw-bold text-teal mb-3">Galería de imágenes</h5>
+      <h5 className="fw-bold text-teal mb-3">{t("excursionGallery.galleryTitle")}</h5>
 
-      {imagenes && imagenes.length > 0 ? (
+      {imagenes.length > 0 ? (
         <Carousel
           variant="dark"
           interval={4000}
+          indicators={imagenes.length > 1}
+          controls={imagenes.length > 1}
           className="shadow-sm rounded overflow-hidden"
         >
           {imagenes.map((img, index) => (
-            <Carousel.Item key={index}>
+            <Carousel.Item key={img.id_multimedia || index} interval={6000} pause="hover" indicators={img.length > 1} controls={img.length > 1}>
               <img
-                src={img || "/placeholder.jpg"}
-                alt={`Imagen ${index + 1}`}
+                src={img.url}
+                alt={img.descripcion || `Imagen ${index + 1}`}
                 className="d-block w-100 gallery-image"
               />
             </Carousel.Item>
           ))}
         </Carousel>
       ) : (
-        <div className="text-center bg-light p-4 rounded border">
-          <p className="text-muted mb-0">
-            📷 No hay imágenes disponibles para esta excursión.
-          </p>
-        </div>
+        <p className="text-muted">
+          {t("excursionGallery.galleryEmpty")}
+        </p>
       )}
     </section>
   );

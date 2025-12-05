@@ -1,0 +1,249 @@
+{
+  "brand": "Turismo Tucumán",
+  "home": "INICIO",
+  "catalog": "CATÁLOGO",
+  "contact": "CONTÁCTANOS",
+  "login": "Iniciar sesión",
+  "register": "Registrate",
+  "cart": "Carrito",
+  "hello": "¡Hola, {{name}}!",
+  "myprofile": "Mi perfil",
+  "logout": "Cerrar sesión",
+  "contact_whatsapp": "Contactar por WhatsApp",
+  "explora_categoria": "Explorá por categoría",
+  "hero": {
+    "title": "Descubrí Tucumán",
+    "subtitle": "Excursiones exclusivas: naturaleza, cultura y sabores.",
+    "placeholder": "Buscar destino o excursión",
+    "button": "Buscar",
+    "no_support": "Tu navegador no soporta video HTML5."
+  },
+  "promo": {
+    "titulo": "¿Por qué elegirnos?",
+    "descripcion": "Accedé a experiencias únicas y recibí atención personalizada.",
+    "card1": {
+      "titulo": "Facil registro",
+      "texto": "Reservá en segundos al crear usuario."
+    },
+    "card2": {
+      "titulo": "Experiencias únicas",
+      "texto": "Excursiones seleccionadas por expertos locales."
+    },
+    "card3": {
+      "titulo": "Atención directa",
+      "texto": "Consultá por WhatsApp sin intermediarios."
+    }
+  },
+  "search": {
+    "titulo": "Resultados de búsqueda",
+    "boton": "Ver más"
+  },
+  "footer": {
+    "brand": {
+      "titulo": "Turismo Tucumán",
+      "descripcion": "Explora las maravillas naturales y culturales de nuestra provincia."
+    },
+    "enlaces": {
+      "titulo": "Enlaces útiles",
+      "catalogo": "Catálogo",
+      "contacto": "Contacto",
+      "politicas": "Políticas de privacidad"
+    },
+    "contacto": {
+      "titulo": "Contáctanos",
+      "direccion": "San Miguel de Tucumán, Argentina",
+      "email": "info@turismotucuman.com",
+      "telefono": "+54 381 555 1234"
+    },
+    "copyright": "© 2025 Turismo Tucumán. Todos los derechos reservados.",
+    "admin": {
+      "titulo": "Panel de administración",
+      "link": "Administrar"
+    }
+  },
+  "contactUs": {
+    "title": "Envía un mensaje",
+    "name": "Nombre",
+    "email": "Email",
+    "subject": "Asunto",
+    "message": "Enviar Mensaje",
+    "placeholder": {
+      "name": "Tu nombre completo",
+      "email": "ejemplo@correo.com",
+      "subject": "¿Sobre qué querés consultarnos?",
+      "message": "Escribí tu consulta o comentario..."
+    },
+    "button": "Enviar mensaje",
+    "validation": {
+      "name": "El nombre es obligatorio y debe tener menos de 100 caracteres.",
+      "email": "Ingresá un email válido (máx. 100 caracteres).",
+      "subject": "El asunto es obligatorio (máx. 150 caracteres).",
+      "message": "El mensaje es obligatorio (máx. 1000 caracteres)."
+    },
+    "alert": {
+      "incompleteTitle": "Formulario incompleto",
+      "incompleteText": "Por favor completá todos los campos correctamente.",
+      "successTitle": "Mensaje enviado",
+      "successText": "Gracias por contactarnos. Te responderemos pronto.",
+      "errorTitle": "Error",
+      "errorText": "No se pudo enviar el mensaje. Intentalo más tarde."
+    }
+  },
+  "catalogo": {
+    "loading": "Cargando excursiones...",
+    "empty": "No hay excursiones en esta categoría.",
+    "error": "No se pudieron cargar las excursiones."
+  },
+  "filterSidebar": {
+    "filter": "Filtrar excursiones",
+     "location": "Ubicación",
+    "locationPlaceholder": "Ej: Tafí del Valle",
+    "minPrice": "Precio mínimo",
+    "maxPrice": "Precio máximo",
+    "from": "Desde...",
+    "to": "Hasta...",
+    "duration": "Duración",
+    "durationPlaceholder": "Ej: Día completo",
+    "category": "Categoría",
+    "all": "Todas",
+    "apply": "Aplicar",
+    "clear": "Limpiar"
+  },
+  "catalogGrid": {
+  "viewDetails": "Ver detalles"
+  },
+  "categorias": {
+    "Aventura": "Aventura",
+    "Cultural": "Cultural",
+    "Naturaleza": "Naturaleza",
+    "Gastronómica": "Gastronómica",
+    "Relajación": "Relajación",
+    "Familiar": "Familiar",
+    "Fotográfica": "Fotográfica",
+    "Nocturna": "Nocturna"
+  },
+  "sortBar": {
+  "sortBy": "Ordenar por...",
+  "priceLowHigh": "Precio: menor a mayor",
+  "priceHighLow": "Precio: mayor a menor",
+  "newest": "Más recientes",
+  "oldest": "Más antiguas"
+  },
+  "loginTurista": {
+    "title": "Turismo Tucumán",
+    "subtitle": "Inicio de sesión",
+    "email": "Email",
+    "password": "Contraseña",
+    "loading": "Ingresando...",
+    "button": "Ingresar",
+    "noAccount": "¿No tenés cuenta?",
+    "createAccount": "Crear una cuenta",
+    "forgotPassword": "¿Olvidaste tu contraseña?"
+  },
+  "registerTurista": {
+    "title": "Turismo Tucumán",
+    "subtitle": "Crear cuenta",
+    "name": "Nombre",
+    "lastname": "Apellido",
+    "dni": "DNI",
+    "dniPlaceholder": "Solo números",
+    "nationality": "Nacionalidad",
+    "email": "Email",
+    "password": "Contraseña",
+    "phone": "Teléfono",
+    "phonePlaceholder": "Solo números",
+    "address": "Dirección",
+    "button": "Registrarme",
+    "loading": "Registrando...",
+    "haveAccount": "¿Ya tenés cuenta?",
+    "login": "Iniciar sesión"
+  },
+  "excursionDetalle": {
+    "loading": "Cargando excursión...",
+    "loadError": "No se pudo cargar la información de la excursión.",
+    "notFound": "Excursión no encontrada."
+  },
+  "mapa": {
+    "titulo": "Mapa del recorrido",
+    "sin_mapa": "🗺️ El mapa estará disponible próximamente."
+  },
+  "tabs": {
+    "itinerario": "Itinerario",
+    "incluye": "Qué incluye",
+    "punto_partida": "Punto de partida",
+    "no_disponible": "Información no disponible."
+  },
+  "reviews": {
+    "title": "Opiniones de otros viajeros",
+    "noReviews": "Aún no hay reseñas para esta excursión."
+  },
+  "sidebar": {
+    "from": "Desde",
+    "availableDates": "Fechas disponibles",
+    "spots": "lugares",
+    "noDates": "Sin fechas disponibles",
+    "people": "Numero de Personas",
+    "addToCart": "Agregar al carrito",
+    "noDatesAvailable": "No hay fechas disponibles",
+
+    "loginRequiredTitle": "Tenés que iniciar sesión",
+    "loginRequiredText": "Iniciá sesión para poder agregar al carrito.",
+    "noDatesTitle": "Sin fechas disponibles",
+    "noDatesText": "No hay fechas disponibles para esta excursión.",
+    "selectDateTitle": "Seleccioná una fecha",
+    "selectDateText": "Elegí una fecha antes de continuar.",
+    "notEnoughSpotsTitle": "Cupo insuficiente",
+    "notEnoughSpotsText": "Solo quedan {{cupo}} lugares disponibles."
+  },
+  "excursionGallery": {
+    "galleryTitle": "Galería de imágenes",
+    "galleryEmpty": "No hay imágenes disponibles para esta excursión."
+  },
+  "reseñaCarrusel": {
+    "title": "Qué dicen nuestros viajeros",
+    "noReviews": "Aún no hay reseñas para esta excursión."
+  },
+  "currency": {
+    "ars": "ARS",
+    "usd": "USD"
+  },
+  "profile": {
+  "title": "Mi perfil",
+  "personalData": "Datos personales",
+  "name": "Nombre",
+  "lastname": "Apellido",
+  "dni": "DNI",
+  "email": "Correo electrónico",
+  "phone": "Teléfono",
+  "address": "Dirección",
+  "nationality": "Nacionalidad",
+  "save": "Guardar cambios",
+  "cancel": "Cancelar",
+  "edit": "Editar datos",
+  "reservations": "Mis reservas",
+  "location": "Ubicación",
+  "departureDate": "Fecha de salida",
+  "people": "Cantidad de personas",
+  "totalAmount": "Monto total",
+  "status": "Estado",
+  "statuses": {
+    "confirmada": "Confirmada",
+    "pendiente": "Pendiente",
+    "finalizada": "Finalizada",
+    "cancelada": "Cancelada"
+  },
+  "ratePrompt": "¡Ya podés calificar tu experiencia! ⭐",
+  "rateButton": "Calificar excursión",
+  "noReservations": "No tenés reservas registradas.",
+  "errors": {
+    "fetchReservations": "No se pudieron cargar tus reservas.",
+    "notLoggedIn": "Debés iniciar sesión para acceder a tu perfil."
+  },
+  "alerts": {
+    "updated": " Datos actualizados correctamente.",
+    "updateError": " No se pudo actualizar el perfil."
+    }
+  }
+
+}
+

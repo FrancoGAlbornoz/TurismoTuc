@@ -1,57 +1,68 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Swal from "sweetalert2";
-import "../../styles/components/reservas/reservas.css";
+import {
+  Card,
+  Form,
+  Button,
+  Spinner,
+  Row,
+  Col,
+  Container,
+} from "react-bootstrap";
 
 export default function CreateReserva() {
   const navigate = useNavigate();
 
-  // Listas para selects
   const [turistas, setTuristas] = useState([]);
   const [excursiones, setExcursiones] = useState([]);
   const [fechasExcursion, setFechasExcursion] = useState([]);
+  const [nombreTurista, setNombreTurista] = useState("");
 
   const [reserva, setReserva] = useState({
     id_turista: "",
     id_fecha: "",
+    dni: "",
     cantidad_personas: 1,
     estado_reserva: "pendiente",
+    id_excursion: "",
   });
 
   const [saving, setSaving] = useState(false);
 
-  // Obtener datos al montar el componente
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [turistasRes, fechasRes] = await Promise.all([
+        const [turistasRes, excursionesRes] = await Promise.all([
           axios.get("http://localhost:8000/api/turistas"),
           axios.get("http://localhost:8000/api/excursiones"),
         ]);
         setTuristas(turistasRes.data);
-        setExcursiones(fechasRes.data);
+        setExcursiones(excursionesRes.data);
       } catch (err) {
         console.error("Error cargando listas:", err);
-        Swal.fire(
-          "Error",
-          "No se pudieron cargar turistas o excursiones",
-          "error"
-        );
+        Swal.fire("Error", "No se pudieron cargar turistas o excursiones", "error");
       }
     };
     fetchData();
   }, []);
 
-  // Cuando cambia la excursión seleccionada → cargar sus fechas
+  const buscarTuristaPorDNI = () => {
+    const turista = turistas.find((t) => t.dni == reserva.dni);
+    if (turista) {
+      setNombreTurista(turista.nombre_completo);
+      setReserva((prev) => ({ ...prev, id_turista: turista.id_turista }));
+    } else {
+      setNombreTurista("");
+      setReserva((prev) => ({ ...prev, id_turista: "" }));
+      Swal.fire("Atención", "No se encontró un turista con ese DNI", "warning");
+    }
+  };
+
   const handleExcursionChange = async (e) => {
     const id_excursion = e.target.value;
-
-    setReserva((prev) => ({
-      ...prev,
-      id_excursion,
-      id_fecha: "", // resetea fecha anterior
-    }));
+    setReserva((prev) => ({ ...prev, id_excursion, id_fecha: "" }));
 
     if (id_excursion) {
       try {
@@ -61,18 +72,13 @@ export default function CreateReserva() {
         setFechasExcursion(res.data);
       } catch (err) {
         console.error("Error al cargar fechas:", err);
-        Swal.fire(
-          "Error",
-          "No se pudieron cargar las fechas de esta excursión",
-          "error"
-        );
+        Swal.fire("Error", "No se pudieron cargar las fechas", "error");
       }
     } else {
       setFechasExcursion([]);
     }
   };
 
-  // Manejar cambios de formulario
   const handleChange = (e) => {
     const { name, value } = e.target;
     setReserva((prev) => ({
@@ -81,28 +87,23 @@ export default function CreateReserva() {
     }));
   };
 
-  // Enviar al backend
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!reserva.id_turista || !reserva.id_fecha) {
+      Swal.fire("Atención", "Debe seleccionar un turista y una fecha", "warning");
+      return;
+    }
+
     setSaving(true);
     try {
-      await axios.post("http://localhost:8000/api/reservas", reserva);
+      const res = await axios.post("http://localhost:8000/api/reservas", reserva);
       Swal.fire({
-        title: "Creada",
-        text: "La reserva fue registrada correctamente",
         icon: "success",
+        title: "Reserva creada",
+        text: "La reserva fue registrada correctamente",
         timer: 2000,
         showConfirmButton: false,
       });
-
-      // Actualizar cupo en el estado de fechas
-      setFechasExcursion((prev) =>
-        prev.map((f) =>
-          f.id_fecha === reserva.id_fecha
-            ? { ...f, cupo_disponible: res.data.nuevoCupo }
-            : f
-        )
-      );
 
       navigate("/dashboard-admin/reservas");
     } catch (err) {
@@ -114,116 +115,135 @@ export default function CreateReserva() {
   };
 
   return (
-    <div className="card shadow-sm p-3">
-      <h5 className="fw-bold text-success mb-3">Crear Nueva Reserva</h5>
-      <form onSubmit={handleSubmit}>
-        {/* Turista */}
-        <div className="mb-3">
-          <label className="form-label">Turista</label>
-          <select
-            name="id_turista"
-            value={reserva.id_turista}
-            onChange={handleChange}
-            className="form-select"
-            required
-          >
-            <option value="">Seleccionar turista</option>
-            {turistas.map((t) => (
-              <option key={t.id_turista} value={t.id_turista}>
-                {t.nombre} {t.apellido}
-              </option>
-            ))}
-          </select>
-        </div>
+    <Container className="py-4">
+      <div className="col-12 col-md-6 mb-2 mb-md-0">
+        <Button variant="outline-secondary" size="sm" onClick={() => navigate(-1)}>
+          ← Volver
+        </Button>
+        <br />
+      </div>
+      <br />
 
-        {/* Excursión */}
-        <div className="mb-3">
-          <label className="form-label">Excursión</label>
-          <select
-            name="id_excursion"
-            value={reserva.id_excursion}
-            onChange={handleExcursionChange}
-            className="form-select"
-            required
-          >
-            <option value="">Seleccionar excursión</option>
-            {excursiones.map((e) => (
-              <option key={e.id_excursion} value={e.id_excursion}>
-                {e.titulo}
-              </option>
-            ))}
-          </select>
-        </div>
+      <Card className="shadow-sm">
+        <Card.Body>
+          <h4 className="fw-bold text-success mb-4">Crear Nueva Reserva</h4>
 
-        {/* Fecha Excursión */}
-        <div className="mb-3">
-          <label className="form-label">Fecha de Excursión</label>
-          <select
-            name="id_fecha"
-            value={reserva.id_fecha}
-            onChange={handleChange}
-            className="form-select"
-            required
-            disabled={!fechasExcursion.length}
-          >
-            <option value="">
-              {fechasExcursion.length
-                ? "Seleccionar fecha disponible"
-                : "Seleccione una excursión primero"}
-            </option>
+          <Form onSubmit={handleSubmit}>
+            <Form.Group className="mb-3">
+              <Form.Label>DNI del Turista</Form.Label>
+              <Form.Control
+                type="text"
+                name="dni"
+                value={reserva.dni}
+                onChange={handleChange}
+                onBlur={buscarTuristaPorDNI}
+                placeholder="Ingrese DNI del turista"
+                required
+              />
+            </Form.Group>
 
-            {fechasExcursion.map((f) => (
-              <option
-                key={f.id_fecha}
-                value={f.id_fecha}
-                disabled={f.cupo_disponible <= 0}
+            <Form.Group className="mb-3">
+              <Form.Label>Nombre y Apellido</Form.Label>
+              <Form.Control
+                type="text"
+                value={nombreTurista}
+                readOnly
+                placeholder="Se completa automáticamente"
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Excursión</Form.Label>
+              <Form.Select
+                name="id_excursion"
+                value={reserva.id_excursion}
+                onChange={handleExcursionChange}
+                required
               >
-                {new Date(f.fecha).toLocaleDateString()} —{" "}
-                {f.cupo_disponible > 0
-                  ? `Cupo disponible: ${f.cupo_disponible}`
-                  : "Sin cupo"}
-              </option>
-            ))}
-          </select>
-        </div>
+                <option value="">Seleccionar excursión</option>
+                {excursiones.map((e) => (
+                  <option key={e.id_excursion} value={e.id_excursion}>
+                    {e.titulo}
+                  </option>
+                ))}
+              </Form.Select>
+            </Form.Group>
 
-        {/* Cantidad de personas */}
-        <div className="mb-3">
-          <label className="form-label">Cantidad de Personas</label>
-          <input
-            type="number"
-            name="cantidad_personas"
-            value={reserva.cantidad_personas}
-            onChange={handleChange}
-            className="form-control"
-            min="1"
-            required
-          />
-        </div>
+            <Form.Group className="mb-3">
+              <Form.Label>Fecha de Excursión</Form.Label>
+              <Form.Select
+                name="id_fecha"
+                value={reserva.id_fecha}
+                onChange={handleChange}
+                required
+                disabled={!fechasExcursion.length}
+              >
+                <option value="">
+                  {fechasExcursion.length
+                    ? "Seleccionar fecha disponible"
+                    : "Seleccione una excursión primero"}
+                </option>
+                {fechasExcursion.map((f) => (
+                  <option
+                    key={f.id_fecha}
+                    value={f.id_fecha}
+                    disabled={f.cupo_disponible <= 0}
+                  >
+                    {new Date(f.fecha).toLocaleDateString()} —{" "}
+                    {f.cupo_disponible > 0
+                      ? `Cupo disponible: ${f.cupo_disponible}`
+                      : "Sin cupo"}
+                  </option>
+                ))}
+              </Form.Select>
+            </Form.Group>
 
-        {/* Estado */}
-        <div className="mb-3">
-          <label className="form-label">Estado</label>
-          <select
-            name="estado_reserva"
-            value={reserva.estado_reserva}
-            onChange={handleChange}
-            className="form-select"
-            required
-          >
-            <option value="pendiente">Pendiente</option>
-            <option value="confirmada">Confirmada</option>
-            <option value="cancelada">Cancelada</option>
-          </select>
-        </div>
+            <Row className="mb-3">
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label>Cantidad de Personas</Form.Label>
+                  <Form.Control
+                    type="number"
+                    name="cantidad_personas"
+                    value={reserva.cantidad_personas}
+                    onChange={handleChange}
+                    min={1}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group>
+                  <Form.Label>Estado</Form.Label>
+                  <Form.Select
+                    name="estado_reserva"
+                    value={reserva.estado_reserva}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="pendiente">Pendiente</option>
+                    <option value="confirmada">Confirmada</option>
+                    <option value="cancelada">Cancelada</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+            </Row>
 
-        <button type="submit" className="btn btn-success" disabled={saving}>
-          {saving ? "Guardando..." : "Crear Reserva"}
-        </button>
-        <Link to="/dashboard-admin/reservas" className="btn btn-secondary ms-2">
-          Volver
-        </Link>
-      </form>
-    </div>
+            <div className="d-flex justify-content-end">
+              <Button type="submit" variant="success" disabled={saving}>
+                {saving ? (
+                  <>
+                    <Spinner size="sm" className="me-2" />
+                    Guardando...
+                  </>
+                ) : (
+                  "Crear Reserva"
+                )}
+              </Button>
+            </div>
+          </Form>
+        </Card.Body>
+      </Card>
+    </Container>
   );
 }

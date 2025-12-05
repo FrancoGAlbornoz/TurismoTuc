@@ -1,0 +1,249 @@
+{
+  "brand": "Tucumán Tourism",
+  "home": "HOME",
+  "catalog": "CATALOG",
+  "contact": "CONTACT US",
+  "login": "Log in",
+  "register": "Sign up",
+  "cart": "Cart",
+  "hello": "Hi, {{name}}!",
+  "myprofile": "My profile",
+  "logout": "Log out",
+  "contact_whatsapp": "Contact via WhatsApp",
+   "explora_categoria": "Explore by category",
+  "hero": {
+    "title": "Discover Tucumán",
+    "subtitle": "Exclusive excursions: nature, culture and flavors.",
+    "placeholder": "Search destination or excursion",
+    "button": "Search",
+    "no_support": "Your browser does not support HTML5 video."
+  },
+  "promo": {
+    "titulo": "Why choose us?",
+    "descripcion": "Enjoy unique experiences, and get personalized service.",
+    "card1": {
+      "titulo": "Easy registration",
+      "texto": "Book in seconds by creating an account."
+    },
+    "card2": {
+      "titulo": "Unique experiences",
+      "texto": "Tours selected by local experts."
+    },
+    "card3": {
+      "titulo": "Direct support",
+      "texto": "Chat via WhatsApp with no middlemen."
+    }
+  },
+  "search": {
+    "titulo": "Search results",
+    "boton": "View more"
+  },
+  "footer": {
+    "brand": {
+      "titulo": "Tucumán Tourism",
+      "descripcion": "Authentic excursions, culture, history, and nature. Discover Tucumán in a different way."
+    },
+    "enlaces": {
+      "titulo": "Useful links",
+      "catalogo": "Catalog",
+      "contacto": "Contact",
+      "politicas": "Privacy policy"
+    },
+    "contacto": {
+      "titulo": "Contact",
+      "direccion": "San Miguel de Tucumán, Argentina",
+      "email": "info@turismotucuman.com",
+      "telefono": "+54 381 555 1234"
+    },
+    "copyright": "© 2025 Turismo Tucumán. — All rights reserved.",
+    "admin": {
+      "titulo": "Access the admin panel",
+      "link": "Admin panel"
+    }
+  },
+  "contactUs": {
+    "title": "Send us a message",
+    "name": "Name",
+    "email": "Email",
+    "subject": "Subject",
+    "message": "Send Message",
+    "placeholder": {
+      "name": "Your full name",
+      "email": "example@email.com",
+      "subject": "What would you like to ask us about?",
+      "message": "Write your question or comment..."
+    },
+    "button": "Send message",
+    "validation": {
+      "name": "Name is required and must be under 100 characters.",
+      "email": "Enter a valid email (max 100 characters).",
+      "subject": "Subject is required (max 150 characters).",
+      "message": "Message is required (max 1000 characters)."
+    },
+    "alert": {
+      "incompleteTitle": "Incomplete form",
+      "incompleteText": "Please complete all fields correctly.",
+      "successTitle": "Message sent",
+      "successText": "Thank you for contacting us. We’ll reply soon.",
+      "errorTitle": "Error",
+      "errorText": "Message could not be sent. Please try again later."
+    }
+  },
+  "catalogo": {
+    "loading": "Loading tours...",
+    "empty": "No tours found in this category.",
+    "error": "Failed to load tours."
+  },
+  "filterSidebar": {
+    "filter": "Filter tours",
+    "location": "Location",
+    "locationPlaceholder": "E.g. Tafí del Valle",
+    "minPrice": "Minimum price",
+    "maxPrice": "Maximum price",
+    "from": "From...",
+    "to": "To...",
+    "duration": "Duration",
+    "durationPlaceholder": "E.g. Full day",
+    "category": "Category",
+    "all": "All",
+    "apply": "Apply",
+    "clear": "Clear"
+  },
+  "catalogGrid": {
+  "viewDetails": "View details"
+  },
+  "categorias": {
+    "Aventura": "Adventure",
+    "Cultural": "Cultural",
+    "Naturaleza": "Nature",
+    "Gastronómica": "Gastronomic",
+    "Relajación": "Relaxation",
+    "Familiar": "Family",
+    "Fotográfica": "Photography",
+    "Nocturna": "Night"
+  },
+  "sortBar": {
+  "sortBy": "Sort by...",
+  "priceLowHigh": "Price: low to high",
+  "priceHighLow": "Price: high to low",
+  "newest": "Newest",
+  "oldest": "Oldest"
+},
+"loginTurista": {
+    "title": "Tucumán Tourism",
+    "subtitle": "Sign in",
+    "email": "Email",
+    "password": "Password",
+    "loading": "Signing in...",
+    "button": "Log in",
+    "noAccount": "Don’t have an account?",
+    "createAccount": "Create an account",
+    "forgotPassword": "Forgot your password?"
+  },
+  "registerTurista": {
+    "title": "Tucumán Tourism",
+    "subtitle": "Create account",
+    "name": "First name",
+    "lastname": "Last name",
+    "dni": "ID number",
+    "dniPlaceholder": "Numbers only",
+    "nationality": "Nationality",
+    "email": "Email",
+    "password": "Password",
+    "phone": "Phone",
+    "phonePlaceholder": "Numbers only",
+    "address": "Address",
+    "button": "Register",
+    "loading": "Registering...",
+    "haveAccount": "Already have an account?",
+    "login": "Log in"
+  },
+   "excursionDetalle": {
+    "loading": "Loading excursion...",
+    "loadError": "Failed to load excursion information.",
+    "notFound": "Excursion not found."
+  },
+  "mapa": {
+    "titulo": "Route Map",
+    "sin_mapa": "🗺️ The map will be available soon."
+  },
+   "tabs": {
+    "itinerario": "Itinerary",
+    "incluye": "What's Included",
+    "punto_partida": "Starting Point",
+    "no_disponible": "Information not available."
+  },
+  "reviews": {
+    "title": "Reviews from other travelers",
+    "noReviews": "There are no reviews yet for this tour."
+  },
+  "sidebar": {
+    "from": "From",
+    "availableDates": "Available dates",
+    "spots": "spots",
+    "noDates": "No available dates",
+    "people": "Number People",
+    "addToCart": "Add to cart",
+    "noDatesAvailable": "No dates available",
+
+    "loginRequiredTitle": "You must log in",
+    "loginRequiredText": "Please log in to add this tour to your cart.",
+    "noDatesTitle": "No available dates",
+    "noDatesText": "There are no available dates for this excursion.",
+    "selectDateTitle": "Select a date",
+    "selectDateText": "Please choose a date before continuing.",
+    "notEnoughSpotsTitle": "Not enough spots",
+    "notEnoughSpotsText": "Only {{cupo}} spots remaining."
+  },
+  "excursionGallery": {
+    "galleryTitle": "Image Gallery",
+    "galleryEmpty" : "No images available for this excursion." 
+  },
+  "reseñaCarrusel": {
+    "title": "What our travelers say",
+    "noReviews": "There are no reviews yet for this tour."
+  },
+  "currency" : {
+    "ars": "ARS",
+    "usd": "USD"
+  },
+  "profile": {
+  "title": "My Profile",
+  "personalData": "Personal Information",
+  "name": "First Name",
+  "lastname": "Last Name",
+  "dni": "ID",
+  "email": "Email",
+  "phone": "Phone",
+  "address": "Address",
+  "nationality": "Nationality",
+  "save": "Save changes",
+  "cancel": "Cancel",
+  "edit": "Edit information",
+  "reservations": "My Reservations",
+  "location": "Location",
+  "departureDate": "Departure Date",
+  "people": "Number of People",
+  "totalAmount": "Total Amount",
+  "status": "Status",
+  "statuses": {
+    "confirmada": "Confirmed",
+    "pendiente": "Pending",
+    "finalizada": "Completed",
+    "cancelada": "Cancelled"
+  },
+  "ratePrompt": "You can now rate your experience! ⭐",
+  "rateButton": "Rate Excursion",
+  "noReservations": "You don't have any reservations yet.",
+  "errors": {
+    "fetchReservations": "Could not load your reservations.",
+    "notLoggedIn": "You must log in to access your profile."
+  },
+  "alerts": {
+    "updated": "✅ Profile updated successfully.",
+    "updateError": "❌ Could not update profile."
+    }
+  }
+
+}
+
