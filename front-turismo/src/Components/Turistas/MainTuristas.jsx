@@ -4,6 +4,7 @@ import axios from "axios";
 import { Card, Button, Table, Spinner, Dropdown } from "react-bootstrap";
 import Swal from "sweetalert2";
 import { useDebounce } from "../../hooks/useDeBounce";
+import PaginationComponent from "../Filtros/Paginacion";
 
 export default function MainTuristas() {
   const [turistas, setTuristas] = useState([]);
@@ -53,7 +54,6 @@ export default function MainTuristas() {
       );
       setTuristas(res.data.data || []);
       setTotalPaginas(res.data.totalPages || 1);
-      setPaginaActual(res.data.currentPage || 1);
     } catch (err) {
       console.error("Error al buscar por DNI:", err);
       setTuristas([]);
@@ -65,13 +65,13 @@ export default function MainTuristas() {
   };
 
   useEffect(() => {
-  setPaginaActual(1);
-  if (debouncedDni) {
-    buscarPorDNI(debouncedDni, 1, filtro);
-  } else {
-    fetchTuristas(1, filtro);
-  }
-}, [debouncedDni, filtro]);
+    setPaginaActual(1);
+    if (debouncedDni) {
+      buscarPorDNI(debouncedDni, 1, filtro);
+    } else {
+      fetchTuristas(1, filtro);
+    }
+  }, [debouncedDni, filtro]);
 
   useEffect(() => {
     fetchTuristas(paginaActual);
@@ -131,7 +131,7 @@ export default function MainTuristas() {
                 onChange={(e) => setDniBuscar(e.target.value)}
                 style={{ maxWidth: "200px" }}
               />
-              
+
               {/* Dropdown: Filtrar activas / eliminadas / todas */}
               <Dropdown align="end">
                 <Dropdown.Toggle variant="outline-primary" size="sm">
@@ -231,58 +231,11 @@ export default function MainTuristas() {
               </Table>
 
               {/* Paginación */}
-              {totalPaginas > 1 && (
-                <div className="d-flex justify-content-center mt-3">
-                  <nav>
-                    <ul className="pagination pagination-sm mb-0">
-                      <li
-                        className={`page-item ${
-                          paginaActual === 1 ? "disabled" : ""
-                        }`}
-                      >
-                        <button
-                          className="page-link"
-                          onClick={() => setPaginaActual(paginaActual - 1)}
-                        >
-                          &laquo;
-                        </button>
-                      </li>
-
-                      {Array.from(
-                        { length: totalPaginas },
-                        (_, i) => i + 1
-                      ).map((num) => (
-                        <li
-                          key={num}
-                          className={`page-item ${
-                            paginaActual === num ? "active" : ""
-                          }`}
-                        >
-                          <button
-                            className="page-link"
-                            onClick={() => setPaginaActual(num)}
-                          >
-                            {num}
-                          </button>
-                        </li>
-                      ))}
-
-                      <li
-                        className={`page-item ${
-                          paginaActual === totalPaginas ? "disabled" : ""
-                        }`}
-                      >
-                        <button
-                          className="page-link"
-                          onClick={() => setPaginaActual(paginaActual + 1)}
-                        >
-                          &raquo;
-                        </button>
-                      </li>
-                    </ul>
-                  </nav>
-                </div>
-              )}
+              <PaginationComponent
+                currentPage={paginaActual}
+                totalPages={totalPaginas}
+                onPageChange={(page) => setPaginaActual(page)}
+              />
             </>
           )}
         </Card.Body>

@@ -24,7 +24,6 @@ export default function MainResenias() {
       });
 
       setReseñas(res.data.data);
-      setCurrentPage(res.data.currentPage);
       setTotalPages(res.data.totalPages);
     } catch (err) {
       console.error("Error al obtener reseñas:", err);
@@ -168,7 +167,7 @@ export default function MainResenias() {
           </tbody>
         </Table>
 
-        {/* ================= PAGINACIÓN ================= */}
+        {/* ================= PAGINACIÓN CON COMPONENTE IMPORTADO================= */}
         <PaginationComponent
           currentPage={currentPage}
           totalPages={totalPages}
