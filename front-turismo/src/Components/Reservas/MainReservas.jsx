@@ -6,6 +6,7 @@ import { Card, Button, Table, Dropdown, Spinner, Alert } from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useDebounce } from "../../hooks/useDeBounce";
+import PaginationComponent from "../Filtros/Paginacion.jsx";
 
 export default function ReservasMain() {
   const [reservas, setReservas] = useState([]);
@@ -141,7 +142,7 @@ export default function ReservasMain() {
   // 🔎 Buscar reservas por DNI en el backend
   const buscarPorDNI = async (dni) => {
     if (!dni) {
-      // si el input queda vacío, mostrar todas las reservas otra vez
+      setPaginaActual(1);
       getReservas();
       return;
     }
@@ -150,10 +151,15 @@ export default function ReservasMain() {
       const res = await axios.get(
         `http://localhost:8000/api/reservas/buscar?dni=${dni}`
       );
+
       setReservas(res.data);
+      setTotalPaginas(1);
+      setPaginaActual(1);
     } catch (err) {
       console.error("Error al buscar por DNI:", err);
-      setReservas([]); // limpiar tabla si no hay resultados o error
+      setReservas([]);
+      setTotalPaginas(1);
+      setPaginaActual(1);
     }
   };
 
@@ -192,7 +198,6 @@ export default function ReservasMain() {
             />
           </div>
 
-          
           <div className="d-flex align-items-center gap-2">
             {/* Botón Crear Reserva */}
             <Button
@@ -472,65 +477,12 @@ export default function ReservasMain() {
           </tbody>
         </Table>
         {/* Paginación con Bootstrap */}
-        {totalPaginas > 1 && (
-          <div className="d-flex justify-content-center mt-3">
-            <nav>
-              <ul className="pagination pagination-sm mb-0">
-                {/* Flecha izquierda */}
-                <li
-                  className={`page-item ${
-                    paginaActual === 1 ? "disabled" : ""
-                  }`}
-                >
-                  <button
-                    className="page-link"
-                    onClick={() =>
-                      setPaginaActual((prev) => Math.max(prev - 1, 1))
-                    }
-                  >
-                    &laquo;
-                  </button>
-                </li>
-
-                {/* Números de página */}
-                {Array.from({ length: totalPaginas }, (_, i) => i + 1).map(
-                  (num) => (
-                    <li
-                      key={num}
-                      className={`page-item ${
-                        paginaActual === num ? "active" : ""
-                      }`}
-                    >
-                      <button
-                        className="page-link"
-                        onClick={() => setPaginaActual(num)}
-                      >
-                        {num}
-                      </button>
-                    </li>
-                  )
-                )}
-
-                {/* Flecha derecha */}
-                <li
-                  className={`page-item ${
-                    paginaActual === totalPaginas ? "disabled" : ""
-                  }`}
-                >
-                  <button
-                    className="page-link"
-                    onClick={() =>
-                      setPaginaActual((prev) =>
-                        Math.min(prev + 1, totalPaginas)
-                      )
-                    }
-                  >
-                    &raquo;
-                  </button>
-                </li>
-              </ul>
-            </nav>
-          </div>
+        {!debouncedDni && (
+          <PaginationComponent
+            currentPage={paginaActual}
+            totalPages={totalPaginas}
+            onPageChange={(page) => setPaginaActual(page)}
+          />
         )}
       </Card.Body>
     </Card>
