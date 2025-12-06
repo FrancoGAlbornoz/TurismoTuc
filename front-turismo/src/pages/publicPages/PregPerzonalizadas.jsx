@@ -73,20 +73,6 @@ export default function PreguntasPersonalizadas() {
     }
   };
 
-  if (loading)
-    return (
-      <div className="text-center mt-5">
-        <Spinner animation="border" />
-      </div>
-    );
-
-  if (!preguntas.length)
-    return (
-      <Container className="text-center mt-5">
-        <h4>No hay preguntas personalizadas para esta excursión.</h4>
-      </Container>
-    );
-
   const handleGuardarRespuestas = async () => {
     try {
       const respuestasFormateadas = preguntas.map((p) => ({
@@ -106,12 +92,26 @@ export default function PreguntasPersonalizadas() {
         confirmButtonColor: "#0e7667",
       });
 
-      navigate("/perfil-turista"); // o adonde quieras redirigir después
+      navigate("/perfil-turista");
     } catch (err) {
       console.error(err);
       Swal.fire("Error", "No se pudieron guardar las respuestas", "error");
     }
   };
+
+  if (loading)
+    return (
+      <div className="text-center mt-5">
+        <Spinner animation="border" />
+      </div>
+    );
+
+  if (!preguntas.length)
+    return (
+      <Container className="text-center mt-5">
+        <h4>No hay preguntas personalizadas para esta excursión.</h4>
+      </Container>
+    );
 
   return (
     <Container className="my-5">
@@ -119,19 +119,42 @@ export default function PreguntasPersonalizadas() {
         <h3 className="mb-4 text-center text-primary">
           Personalización de tu Excursión
         </h3>
+
         <Form onSubmit={handleSubmit}>
           {preguntas.map((p) => (
             <Form.Group key={p.id_pregunta} className="mb-3">
-              <Form.Label>{p.texto_pregunta}</Form.Label>
+              <Form.Label className="fw-bold">{p.texto_pregunta}</Form.Label>
+
+              {/* RADIO BUTTONS (antes checkbox) */}
               {p.tipo_respuesta === "checkbox" && (
-                <Form.Check
-                  type="checkbox"
-                  label="Sí"
-                  onChange={(e) =>
-                    handleChange(p.id_pregunta, e.target.checked ? "Sí" : "No")
-                  }
-                />
+                <div>
+                  <Form.Check
+                    type="radio"
+                    id={`preg-${p.id_pregunta}-si`}
+                    name={`preg-${p.id_pregunta}`}
+                    label="Sí"
+                    value="Sí"
+                    checked={respuestas[p.id_pregunta] === "Sí"}
+                    onChange={(e) =>
+                      handleChange(p.id_pregunta, e.target.value)
+                    }
+                  />
+
+                  <Form.Check
+                    type="radio"
+                    id={`preg-${p.id_pregunta}-no`}
+                    name={`preg-${p.id_pregunta}`}
+                    label="No"
+                    value="No"
+                    checked={respuestas[p.id_pregunta] === "No"}
+                    onChange={(e) =>
+                      handleChange(p.id_pregunta, e.target.value)
+                    }
+                  />
+                </div>
               )}
+
+              {/* TEXTO LIBRE */}
               {p.tipo_respuesta === "texto" && (
                 <Form.Control
                   type="text"
@@ -139,6 +162,8 @@ export default function PreguntasPersonalizadas() {
                   onChange={(e) => handleChange(p.id_pregunta, e.target.value)}
                 />
               )}
+
+              {/* SELECT (Sí / No / No aplica) */}
               {p.tipo_respuesta === "select" && (
                 <Form.Select
                   onChange={(e) => handleChange(p.id_pregunta, e.target.value)}
