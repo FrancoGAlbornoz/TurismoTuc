@@ -89,7 +89,6 @@ export default function MainTuristas() {
               Gestión de Turistas
             </h5>
             <div className="d-flex align-items-center gap-2">
-              {/* Input de búsqueda por DNI */}
               <input
                 type="text"
                 className="form-control form-control-sm"
@@ -114,7 +113,7 @@ export default function MainTuristas() {
               <p className="mt-3 text-muted">Cargando turistas...</p>
             </div>
           ) : (
-            <Table hover responsive className="align-middle">
+            <Table hover responsive className="mb-0 align-middle">
               <thead className="table-light">
                 <tr>
                   <th>ID</th>

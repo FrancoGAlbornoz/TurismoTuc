@@ -11,41 +11,54 @@ const useCarritoStore = create((set, get) => ({
   // Obtener carrito del turista
   // =============================
   fetchCarrito: async () => {
-    const { turista, initSession } = useTuristaStore.getState();
+  const { turista, initSession } = useTuristaStore.getState();
 
-    if (!turista) await initSession();
+  if (!turista) await initSession();
 
-    const turistaActual = useTuristaStore.getState().turista;
-    const idTurista =
-      turistaActual?.id_turista ||
-      turistaActual?.id ||
-      turistaActual?.id_usuario;
+  const turistaActual = useTuristaStore.getState().turista;
+  const idTurista =
+    turistaActual?.id_turista ||
+    turistaActual?.id ||
+    turistaActual?.id_usuario;
 
-    if (!idTurista) {
-      console.warn("⚠️ No hay turista logueado o falta id_turista");
+  if (!idTurista) {
+    console.warn("⚠️ No hay turista logueado o falta id_turista");
+    return;
+  }
+
+  try {
+    const resCarrito = await axios.get(
+      `http://localhost:8000/api/carrito/${idTurista}`
+    );
+
+    const carrito = resCarrito.data;
+
+    // 🛡️ NUEVO: defender cuando no hay carrito o no tiene id_carrito
+    if (!carrito || !carrito.id_carrito) {
+      console.warn(
+        "⚠️ No se encontró carrito para este turista. Usando carrito vacío."
+      );
+      set({ carrito: null, items: [] });
+      localStorage.removeItem("carrito");
+      localStorage.removeItem("items_carrito");
       return;
     }
 
-    try {
-      const resCarrito = await axios.get(
-        `http://localhost:8000/api/carrito/${idTurista}`
-      );
-      const carrito = resCarrito.data;
+    const resItems = await axios.get(
+      `http://localhost:8000/api/carrito/${carrito.id_carrito}/items`
+    );
 
-      const resItems = await axios.get(
-        `http://localhost:8000/api/carrito/${carrito.id_carrito}/items`
-      );
+    const data = resItems.data || [];
+    set({ carrito, items: data });
 
-      const data = resItems.data || [];
-      set({ carrito, items: data });
+    // 💾 Guardar en localStorage
+    localStorage.setItem("carrito", JSON.stringify(carrito));
+    localStorage.setItem("items_carrito", JSON.stringify(data));
+  } catch (err) {
+    console.error("Error al obtener carrito:", err);
+  }
+},
 
-      // 💾 Guardar en localStorage
-      localStorage.setItem("carrito", JSON.stringify(carrito));
-      localStorage.setItem("items_carrito", JSON.stringify(data));
-    } catch (err) {
-      console.error("Error al obtener carrito:", err);
-    }
-  },
 
   // =============================
   // Agregar item

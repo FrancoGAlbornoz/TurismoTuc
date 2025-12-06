@@ -7,7 +7,8 @@ import nodemailer from "nodemailer";
 
 // Obtener todas las excursiones con sus categorías
 export const getExcursiones = (req, res) => {
-  const { ubicacion, precio_min, precio_max, duracion, estado, q, categoria } = req.query;
+  const { ubicacion, precio_min, precio_max, duracion, estado, q, categoria } =
+    req.query;
 
   let sql = `
     SELECT e.id_excursion, e.titulo, e.descripcion, e.precio_base, e.duracion,
@@ -162,10 +163,13 @@ export const getExcursionById = (req, res) => {
 
     // Traer imágenes relacionadas
     const sqlImgs = `
-      SELECT id_multimedia, url, descripcion, tipo
-      FROM Multimedia
-      WHERE id_excursion = ? AND eliminado = 0
-    `;
+  SELECT id_multimedia, url, descripcion, tipo
+  FROM Multimedia
+  WHERE id_excursion = ?
+    AND eliminado = 0
+    AND tipo = 'foto'
+    AND estado_moderacion = 'aprobada'
+`;
 
     pool.query(sqlImgs, [id], (errImgs, imgs) => {
       if (errImgs) {
@@ -180,9 +184,6 @@ export const getExcursionById = (req, res) => {
   });
 };
 
-
-
-
 export const createExcursion = (req, res) => {
   const {
     titulo,
@@ -192,8 +193,8 @@ export const createExcursion = (req, res) => {
     ubicacion,
     incluye,
     politicas,
-    id_categoria_excursion,
-    id_guia, // ✅ nuevo campo
+    id_categoria_excursion, // puede venir si usás el flujo viejo
+    id_guia, // guía opcional
   } = req.body;
 
   if (!titulo || !precio_base)
@@ -201,9 +202,18 @@ export const createExcursion = (req, res) => {
 
   const sql = `INSERT INTO Excursiones 
               (titulo, descripcion, precio_base, duracion, ubicacion, incluye, politicas, id_guia)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)`; // ✅ agregamos id_guia
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
 
-  const values = [titulo, descripcion, precio_base, duracion, ubicacion, incluye, politicas, id_guia];
+  const values = [
+    titulo,
+    descripcion,
+    precio_base,
+    duracion,
+    ubicacion,
+    incluye,
+    politicas,
+    id_guia,
+  ];
 
   pool.query(sql, values, (err, result) => {
     if (err) {
@@ -214,16 +224,27 @@ export const createExcursion = (req, res) => {
     const id_excursion = result.insertId;
 
     if (id_categoria_excursion) {
-      const sqlCat = `INSERT INTO ExcursionCategorias (id_excursion, id_categoria_excursion) VALUES (?, ?)`;
+      const sqlCat = `
+        INSERT INTO ExcursionCategorias (id_excursion, id_categoria_excursion)
+        VALUES (?, ?)
+      `;
       pool.query(sqlCat, [id_excursion, id_categoria_excursion], (err2) => {
         if (err2) {
           console.error("Error al vincular categoría:", err2);
-          return res.status(500).json({ message: "Excursión creada pero no se pudo vincular categoría" });
+          return res.status(500).json({
+            message: "Excursión creada pero no se pudo vincular categoría",
+          });
         }
-        res.status(201).json({ message: "Excursión creada correctamente", id: id_excursion });
+        res.status(201).json({
+          message: "Excursión creada correctamente",
+          id: id_excursion,
+        });
       });
     } else {
-      res.status(201).json({ message: "Excursión creada correctamente", id: id_excursion });
+      res.status(201).json({
+        message: "Excursión creada correctamente",
+        id: id_excursion,
+      });
     }
   });
 };
@@ -277,7 +298,6 @@ export const updateExcursion = (req, res) => {
   });
 };
 
-
 // Eliminar (baja lógica) una excursión
 export const deleteExcursion = (req, res) => {
   const { id } = req.params;
@@ -323,7 +343,6 @@ export const getFechasByExcursion = (req, res) => {
   });
 };
 
-
 export const getFechaById = (req, res) => {
   const { id } = req.params;
   const sql = "SELECT * FROM FechasExcursion WHERE id_fecha = ?";
@@ -338,7 +357,6 @@ export const getFechaById = (req, res) => {
     res.json(result[0]);
   });
 };
-
 
 export const createFechaExcursion = (req, res) => {
   const { id_excursion, fecha, hora_salida, cupo_maximo } = req.body;
@@ -358,7 +376,9 @@ export const createFechaExcursion = (req, res) => {
       console.error("Error al crear fecha:", err); // 👈 Este log es clave
       return res.status(500).json({ message: "Error al crear fecha" });
     }
-    res.status(201).json({ message: "Fecha agregada correctamente", id: result.insertId });
+    res
+      .status(201)
+      .json({ message: "Fecha agregada correctamente", id: result.insertId });
   });
 };
 
@@ -368,7 +388,9 @@ export const updateFechaExcursion = (req, res) => {
   const { fecha, hora_salida, cupo_maximo, cupo_disponible, estado } = req.body;
 
   if (!fecha && !hora_salida && !cupo_maximo && !cupo_disponible && !estado)
-    return res.status(400).json({ message: "No se enviaron datos para actualizar" });
+    return res
+      .status(400)
+      .json({ message: "No se enviaron datos para actualizar" });
 
   const fields = [];
   const values = [];
@@ -394,7 +416,9 @@ export const updateFechaExcursion = (req, res) => {
     values.push(estado);
   }
 
-  const sql = `UPDATE FechasExcursion SET ${fields.join(", ")} WHERE id_fecha = ? AND eliminado = 0`;
+  const sql = `UPDATE FechasExcursion SET ${fields.join(
+    ", "
+  )} WHERE id_fecha = ? AND eliminado = 0`;
   values.push(id);
 
   pool.query(sql, values, (err, result) => {
@@ -432,7 +456,6 @@ export const deleteFechaExcursion = (req, res) => {
   });
 };
 
-
 export const getGuias = (req, res) => {
   const sql = `
     SELECT id_usuario, nombre, apellido
@@ -445,7 +468,9 @@ export const getGuias = (req, res) => {
   pool.query(sql, (err, results) => {
     if (err) {
       console.error("Error al obtener guías turísticos:", err);
-      return res.status(500).json({ message: "Error al obtener guías turísticos" });
+      return res
+        .status(500)
+        .json({ message: "Error al obtener guías turísticos" });
     }
     res.json(results);
   });
@@ -464,7 +489,9 @@ export const getExcursionesConFechas = (req, res) => {
   pool.query(sql, (err, results) => {
     if (err) {
       console.error("Error al obtener excursiones con fechas:", err);
-      return res.status(500).json({ message: "Error al obtener excursiones con fechas" });
+      return res
+        .status(500)
+        .json({ message: "Error al obtener excursiones con fechas" });
     }
 
     const agrupadas = {};
@@ -496,19 +523,39 @@ export const getExcursionesConFechas = (req, res) => {
   });
 };
 
-
 // =============================
 // MULTIMEDIA (IMÁGENES DE EXCURSIONES)
 // =============================
 
 // Obtener todas las imágenes de una excursión
+// Obtener imágenes visibles en la excursión (oficiales + turistas aprobadas)
 export const getMultimediaByExcursion = (req, res) => {
-  const { id_excursion } = req.params;
+  // Aceptar ambos nombres de parámetro: :id_excursion o :id
+  const id_excursion = req.params.id_excursion || req.params.id;
+
+  if (!id_excursion) {
+    return res.status(400).json({ message: "Falta id_excursion en la ruta" });
+  }
 
   const sql = `
-    SELECT id_multimedia, tipo, url, descripcion
+    SELECT 
+      id_multimedia, 
+      tipo, 
+      url, 
+      descripcion,
+      id_excursion,
+      id_resena,
+      id_turista,
+      estado_moderacion
     FROM Multimedia
-    WHERE id_excursion = ? AND eliminado = 0
+    WHERE id_excursion = ?
+      AND eliminado = 0
+      AND tipo = 'foto'
+      AND (
+          estado_moderacion = 'aprobada'
+          OR estado_moderacion IS NULL   -- imágenes oficiales antiguas
+      )
+    ORDER BY id_multimedia DESC
   `;
 
   pool.query(sql, [id_excursion], (err, results) => {
@@ -520,30 +567,38 @@ export const getMultimediaByExcursion = (req, res) => {
   });
 };
 
+
 // Crear una nueva imagen (por URL) asociada a una excursión
+// Crear una nueva imagen (por URL) asociada a una excursión (oficial, ya aprobada)
 export const createMultimedia = (req, res) => {
   const { id_excursion, url, descripcion, tipo } = req.body;
 
   if (!id_excursion || !url) {
-    return res.status(400).json({ message: "Faltan datos obligatorios (id_excursion o url)" });
+    return res
+      .status(400)
+      .json({ message: "Faltan datos obligatorios (id_excursion o url)" });
   }
 
   const sql = `
-    INSERT INTO Multimedia (id_excursion, tipo, url, descripcion)
-    VALUES (?, ?, ?, ?)
+    INSERT INTO Multimedia (id_excursion, tipo, url, descripcion, estado_moderacion)
+    VALUES (?, ?, ?, ?, 'aprobada')
   `;
 
-  pool.query(sql, [id_excursion, tipo || "foto", url, descripcion || null], (err, result) => {
-    if (err) {
-      console.error("Error al crear multimedia:", err);
-      return res.status(500).json({ message: "Error al crear multimedia" });
-    }
+  pool.query(
+    sql,
+    [id_excursion, tipo || "foto", url, descripcion || null],
+    (err, result) => {
+      if (err) {
+        console.error("Error al crear multimedia:", err);
+        return res.status(500).json({ message: "Error al crear multimedia" });
+      }
 
-    res.status(201).json({
-      message: "Imagen agregada correctamente",
-      id_multimedia: result.insertId,
-    });
-  });
+      res.status(201).json({
+        message: "Imagen agregada correctamente",
+        id_multimedia: result.insertId,
+      });
+    }
+  );
 };
 
 // Eliminar (baja lógica) una imagen de una excursión
@@ -594,8 +649,6 @@ export const getExcursionesPorGuia = async (req, res) => {
   }
 };
 
-
-
 export const getParticipantesByExcursion = (req, res) => {
   const { id } = req.params;
 
@@ -620,12 +673,16 @@ export const getParticipantesByExcursion = (req, res) => {
   pool.query(sql, [id], (err, results) => {
     if (err) {
       console.error("Error al obtener participantes:", err.message);
-      return res.status(500).json({ message: "Error al obtener participantes", error: err.message });
+      return res
+        .status(500)
+        .json({
+          message: "Error al obtener participantes",
+          error: err.message,
+        });
     }
     res.json(results);
   });
 };
-
 
 export const notificarGuia = async (req, res) => {
   const { id_excursion } = req.params;
@@ -642,7 +699,9 @@ export const notificarGuia = async (req, res) => {
     );
 
     if (rows.length === 0 || !rows[0].email) {
-      return res.status(404).json({ message: "No se encontró el email del guía" });
+      return res
+        .status(404)
+        .json({ message: "No se encontró el email del guía" });
     }
 
     const { titulo, ubicacion, email, nombre } = rows[0];
@@ -688,13 +747,59 @@ export const notificarGuia = async (req, res) => {
       `,
     });
 
-    await pool.promise().query(
-      `UPDATE FechasExcursion SET notificado = 1 WHERE id_fecha = ?`,
-      [id_fecha]);
+    await pool
+      .promise()
+      .query(`UPDATE FechasExcursion SET notificado = 1 WHERE id_fecha = ?`, [
+        id_fecha,
+      ]);
 
     res.json({ message: "Correo enviado y fecha marcada como notificada" });
   } catch (err) {
     console.error("❌ Error al notificar guía:", err);
     res.status(500).json({ message: "Error al enviar correo" });
+  }
+};
+
+// =============================
+// CATEGORÍAS de una Excursión (múltiples)
+// =============================
+export const updateCategoriasExcursionMultiple = async (req, res) => {
+  const { id } = req.params; // id de la excursión
+  let { ids_categorias } = req.body; // array de ids
+
+  if (!Array.isArray(ids_categorias)) {
+    ids_categorias = [];
+  }
+
+  // Aseguramos que sean números válidos
+  ids_categorias = ids_categorias.map((c) => Number(c)).filter(Boolean);
+
+  try {
+    // 1) Limpiar categorías anteriores
+    await pool
+      .promise()
+      .query("DELETE FROM ExcursionCategorias WHERE id_excursion = ?", [id]);
+
+    // 2) Insertar nuevas categorías (si hay)
+    if (ids_categorias.length > 0) {
+      const values = ids_categorias.map((idCat) => [id, idCat]);
+
+      await pool
+        .promise()
+        .query(
+          "INSERT INTO ExcursionCategorias (id_excursion, id_categoria_excursion) VALUES ?",
+          [values]
+        );
+    }
+
+    return res.json({
+      ok: true,
+      message: "Categorías actualizadas correctamente",
+    });
+  } catch (error) {
+    console.error("Error actualizando categorías:", error);
+    return res
+      .status(500)
+      .json({ ok: false, message: "Error al actualizar categorías" });
   }
 };

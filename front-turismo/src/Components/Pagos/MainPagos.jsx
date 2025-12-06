@@ -50,101 +50,121 @@ export default function MainPagos() {
   };
 
   return (
-    <Card className="shadow-sm">
-      <Card.Body>
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <h5 className="fw-bold text-success mb-0">Gestión de Pagos</h5>
-        </div>
+    <div className="container-fluid py-4">
+      <Card className="shadow-sm">
+        <Card.Body className="p-3">
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h5 className="fw-bold text-success mb-0">Gestión de Pagos</h5>
+          </div>
 
-        {mensaje && <Alert variant="success" className="py-2">{mensaje}</Alert>}
-        {error && <Alert variant="danger" className="py-2">{error}</Alert>}
+          {mensaje && (
+            <Alert variant="success" className="py-2">
+              {mensaje}
+            </Alert>
+          )}
+          {error && (
+            <Alert variant="danger" className="py-2">
+              {error}
+            </Alert>
+          )}
 
-        <Table hover responsive className="align-middle">
-          <thead className="table-light">
-            <tr>
-              <th>ID</th>
-              <th>Turista</th>
-              <th>Método</th>
-              <th>Monto</th>
-              <th>Estado</th>
-              <th>Referencia</th>
-              <th>Reserva</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {pagos.length > 0 ? (
-              pagos.map((p) => (
-                <tr key={p.id_pago}>
-                  <td>{p.id_pago}</td>
-                  <td>{p.turista_nombre} {p.turista_apellido}</td>
-                  <td>{p.metodo}</td>
-                  <td>${p.monto?.toLocaleString("es-AR")}</td>
-                  <td>
-                    <Badge
-                      bg={
-                        p.estado_pago === "aprobado"
-                          ? "success"
-                          : p.estado_pago === "pendiente"
-                          ? "warning text-dark"
-                          : "danger"
-                      }
-                    >
-                      {p.estado_pago}
-                    </Badge>
-                  </td>
-                  <td>{p.referencia || "—"}</td>
-                  <td>{p.id_reserva}</td>
-                  <td>
-                    <div className="btn-group" role="group">
-                      <Button
-                        variant="outline-secondary"
-                        size="sm"
-                        onClick={() => navigate(`/dashboard-admin/pagos/view/${p.id_pago}`)}
+          <Table hover responsive className="mb-0 align-middle">
+            <thead className="table-light">
+              <tr>
+                <th>ID</th>
+                <th>Turista</th>
+                <th>Método</th>
+                <th>Monto</th>
+                <th>Estado</th>
+                <th>Referencia</th>
+                <th>Reserva</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pagos.length > 0 ? (
+                pagos.map((p) => (
+                  <tr key={p.id_pago}>
+                    <td>{p.id_pago}</td>
+                    <td>
+                      {p.turista_nombre} {p.turista_apellido}
+                    </td>
+                    <td>{p.metodo}</td>
+                    <td>${p.monto?.toLocaleString("es-AR")}</td>
+                    <td>
+                      <Badge
+                        bg={
+                          p.estado_pago === "aprobado"
+                            ? "success"
+                            : p.estado_pago === "pendiente"
+                            ? "warning text-dark"
+                            : "danger"
+                        }
                       >
-                        <i className="bi bi-eye"></i>
-                      </Button>
-
-                      <Button
-                        variant="outline-primary"
-                        size="sm"
-                        onClick={() => navigate(`/dashboard-admin/pagos/edit/${p.id_pago}`)}
-                      >
-                        <i className="bi bi-pencil"></i>
-                      </Button>
-
-                      {p.estado_pago === "pendiente" && (
-                        <>
-                          <Button
-                            variant="outline-success"
-                            size="sm"
-                            onClick={() => actualizarEstado(p.id_pago, "aprobado")}
-                          >
-                            <i className="bi bi-check2-circle"></i>
-                          </Button>
-                          <Button
-                          variant="outline-danger"
+                        {p.estado_pago}
+                      </Badge>
+                    </td>
+                    <td>{p.referencia || "—"}</td>
+                    <td>{p.id_reserva}</td>
+                    <td>
+                      <div className="btn-group" role="group">
+                        <Button
+                          variant="outline-secondary"
                           size="sm"
-                          onClick={() => actualizarEstado(p.id_pago, "rechazado")}
+                          onClick={() =>
+                            navigate(`/dashboard-admin/pagos/view/${p.id_pago}`)
+                          }
                         >
-                          <i className="bi bi-x-circle"></i>
+                          <i className="bi bi-eye"></i>
                         </Button>
-                        </>
-                      )}
-                    </div>
+
+                        <Button
+                          variant="outline-primary"
+                          size="sm"
+                          onClick={() =>
+                            navigate(`/dashboard-admin/pagos/edit/${p.id_pago}`)
+                          }
+                        >
+                          <i className="bi bi-pencil"></i>
+                        </Button>
+
+                        {p.estado_pago === "pendiente" && (
+                          <>
+                            <Button
+                              variant="outline-success"
+                              size="sm"
+                              onClick={() =>
+                                actualizarEstado(p.id_pago, "aprobado")
+                              }
+                            >
+                              <i className="bi bi-check2-circle"></i>
+                            </Button>
+                            <Button
+                              variant="outline-danger"
+                              size="sm"
+                              onClick={() =>
+                                actualizarEstado(p.id_pago, "rechazado")
+                              }
+                            >
+                              <i className="bi bi-x-circle"></i>
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="8" className="text-center text-muted py-3">
+                    No hay pagos registrados.
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="8" className="text-center text-muted py-3">
-                  No hay pagos registrados.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </Table>
-      </Card.Body>
-    </Card>
+              )}
+            </tbody>
+          </Table>
+        </Card.Body>
+      </Card>
+    </div>
   );
 }

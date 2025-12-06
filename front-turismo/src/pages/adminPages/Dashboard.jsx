@@ -9,6 +9,7 @@ import FechasCRUD from "./CRUDS/FechasCRUD";
 import PagosCRUD from "./CRUDS/PagosCRUD";
 import PreguntasCRUD from "./CRUDS/PreguntasCRUD";
 import DashboardHome from "./DashboardHome";
+import MultimediaCRUD from "./CRUDS/MultimediaCRUD";
 
 
 const Dashboard = () => {
@@ -30,9 +31,11 @@ const Dashboard = () => {
               <Route path="turistas/*" element={<TuristasCRUD />} />
               <Route path="reservas/*" element={<ReservasCRUD />} />
               <Route path="reseñas/*" element={<ReseñasCRUD />} />
+              <Route path="multimedia/*" element={<MultimediaCRUD />} />
               <Route path="usuarios/*" element={<UsuariosCRUD />} />
               <Route path="pagos/*" element={<PagosCRUD />} />
               <Route path="preguntas/*" element={<PreguntasCRUD />} />
+
             </Routes>
           </main>
         </div>
