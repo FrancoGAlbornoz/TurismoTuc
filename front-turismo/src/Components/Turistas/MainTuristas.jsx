@@ -1,32 +1,49 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
-import { Card, Button, Table, Spinner } from "react-bootstrap";
+import { Card, Button, Table, Spinner, Dropdown } from "react-bootstrap";
 import Swal from "sweetalert2";
 import { useDebounce } from "../../hooks/useDeBounce";
 
 export default function MainTuristas() {
   const [turistas, setTuristas] = useState([]);
+  const [filtro, setFiltro] = useState("activas");
   const [loading, setLoading] = useState(true);
   const [dniBuscar, setDniBuscar] = useState("");
   const debouncedDni = useDebounce(dniBuscar, 500);
+
+  // Paginación
+  const [paginaActual, setPaginaActual] = useState(1);
+  const [totalPaginas, setTotalPaginas] = useState(1);
+  const porPagina = 10;
+
   const navigate = useNavigate();
 
+  // Función para obtener turistas
   const fetchTuristas = async () => {
+    setLoading(true);
     try {
-      const res = await axios.get("http://localhost:8000/api/turistas");
-      setTuristas(res.data);
+      const res = await axios.get(
+        `http://localhost:8000/api/turistas?filtro=${filtro}&page=${paginaActual}&limit=${porPagina}`
+      );
+      setTuristas(res.data.data || []);
+      setTotalPaginas(res.data.totalPages || 1);
+      setPaginaActual(res.data.currentPage || 1);
     } catch (err) {
       console.error("Error al obtener turistas:", err);
       Swal.fire("Error", "No se pudieron cargar los turistas.", "error");
+      setTuristas([]);
+      setTotalPaginas(1);
+      setPaginaActual(1);
     } finally {
       setLoading(false);
     }
   };
 
-  const buscarPorDNI = async (dni) => {
+  // Función de búsqueda por DNI
+  const buscarPorDNI = async (dni, page = 1) => {
     if (!dni) {
-      fetchTuristas(); // Si el input está vacío, mostramos todos
+      fetchTuristas(page);
       return;
     }
     setLoading(true);
@@ -34,22 +51,31 @@ export default function MainTuristas() {
       const res = await axios.get(
         `http://localhost:8000/api/turistas/buscar?dni=${dni}`
       );
-      setTuristas(res.data);
+      setTuristas(res.data.data || []);
+      setTotalPaginas(res.data.totalPages || 1);
+      setPaginaActual(res.data.currentPage || 1);
     } catch (err) {
       console.error("Error al buscar por DNI:", err);
-      setTuristas([]); // limpiar tabla si no hay resultados
+      setTuristas([]);
+      setTotalPaginas(1);
+      setPaginaActual(1);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    buscarPorDNI(debouncedDni);
-  }, [debouncedDni]);
+  setPaginaActual(1);
+  if (debouncedDni) {
+    buscarPorDNI(debouncedDni, 1, filtro);
+  } else {
+    fetchTuristas(1, filtro);
+  }
+}, [debouncedDni, filtro]);
 
   useEffect(() => {
-    fetchTuristas();
-  }, []);
+    fetchTuristas(paginaActual);
+  }, [paginaActual, filtro]);
 
   const handleDelete = async (id) => {
     const confirmDelete = await Swal.fire({
@@ -65,15 +91,15 @@ export default function MainTuristas() {
 
     try {
       await axios.delete(`http://localhost:8000/api/turistas/${id}`);
-      setTuristas(turistas.filter((t) => t.id_turista !== id));
-
-      await Swal.fire({
+      fetchTuristas(paginaActual);
+      Swal.fire({
         icon: "success",
         title: "Turista eliminado",
         text: "El turista fue eliminado correctamente.",
         timer: 2000,
         showConfirmButton: false,
       });
+      buscarPorDNI(debouncedDni, paginaActual);
     } catch (err) {
       console.error("Error al eliminar turista:", err);
       Swal.fire("Error", "No se pudo eliminar el turista.", "error");
@@ -89,6 +115,7 @@ export default function MainTuristas() {
               Gestión de Turistas
             </h5>
             <div className="d-flex align-items-center gap-2">
+              {/* Input de búsqueda por DNI */}
               <input
                 type="text"
                 className="form-control form-control-sm"
@@ -97,13 +124,28 @@ export default function MainTuristas() {
                 onChange={(e) => setDniBuscar(e.target.value)}
                 style={{ maxWidth: "200px" }}
               />
-              <Button
-                variant="success"
-                size="sm"
-                onClick={() => navigate("/dashboard-admin/turistas/create")}
-              >
-                <i className="bi bi-plus-circle me-1"></i> Agregar Turista
-              </Button>
+              
+              {/* Dropdown: Filtrar activas / eliminadas / todas */}
+              <Dropdown align="end">
+                <Dropdown.Toggle variant="outline-primary" size="sm">
+                  <i className="bi bi-funnel"></i> Filtrar Eliminados
+                </Dropdown.Toggle>
+
+                <Dropdown.Menu>
+                  <Dropdown.Item onClick={() => setFiltro("activas")}>
+                    <i className="bi bi-check-circle text-success me-2"></i>
+                    Activas
+                  </Dropdown.Item>
+                  <Dropdown.Item onClick={() => setFiltro("eliminadas")}>
+                    <i className="bi bi-x-circle text-danger me-2"></i>
+                    Eliminadas
+                  </Dropdown.Item>
+                  <Dropdown.Item onClick={() => setFiltro("todas")}>
+                    <i className="bi bi-list-ul text-secondary me-2"></i>
+                    Todas
+                  </Dropdown.Item>
+                </Dropdown.Menu>
+              </Dropdown>
             </div>
           </div>
 
@@ -113,7 +155,7 @@ export default function MainTuristas() {
               <p className="mt-3 text-muted">Cargando turistas...</p>
             </div>
           ) : (
-            <Table hover responsive className="mb-0 align-middle">
+            <Table hover responsive className="align-middle">
               <thead className="table-light">
                 <tr>
                   <th>ID</th>

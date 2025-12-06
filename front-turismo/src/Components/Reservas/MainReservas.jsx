@@ -75,7 +75,7 @@ export default function ReservasMain() {
       const res = await axios.get("http://localhost:8000/api/reservas", {
         params,
       });
-      setReservas(res.data);
+      setReservas(data);
     } catch (err) {
       console.error("Error al obtener reservas:", err);
       setError("No se pudieron cargar las reservas.");
@@ -207,7 +207,7 @@ export default function ReservasMain() {
             {/* Dropdown: Filtrar activas / eliminadas / todas */}
             <Dropdown align="end">
               <Dropdown.Toggle variant="outline-primary" size="sm">
-                <i className="bi bi-funnel"></i> Filtrar activas
+                <i className="bi bi-funnel"></i> Filtrar Eliminados
               </Dropdown.Toggle>
 
               <Dropdown.Menu>

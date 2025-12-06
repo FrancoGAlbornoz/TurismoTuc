@@ -184,7 +184,8 @@ export const registrarTransferencia = async (req, res) => {
     console.log(`✅ Transferencia registrada para reserva ${id_reserva}`);
 
     res.status(201).json({
-      message: "Transferencia registrada correctamente. Pendiente de verificación.",
+      message:
+        "Transferencia registrada correctamente. Pendiente de verificación.",
       data: {
         id_reserva,
         monto_total: reserva.monto_total,
@@ -203,31 +204,78 @@ export const registrarTransferencia = async (req, res) => {
 
 // 🟢 Obtener todos los pagos (con info del turista y método)
 export const getPagos = async (req, res) => {
-  try {
-    const [rows] = await pool.promise().query(`
-      SELECT 
-        p.id_pago,
-        p.id_reserva,
-        p.monto,
-        p.estado_pago,
-        p.moneda,
-        p.referencia,
-        p.fecha_pago,
-        mp.nombre_medio AS metodo,
-        t.nombre AS turista_nombre,
-        t.apellido AS turista_apellido,
-        r.estado_reserva
-      FROM Pagos p
-      LEFT JOIN MediosPago mp ON p.id_medio_pago = mp.id_medio_pago
-      LEFT JOIN Reservas r ON p.id_reserva = r.id_reserva
-      LEFT JOIN Turistas t ON r.id_turista = t.id_turista
-      ORDER BY p.fecha_pago DESC;
-    `);
-    res.json(rows);
-  } catch (err) {
-    console.error("❌ Error al obtener pagos:", err);
-    res.status(500).json({ message: "Error al obtener pagos" });
+  const {
+    estado, // opcional: 'todos', 'aprobado', 'pendiente', 'rechazado'
+    fechaDesde,
+    fechaHasta,
+    page = 1,
+    limit = 10,
+  } = req.query;
+
+  const condiciones = [];
+  const params = [];
+
+  if (estado && estado !== "todos") {
+    condiciones.push(`p.estado_pago = ?`);
+    params.push(estado);
   }
+
+  const whereClause =
+    condiciones.length > 0 ? `WHERE ${condiciones.join(" AND ")}` : "";
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+
+  const baseQuery = `
+    FROM Pagos p
+    LEFT JOIN MediosPago mp ON p.id_medio_pago = mp.id_medio_pago
+    LEFT JOIN Reservas r ON p.id_reserva = r.id_reserva
+    LEFT JOIN Turistas t ON r.id_turista = t.id_turista
+    ${whereClause}
+  `;
+  const sqlCount = `SELECT COUNT(*) AS total ${baseQuery}`;
+  const sqlData = `
+    SELECT 
+      p.id_pago,
+      p.id_reserva,
+      p.monto,
+      p.estado_pago,
+      p.moneda,
+      p.referencia,
+      p.fecha_pago,
+      mp.nombre_medio AS metodo,
+      t.nombre AS turista_nombre,
+      t.apellido AS turista_apellido,
+      r.estado_reserva
+    ${baseQuery}
+    ORDER BY p.fecha_pago DESC
+    LIMIT ? OFFSET ?;
+  `;
+
+  const dataParams = [...params, parseInt(limit), parseInt(offset)];
+
+  // Ejecutamos consultas
+  pool.query(sqlCount, params, (err, countResult) => {
+    if (err) {
+      console.error("Error al contar pagos:", err);
+      return res.status(500).json({ message: "Error al contar pagos" });
+    }
+
+    const total = countResult[0].total;
+    const totalPages = Math.ceil(total / limit);
+
+    pool.query(sqlData, dataParams, (err, dataResult) => {
+      if (err) {
+        console.error("Error al obtener pagos:", err);
+        return res.status(500).json({ message: "Error al obtener pagos" });
+      }
+
+      res.json({
+        data: dataResult,
+        total,
+        totalPages,
+        currentPage: parseInt(page),
+      });
+    });
+  });
 };
 
 // 🟡 Actualizar estado del pago (confirmar/rechazar)
@@ -315,7 +363,9 @@ export const updatePagoEstado = async (req, res) => {
 export const deletePago = async (req, res) => {
   const { id_pago } = req.params;
   try {
-    await pool.promise().query(`DELETE FROM Pagos WHERE id_pago = ?`, [id_pago]);
+    await pool
+      .promise()
+      .query(`DELETE FROM Pagos WHERE id_pago = ?`, [id_pago]);
     res.json({ message: "Pago eliminado correctamente." });
   } catch (err) {
     console.error("❌ Error al eliminar pago:", err);

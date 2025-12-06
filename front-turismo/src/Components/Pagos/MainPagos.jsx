@@ -1,28 +1,53 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Card, Table, Button, Badge, Alert } from "react-bootstrap";
+import {
+  Card,
+  Table,
+  Button,
+  Badge,
+  Alert,
+  Spinner,
+  Dropdown,
+  Pagination,
+} from "react-bootstrap";
 import Swal from "sweetalert2";
 
 export default function MainPagos() {
   const [pagos, setPagos] = useState([]);
   const [mensaje, setMensaje] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [filtro, setFiltro] = useState("todos");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [limit] = useState(10);
   const navigate = useNavigate();
 
-  const fetchPagos = async () => {
+  const fetchPagos = async (estado = filtro, page = currentPage) => {
+    setLoading(true);
     try {
-      const res = await axios.get("http://localhost:8000/api/pagos");
-      setPagos(res.data);
+      const res = await axios.get("http://localhost:8000/api/pagos", {
+        params:
+          estado !== "todos"
+            ? { estado, page, limit }
+            : { page, limit },
+      });
+      setPagos(res.data.data || []);
+      setTotalPages(res.data.totalPages || 1);
+      setCurrentPage(res.data.currentPage || 1);
     } catch (err) {
       console.error("Error al obtener pagos:", err);
       setError("No se pudieron cargar los pagos.");
+      setTimeout(() => setError(""), 2500);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchPagos();
-  }, []);
+    fetchPagos(filtro, currentPage);
+  }, [filtro, currentPage]);
 
   const actualizarEstado = async (id_pago, nuevo_estado) => {
     const confirmacion = await Swal.fire({
@@ -40,13 +65,38 @@ export default function MainPagos() {
       await axios.put(`http://localhost:8000/api/pagos/${id_pago}`, {
         nuevo_estado,
       });
-      setMensaje(`Pago actualizado a ${nuevo_estado}`);
-      fetchPagos();
+      setPagos((prev) =>
+        prev.map((p) =>
+          p.id_pago === id_pago ? { ...p, estado_pago: nuevo_estado } : p
+        )
+      );
+      setMensaje(`Pago actualizado a "${nuevo_estado}"`);
       setTimeout(() => setMensaje(""), 2500);
     } catch (err) {
       console.error("Error al actualizar pago:", err);
       setError("No se pudo actualizar el estado del pago.");
+      setTimeout(() => setError(""), 2500);
     }
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const renderPagination = () => {
+    const items = [];
+    for (let i = 1; i <= totalPages; i++) {
+      items.push(
+        <Pagination.Item
+          key={i}
+          active={i === currentPage}
+          onClick={() => handlePageChange(i)}
+        >
+          {i}
+        </Pagination.Item>
+      );
+    }
+    return <Pagination>{items}</Pagination>;
   };
 
   return (
