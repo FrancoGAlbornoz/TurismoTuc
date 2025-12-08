@@ -19,6 +19,7 @@ import {
   getExcursionesPorGuia,
   getParticipantesByExcursion,
   getFechaById,
+  updateCategoriasExcursionMultiple
 } from "../controllers/excursiones.controller.js";
 
 const router = express.Router();
@@ -67,8 +68,9 @@ router.delete("/fechas/:id", deleteFechaExcursion);
 router.post("/notificar/:id_excursion", notificarGuia);
 
 // =============================
-// Obtener info de una fecha (para control de cupos)
+// Categorías de Excursión
 // =============================
+router.put("/:id/categorias", updateCategoriasExcursionMultiple);
 
 
 router.get("/fecha/:id_fecha", async (req, res) => {

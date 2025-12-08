@@ -11,6 +11,7 @@ import {
   FaGlobeAmericas,
   FaMoneyBillWave,
   FaQuestion, 
+  FaImages,
 } from "react-icons/fa";
 import useUserStore from "../../store/useUserStore";
 import "../../styles/components/sidebar.css";
@@ -27,6 +28,8 @@ export default function Sidebar() {
 
     // 💰 Nuevo enlace al CRUD de Pagos
     { to: "/dashboard-admin/pagos", label: "Pagos", icon: <FaMoneyBillWave /> },
+    
+    { to: "/dashboard-admin/multimedia", label: "Multimedia", icon: <FaImages /> },
 
     { to: "/dashboard-admin/reseñas", label: "Reseñas", icon: <FaComments /> },
     { to: "/dashboard-admin/usuarios", label: "Usuarios", icon: <FaUserTie /> },

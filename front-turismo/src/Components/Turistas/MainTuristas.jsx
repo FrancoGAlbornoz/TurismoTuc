@@ -115,14 +115,7 @@ export default function MainTuristas() {
               Gestión de Turistas
             </h5>
             <div className="d-flex align-items-center gap-2">
-              <Button
-                as={Link}
-                to="/dashboard-admin/turistas/create"
-                variant="success"
-                size="sm"
-              >
-                <i className="bi bi-plus-circle me-1"></i> Crear Turista
-              </Button>
+              {/* Input de búsqueda por DNI */}
               <input
                 type="text"
                 className="form-control form-control-sm"
@@ -162,128 +155,74 @@ export default function MainTuristas() {
               <p className="mt-3 text-muted">Cargando turistas...</p>
             </div>
           ) : (
-            <>
-              <Table hover responsive className="align-middle">
-                <thead className="table-light">
-                  <tr>
-                    <th>ID</th>
-                    <th>Nombre</th>
-                    <th>DNI</th>
-                    <th>Email</th>
-                    <th>Teléfono</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {turistas.length > 0 ? (
-                    turistas.map((t) => (
-                      <tr key={t.id_turista}>
-                        <td>{t.id_turista}</td>
-                        <td>
-                          {t.nombre} {t.apellido}
-                        </td>
-                        <td>{t.dni}</td>
-                        <td>{t.email}</td>
-                        <td>{t.telefono}</td>
-                        <td>
-                          <div className="btn-group" role="group">
-                            <Button
-                              variant="outline-secondary"
-                              size="sm"
-                              onClick={() =>
-                                navigate(
-                                  `/dashboard-admin/turistas/view/${t.id_turista}`
-                                )
-                              }
-                            >
-                              <i className="bi bi-eye"></i>
-                            </Button>
-                            <Button
-                              variant="outline-primary"
-                              size="sm"
-                              onClick={() =>
-                                navigate(
-                                  `/dashboard-admin/turistas/edit/${t.id_turista}`
-                                )
-                              }
-                            >
-                              <i className="bi bi-pencil"></i>
-                            </Button>
-                            <Button
-                              variant="outline-danger"
-                              size="sm"
-                              onClick={() => handleDelete(t.id_turista)}
-                            >
-                              <i className="bi bi-trash"></i>
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="6" className="text-center text-muted py-3">
-                        No hay turistas registrados
+            <Table hover responsive className="align-middle">
+              <thead className="table-light">
+                <tr>
+                  <th>ID</th>
+                  <th>Nombre</th>
+                  <th>DNI</th>
+                  <th>Email</th>
+                  <th>Teléfono</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {turistas.length > 0 ? (
+                  turistas.map((t) => (
+                    <tr key={t.id_turista}>
+                      <td>{t.id_turista}</td>
+                      <td>
+                        {t.nombre} {t.apellido}
+                      </td>
+                      <td>{t.dni}</td>
+                      <td>{t.email}</td>
+                      <td>{t.telefono}</td>
+                      <td>
+                        <div className="btn-group" role="group">
+                          <Button
+                            variant="outline-secondary"
+                            size="sm"
+                            onClick={() =>
+                              navigate(
+                                `/dashboard-admin/turistas/view/${t.id_turista}`
+                              )
+                            }
+                          >
+                            <i className="bi bi-eye"></i>
+                          </Button>
+
+                          <Button
+                            variant="outline-primary"
+                            size="sm"
+                            onClick={() =>
+                              navigate(
+                                `/dashboard-admin/turistas/edit/${t.id_turista}`
+                              )
+                            }
+                          >
+                            <i className="bi bi-pencil"></i>
+                          </Button>
+
+                          <Button
+                            variant="outline-danger"
+                            size="sm"
+                            onClick={() => handleDelete(t.id_turista)}
+                          >
+                            <i className="bi bi-trash"></i>
+                          </Button>
+                        </div>
                       </td>
                     </tr>
-                  )}
-                </tbody>
-              </Table>
-
-              {/* Paginación */}
-              {totalPaginas > 1 && (
-                <div className="d-flex justify-content-center mt-3">
-                  <nav>
-                    <ul className="pagination pagination-sm mb-0">
-                      <li
-                        className={`page-item ${
-                          paginaActual === 1 ? "disabled" : ""
-                        }`}
-                      >
-                        <button
-                          className="page-link"
-                          onClick={() => setPaginaActual(paginaActual - 1)}
-                        >
-                          &laquo;
-                        </button>
-                      </li>
-
-                      {Array.from(
-                        { length: totalPaginas },
-                        (_, i) => i + 1
-                      ).map((num) => (
-                        <li
-                          key={num}
-                          className={`page-item ${
-                            paginaActual === num ? "active" : ""
-                          }`}
-                        >
-                          <button
-                            className="page-link"
-                            onClick={() => setPaginaActual(num)}
-                          >
-                            {num}
-                          </button>
-                        </li>
-                      ))}
-
-                      <li
-                        className={`page-item ${
-                          paginaActual === totalPaginas ? "disabled" : ""
-                        }`}
-                      >
-                        <button
-                          className="page-link"
-                          onClick={() => setPaginaActual(paginaActual + 1)}
-                        >
-                          &raquo;
-                        </button>
-                      </li>
-                    </ul>
-                  </nav>
-                </div>
-              )}
-            </>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="6" className="text-center text-muted py-3">
+                      No hay turistas registrados
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </Table>
           )}
         </Card.Body>
       </Card>

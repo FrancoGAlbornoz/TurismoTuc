@@ -11,7 +11,9 @@ export default function MainFechasExcursion() {
 
   const fetchFechas = async () => {
     try {
-      const res = await axios.get("http://localhost:8000/api/excursiones/con-fechas");
+      const res = await axios.get(
+        "http://localhost:8000/api/excursiones/con-fechas"
+      );
       setExcursiones(res.data);
     } catch (err) {
       console.error("Error al obtener excursiones con fechas:", err);
@@ -26,45 +28,45 @@ export default function MainFechasExcursion() {
   }, []);
 
   const handleCerrar = async (id_fecha) => {
-  const confirmar = await Swal.fire({
-    title: "¿Cerrar fecha?",
-    text: "No se eliminará, pero ya no podrá reservarse.",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonText: "Cerrar fecha",
-    cancelButtonText: "Cancelar",
-  });
-
-  if (!confirmar.isConfirmed) return;
-
-  try {
-    const res = await axios.delete(`http://localhost:8000/api/excursiones/fechas/${id_fecha}`);
-    console.log(res);
-    Swal.fire({
-      icon: "success",
-      title: "Fecha cerrada",
-      text: "La fecha ya no estará disponible para reservas.",
-      timer: 2000,
-      showConfirmButton: false,
+    const confirmar = await Swal.fire({
+      title: "¿Cerrar fecha?",
+      text: "No se eliminará, pero ya no podrá reservarse.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Cerrar fecha",
+      cancelButtonText: "Cancelar",
     });
 
-    fetchFechas();
-  } catch (err) {
-    Swal.fire("Error", "No se pudo cerrar la fecha.", err);
-  }
-};
+    if (!confirmar.isConfirmed) return;
 
+    try {
+      await axios.delete(
+        `http://localhost:8000/api/excursiones/fechas/${id_fecha}`
+      );
+      Swal.fire({
+        icon: "success",
+        title: "Fecha cerrada",
+        text: "La fecha ya no estará disponible para reservas.",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+
+      fetchFechas();
+    } catch (err) {
+      Swal.fire("Error", "No se pudo cerrar la fecha.", "error", err);
+    }
+  };
 
   return (
     <div className="container-fluid py-4">
       <Card className="shadow-sm">
-        <Card.Body>
+        <Card.Body className="p-3">
           <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
-            <h5 className="fw-bold text-primary mb-2 mb-md-0">
+            <h5 className="fw-bold text-success mb-2 mb-md-0">
               Fechas de Excursiones
             </h5>
             <Button
-              variant="primary"
+              variant="success"
               size="sm"
               onClick={() => navigate("/dashboard-admin/fechas/create")}
             >
@@ -74,7 +76,7 @@ export default function MainFechasExcursion() {
 
           {loading ? (
             <div className="text-center py-5">
-              <Spinner animation="border" variant="primary" />
+              <Spinner animation="border" variant="success" />
               <p className="mt-3 text-muted">Cargando fechas...</p>
             </div>
           ) : excursiones.length > 0 ? (
@@ -82,11 +84,10 @@ export default function MainFechasExcursion() {
               <div key={e.id_excursion} className="mb-4">
                 <h6 className="fw-bold text-success">{e.titulo}</h6>
                 <Table
-                  bordered
                   responsive
                   hover
                   size="sm"
-                  className="align-middle"
+                  className="mb-0 align-middle"
                 >
                   <thead className="table-light">
                     <tr>
@@ -153,7 +154,9 @@ export default function MainFechasExcursion() {
               </div>
             ))
           ) : (
-            <p className="text-muted">No hay excursiones registradas</p>
+            <p className="text-muted mb-0">
+              No hay excursiones registradas.
+            </p>
           )}
         </Card.Body>
       </Card>
