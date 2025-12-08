@@ -66,23 +66,49 @@ export const validarToken = (req, res) => {
 
 // Obtener todas las reseñas publicadas
 export const getResenas = (req, res) => {
-  const sql = `
-    SELECT 
-      r.id_resena, e.titulo AS excursion, t.nombre AS turista,
-      r.calificacion, r.comentario, r.fecha_resena, r.estado
+  const { page = 1, limit = 10 } = req.query;
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+
+  const baseQuery = `
     FROM Reseñas r
     JOIN Excursiones e ON r.id_excursion = e.id_excursion
     LEFT JOIN Reservas resv ON r.id_reserva = resv.id_reserva
     LEFT JOIN Turistas t ON resv.id_turista = t.id_turista
     WHERE r.eliminado = 0
-    ORDER BY r.fecha_resena DESC;
   `;
-  pool.query(sql, (err, results) => {
+
+  const sqlCount = `SELECT COUNT(*) AS total ${baseQuery}`;
+  const sqlData = `
+    SELECT 
+      r.id_resena, e.titulo AS excursion, t.nombre AS turista,
+      r.calificacion, r.comentario, r.fecha_resena, r.estado
+    ${baseQuery}
+    ORDER BY r.fecha_resena DESC
+    LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)};
+  `;
+
+  pool.query(sqlCount, (err, countResult) => {
     if (err) {
-      console.error("Error al obtener reseñas:", err);
-      return res.status(500).json({ message: "Error al obtener reseñas" });
+      console.error("Error al contar reseñas:", err);
+      return res.status(500).json({ message: "Error al contar reseñas" });
     }
-    res.json(results);
+
+    const total = countResult[0].total;
+    const totalPages = Math.ceil(total / limit);
+
+    pool.query(sqlData, (err, dataResult) => {
+      if (err) {
+        console.error("Error al obtener reseñas:", err);
+        return res.status(500).json({ message: "Error al obtener reseñas" });
+      }
+
+      res.json({
+        data: dataResult,
+        total,
+        totalPages,
+        currentPage: parseInt(page),
+      });
+    });
   });
 };
 

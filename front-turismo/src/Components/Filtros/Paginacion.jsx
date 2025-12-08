@@ -1,49 +1,47 @@
 import React from "react";
+import { Button } from "react-bootstrap";
 
-const Paginacion = ({ paginaActual, totalPaginas, onPageChange }) => {
-  if (totalPaginas <= 1) return null;
+export default function PaginationComponent({ currentPage, totalPages, onPageChange }) {
+  if (totalPages <= 1) return null; // Oculta si hay 1 página o menos
 
-  const paginas = Array.from({ length: totalPaginas }, (_, i) => i + 1);
+  const handlePrev = () => onPageChange(currentPage - 1);
+  const handleNext = () => onPageChange(currentPage + 1);
+
+  const pages = [];
+  for (let i = 1; i <= totalPages; i++) {
+    pages.push(i);
+  }
 
   return (
-    <div className="d-flex justify-content-center mt-3">
-      <nav>
-        <ul className="pagination pagination-sm mb-0">
-          {/* Flecha izquierda */}
-          <li className={`page-item ${paginaActual === 1 ? "disabled" : ""}`}>
-            <button
-              className="page-link"
-              onClick={() => onPageChange(Math.max(paginaActual - 1, 1))}
-            >
-              &laquo;
-            </button>
-          </li>
+    <div className="d-flex justify-content-center align-items-center gap-2 mt-3">
+      <Button
+        size="sm"
+        variant="outline-primary"
+        onClick={handlePrev}
+        disabled={currentPage === 1}
+      >
+        &lt;
+      </Button>
 
-          {/* Números de página */}
-          {paginas.map((num) => (
-            <li
-              key={num}
-              className={`page-item ${paginaActual === num ? "active" : ""}`}
-            >
-              <button className="page-link" onClick={() => onPageChange(num)}>
-                {num}
-              </button>
-            </li>
-          ))}
+      {pages.map((p) => (
+        <Button
+          key={p}
+          size="sm"
+          variant={p === currentPage ? "primary" : "outline-primary"}
+          onClick={() => onPageChange(p)}
+        >
+          {p}
+        </Button>
+      ))}
 
-          {/* Flecha derecha */}
-          <li className={`page-item ${paginaActual === totalPaginas ? "disabled" : ""}`}>
-            <button
-              className="page-link"
-              onClick={() => onPageChange(Math.min(paginaActual + 1, totalPaginas))}
-            >
-              &raquo;
-            </button>
-          </li>
-        </ul>
-      </nav>
+      <Button
+        size="sm"
+        variant="outline-primary"
+        onClick={handleNext}
+        disabled={currentPage === totalPages}
+      >
+        &gt;
+      </Button>
     </div>
   );
-};
-
-export default Paginacion;
+}
