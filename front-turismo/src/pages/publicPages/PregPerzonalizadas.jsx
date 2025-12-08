@@ -127,29 +127,32 @@ export default function PreguntasPersonalizadas() {
 
               {/* RADIO BUTTONS (antes checkbox) */}
               {p.tipo_respuesta === "checkbox" && (
-  <div className="d-flex gap-4 mt-2">
-    <Form.Check
-      type="radio"
-      id={`preg-${p.id_pregunta}-si`}
-      name={`preg-${p.id_pregunta}`}
-      label="Sí"
-      value="Sí"
-      checked={respuestas[p.id_pregunta] === "Sí"}
-      onChange={(e) => handleChange(p.id_pregunta, e.target.value)}
-    />
+                <div className="d-flex gap-4 mt-2">
+                  <Form.Check
+                    type="radio"
+                    id={`preg-${p.id_pregunta}-si`}
+                    name={`preg-${p.id_pregunta}`}
+                    label="Sí"
+                    value="Sí"
+                    checked={respuestas[p.id_pregunta] === "Sí"}
+                    onChange={(e) =>
+                      handleChange(p.id_pregunta, e.target.value)
+                    }
+                  />
 
-    <Form.Check
-      type="radio"
-      id={`preg-${p.id_pregunta}-no`}
-      name={`preg-${p.id_pregunta}`}
-      label="No"
-      value="No"
-      checked={respuestas[p.id_pregunta] === "No"}
-      onChange={(e) => handleChange(p.id_pregunta, e.target.value)}
-    />
-  </div>
-)}
-
+                  <Form.Check
+                    type="radio"
+                    id={`preg-${p.id_pregunta}-no`}
+                    name={`preg-${p.id_pregunta}`}
+                    label="No"
+                    value="No"
+                    checked={respuestas[p.id_pregunta] === "No"}
+                    onChange={(e) =>
+                      handleChange(p.id_pregunta, e.target.value)
+                    }
+                  />
+                </div>
+              )}
 
               {/* TEXTO LIBRE */}
               {p.tipo_respuesta === "texto" && (
