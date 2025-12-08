@@ -17,6 +17,10 @@ import carritoRoutes from "./routes/carrito.routes.js";
 import pagosRoutes from "./routes/pagos.routes.js";
 import contactoRoutes from "./routes/contacto.routes.js";
 
+import cloudinaryRoutes from './routes/cloudinary.routes.js'; 
+import excursionUploadRoutes from './routes/uploadExcursiones.routes.js';
+import resenasMultimediaRoutes from "./routes/reseniaMultimedia.routes.js";
+
 const app = express()
 
 //Se usa la libreria y metodos internos
@@ -35,6 +39,10 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/auth/turistas", authTuristasRoutes);
 app.use("/api/pagos", pagosRoutes);
 app.use("/api", contactoRoutes);
+
+app.use('/api', cloudinaryRoutes);
+app.use('/api', excursionUploadRoutes);
+app.use("/api", resenasMultimediaRoutes);
 
 // Servir archivos estáticos (imágenes)
 

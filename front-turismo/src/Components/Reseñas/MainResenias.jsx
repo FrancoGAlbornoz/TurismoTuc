@@ -51,12 +51,11 @@ export default function MainResenias() {
     );
   }
 
-  // =============================
-  // ELIMINAR RESEÑA
-  // =============================
   const handleEliminar = async (id) => {
     try {
-      const confirmar = window.confirm("¿Seguro que deseas eliminar esta reseña?");
+      const confirmar = window.confirm(
+        "¿Seguro que deseas eliminar esta reseña?"
+      );
       if (!confirmar) return;
 
       await axios.delete(`http://localhost:8000/api/resenias/${id}`);
@@ -99,8 +98,16 @@ export default function MainResenias() {
           </Button>
         </div>
 
-        {error && <Alert variant="danger" className="py-2">{error}</Alert>}
-        {mensaje && <Alert variant="success" className="py-2">{mensaje}</Alert>}
+          {error && (
+            <Alert variant="danger" className="py-2">
+              {error}
+            </Alert>
+          )}
+          {mensaje && (
+            <Alert variant="success" className="py-2">
+              {mensaje}
+            </Alert>
+          )}
 
         <Table hover responsive className="align-middle">
           <thead className="table-light">
@@ -177,3 +184,4 @@ export default function MainResenias() {
     </Card>
   );
 }
+

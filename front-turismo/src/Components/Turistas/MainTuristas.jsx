@@ -115,14 +115,7 @@ export default function MainTuristas() {
               Gestión de Turistas
             </h5>
             <div className="d-flex align-items-center gap-2">
-              <Button
-                as={Link}
-                to="/dashboard-admin/turistas/create"
-                variant="success"
-                size="sm"
-              >
-                <i className="bi bi-plus-circle me-1"></i> Crear Turista
-              </Button>
+              {/* Input de búsqueda por DNI */}
               <input
                 type="text"
                 className="form-control form-control-sm"

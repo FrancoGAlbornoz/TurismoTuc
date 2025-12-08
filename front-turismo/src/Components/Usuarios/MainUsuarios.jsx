@@ -58,81 +58,92 @@ export default function MainUsuarios() {
   };
 
   return (
-    <Card className="shadow-sm">
-      <Card.Body className="p-3">
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <h5 className="fw-bold text-success mb-0">Gestión de Usuarios</h5>
-          <Button variant="success" size="sm" onClick={() => navigate("create")}>
-            <i className="bi bi-plus-circle me-1"></i> Agregar Usuario
-          </Button>
-        </div>
+    <div className="container-fluid py-4">
+      <Card className="shadow-sm">
+        <Card.Body className="p-3">
+          <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+            <h5 className="fw-bold text-success mb-2 mb-md-0">
+              Gestión de Usuarios
+            </h5>
+            <Button
+              variant="success"
+              size="sm"
+              onClick={() => navigate("create")}
+            >
+              <i className="bi bi-plus-circle me-1"></i> Agregar Usuario
+            </Button>
+          </div>
 
-        <Table hover responsive className="align-middle">
-          <thead className="table-light">
-            <tr>
-              <th>ID</th>
-              <th>Nombre</th>
-              <th>Email</th>
-              <th>Teléfono</th>
-              <th>Rol</th>
-              <th>Estado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {usuarios.length > 0 ? (
-              usuarios.map((u) => (
-                <tr key={u.id_usuario}>
-                  <td>{u.id_usuario}</td>
-                  <td>{u.nombre} {u.apellido}</td>
-                  <td>{u.email}</td>
-                  <td>{u.telefono || "—"}</td>
-                  <td>{u.nombre_rol}</td>
-                  <td>
-                    <Badge bg={u.estado === "activo" ? "success" : "secondary"}>
-                      {u.estado || "pendiente"}
-                    </Badge>
-                  </td>
-                  <td>
-                    <div className="btn-group" role="group">
-                      <Button
-                        variant="outline-secondary"
-                        size="sm"
-                        onClick={() => navigate(`view/${u.id_usuario}`)}
+          <Table hover responsive className="mb-0 align-middle">
+            <thead className="table-light">
+              <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Email</th>
+                <th>Teléfono</th>
+                <th>Rol</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {usuarios.length > 0 ? (
+                usuarios.map((u) => (
+                  <tr key={u.id_usuario}>
+                    <td>{u.id_usuario}</td>
+                    <td>
+                      {u.nombre} {u.apellido}
+                    </td>
+                    <td>{u.email}</td>
+                    <td>{u.telefono || "—"}</td>
+                    <td>{u.nombre_rol}</td>
+                    <td>
+                      <Badge
+                        bg={u.estado === "activo" ? "success" : "secondary"}
                       >
-                        <i className="bi bi-eye"></i>
-                      </Button>
+                        {u.estado || "pendiente"}
+                      </Badge>
+                    </td>
+                    <td>
+                      <div className="btn-group" role="group">
+                        <Button
+                          variant="outline-secondary"
+                          size="sm"
+                          onClick={() => navigate(`view/${u.id_usuario}`)}
+                        >
+                          <i className="bi bi-eye"></i>
+                        </Button>
 
-                      <Button
-                        variant="outline-primary"
-                        size="sm"
-                        onClick={() => navigate(`edit/${u.id_usuario}`)}
-                      >
-                        <i className="bi bi-pencil"></i>
-                      </Button>
+                        <Button
+                          variant="outline-primary"
+                          size="sm"
+                          onClick={() => navigate(`edit/${u.id_usuario}`)}
+                        >
+                          <i className="bi bi-pencil"></i>
+                        </Button>
 
-                      <Button
-                        variant="outline-danger"
-                        size="sm"
-                        onClick={() => handleDelete(u.id_usuario)}
-                      >
-                        <i className="bi bi-trash"></i>
-
-                      </Button>
-                    </div>
+                        <Button
+                          variant="outline-danger"
+                          size="sm"
+                          onClick={() => handleDelete(u.id_usuario)}
+                        >
+                          <i className="bi bi-trash"></i>
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="7" className="text-center text-muted py-3">
+                    No hay usuarios registrados
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="7" className="text-center text-muted py-3">
-                  No hay usuarios registrados
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </Table>
-      </Card.Body>
-    </Card>
+              )}
+            </tbody>
+          </Table>
+        </Card.Body>
+      </Card>
+    </div>
   );
 }
