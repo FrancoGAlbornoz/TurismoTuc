@@ -20,7 +20,7 @@ export default function MainResenias() {
   const fetchReseñas = async (page = 1) => {
     try {
       const res = await axios.get("http://localhost:8000/api/resenias", {
-        params: { page, limit },
+        params: { page: currentPage, limit },
       });
 
       setReseñas(res.data.data);
@@ -59,7 +59,7 @@ export default function MainResenias() {
       if (!confirmar) return;
 
       await axios.delete(`http://localhost:8000/api/resenias/${id}`);
-      setMensaje("🗑️ Reseña eliminada correctamente.");
+      setMensaje("Reseña eliminada correctamente.");
       fetchReseñas(currentPage);
       setTimeout(() => setMensaje(""), 2500);
     } catch (err) {
