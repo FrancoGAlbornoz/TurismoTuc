@@ -78,7 +78,7 @@ export const getReservas = (req, res) => {
     }
 
     const total = countResult[0].total;
-    const totalPages = Math.ceil(total / limit);
+    const totalPages = Math.ceil(total / parseInt(limit));
 
     pool.query(sqlData, (err, dataResult) => {
       if (err) {

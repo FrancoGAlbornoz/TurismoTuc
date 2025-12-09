@@ -4,6 +4,7 @@ import axios from "axios";
 import { Card, Button, Table, Spinner, Dropdown } from "react-bootstrap";
 import Swal from "sweetalert2";
 import { useDebounce } from "../../hooks/useDeBounce";
+import PaginationComponent from "../Filtros/Paginacion";
 
 export default function MainTuristas() {
   const [turistas, setTuristas] = useState([]);
@@ -53,7 +54,6 @@ export default function MainTuristas() {
       );
       setTuristas(res.data.data || []);
       setTotalPaginas(res.data.totalPages || 1);
-      setPaginaActual(res.data.currentPage || 1);
     } catch (err) {
       console.error("Error al buscar por DNI:", err);
       setTuristas([]);
@@ -65,13 +65,13 @@ export default function MainTuristas() {
   };
 
   useEffect(() => {
-  setPaginaActual(1);
-  if (debouncedDni) {
-    buscarPorDNI(debouncedDni, 1, filtro);
-  } else {
-    fetchTuristas(1, filtro);
-  }
-}, [debouncedDni, filtro]);
+    setPaginaActual(1);
+    if (debouncedDni) {
+      buscarPorDNI(debouncedDni, 1, filtro);
+    } else {
+      fetchTuristas(1, filtro);
+    }
+  }, [debouncedDni, filtro]);
 
   useEffect(() => {
     fetchTuristas(paginaActual);
@@ -124,7 +124,7 @@ export default function MainTuristas() {
                 onChange={(e) => setDniBuscar(e.target.value)}
                 style={{ maxWidth: "200px" }}
               />
-              
+
               {/* Dropdown: Filtrar activas / eliminadas / todas */}
               <Dropdown align="end">
                 <Dropdown.Toggle variant="outline-primary" size="sm">
@@ -155,74 +155,81 @@ export default function MainTuristas() {
               <p className="mt-3 text-muted">Cargando turistas...</p>
             </div>
           ) : (
-            <Table hover responsive className="align-middle">
-              <thead className="table-light">
-                <tr>
-                  <th>ID</th>
-                  <th>Nombre</th>
-                  <th>DNI</th>
-                  <th>Email</th>
-                  <th>Teléfono</th>
-                  <th>Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {turistas.length > 0 ? (
-                  turistas.map((t) => (
-                    <tr key={t.id_turista}>
-                      <td>{t.id_turista}</td>
-                      <td>
-                        {t.nombre} {t.apellido}
-                      </td>
-                      <td>{t.dni}</td>
-                      <td>{t.email}</td>
-                      <td>{t.telefono}</td>
-                      <td>
-                        <div className="btn-group" role="group">
-                          <Button
-                            variant="outline-secondary"
-                            size="sm"
-                            onClick={() =>
-                              navigate(
-                                `/dashboard-admin/turistas/view/${t.id_turista}`
-                              )
-                            }
-                          >
-                            <i className="bi bi-eye"></i>
-                          </Button>
-
-                          <Button
-                            variant="outline-primary"
-                            size="sm"
-                            onClick={() =>
-                              navigate(
-                                `/dashboard-admin/turistas/edit/${t.id_turista}`
-                              )
-                            }
-                          >
-                            <i className="bi bi-pencil"></i>
-                          </Button>
-
-                          <Button
-                            variant="outline-danger"
-                            size="sm"
-                            onClick={() => handleDelete(t.id_turista)}
-                          >
-                            <i className="bi bi-trash"></i>
-                          </Button>
-                        </div>
+            <>
+              <Table hover responsive className="align-middle">
+                <thead className="table-light">
+                  <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>DNI</th>
+                    <th>Email</th>
+                    <th>Teléfono</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {turistas.length > 0 ? (
+                    turistas.map((t) => (
+                      <tr key={t.id_turista}>
+                        <td>{t.id_turista}</td>
+                        <td>
+                          {t.nombre} {t.apellido}
+                        </td>
+                        <td>{t.dni}</td>
+                        <td>{t.email}</td>
+                        <td>{t.telefono}</td>
+                        <td>
+                          <div className="btn-group" role="group">
+                            <Button
+                              variant="outline-secondary"
+                              size="sm"
+                              onClick={() =>
+                                navigate(
+                                  `/dashboard-admin/turistas/view/${t.id_turista}`
+                                )
+                              }
+                            >
+                              <i className="bi bi-eye"></i>
+                            </Button>
+                            <Button
+                              variant="outline-primary"
+                              size="sm"
+                              onClick={() =>
+                                navigate(
+                                  `/dashboard-admin/turistas/edit/${t.id_turista}`
+                                )
+                              }
+                            >
+                              <i className="bi bi-pencil"></i>
+                            </Button>
+                            <Button
+                              variant="outline-danger"
+                              size="sm"
+                              onClick={() => handleDelete(t.id_turista)}
+                            >
+                              <i className="bi bi-trash"></i>
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="6" className="text-center text-muted py-3">
+                        No hay turistas registrados
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan="6" className="text-center text-muted py-3">
-                      No hay turistas registrados
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </Table>
+                  )}
+                </tbody>
+              </Table>
+
+              {/* Paginación */}
+              <PaginationComponent
+                currentPage={paginaActual}
+                totalPages={totalPaginas}
+                onPageChange={(page) => setPaginaActual(page)}
+              />
+            </>
           )}
         </Card.Body>
       </Card>

@@ -51,7 +51,7 @@ export const getTuristas = (req, res) => {
     }
 
     const total = countResult[0].total;
-    const totalPages = Math.ceil(total / limit);
+    const totalPages = Math.ceil(total / parseInt(limit));
 
     pool.query(sqlData, (err, dataResult) => {
       if (err) {
@@ -131,6 +131,30 @@ export const buscarTuristaPorDNI = (req, res) => {
   });
 };
 
+/* ============================================================
+   🔍 BUSCAR UN SOLO TURISTA POR DNI
+   ============================================================ */
+export const buscarTuristaExactoPorDNI = (req, res) => {
+  const { dni } = req.query;
+
+  if (!dni) return res.status(400).json({ message: "Se requiere el parámetro 'dni'" });
+
+  const sql = `
+    SELECT id_turista, nombre, apellido, CONCAT(nombre, ' ', apellido) AS nombre_completo,
+           dni, email, telefono, direccion, nacionalidad
+    FROM Turistas
+    WHERE dni = ? AND eliminado = 0
+    LIMIT 1
+  `;
+
+  pool.query(sql, [dni], (err, results) => {
+    if (err) return res.status(500).json({ message: "Error al buscar turista", error: err.message });
+
+    if (results.length === 0) return res.status(404).json({ message: "Turista no encontrado" });
+
+    res.json(results[0]);
+  });
+};
 
 // Crear un nuevo turista (uso interno del panel)
 export const createTurista = async (req, res) => {

@@ -15,7 +15,6 @@ import {
 export default function CreateReserva() {
   const navigate = useNavigate();
 
-  const [turistas, setTuristas] = useState([]);
   const [excursiones, setExcursiones] = useState([]);
   const [fechasExcursion, setFechasExcursion] = useState([]);
   const [nombreTurista, setNombreTurista] = useState("");
@@ -31,45 +30,55 @@ export default function CreateReserva() {
 
   const [saving, setSaving] = useState(false);
 
+  // Cargar excursiones al iniciar
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchExcursiones = async () => {
       try {
-        const [turistasRes, excursionesRes] = await Promise.all([
-          axios.get("http://localhost:8000/api/turistas"),
-          axios.get("http://localhost:8000/api/excursiones"),
-        ]);
-        setTuristas(turistasRes.data);
-        setExcursiones(excursionesRes.data);
+        const res = await axios.get("http://localhost:8000/api/excursiones");
+        setExcursiones(Array.isArray(res.data) ? res.data : []);
       } catch (err) {
-        console.error("Error cargando listas:", err);
-        Swal.fire("Error", "No se pudieron cargar turistas o excursiones", "error");
+        console.error("Error cargando excursiones:", err);
+        Swal.fire("Error", "No se pudieron cargar las excursiones", "error");
       }
     };
-    fetchData();
+    fetchExcursiones();
   }, []);
 
-  const buscarTuristaPorDNI = () => {
-    const turista = turistas.find((t) => t.dni == reserva.dni);
-    if (turista) {
-      setNombreTurista(turista.nombre_completo);
-      setReserva((prev) => ({ ...prev, id_turista: turista.id_turista }));
-    } else {
+  // Buscar turista exacto por DNI usando backend
+  const buscarTuristaPorDNI = async () => {
+    const dni = reserva.dni.trim();
+    if (!dni) return;
+
+    try {
+      const res = await axios.get(`http://localhost:8000/api/turistas/exacto?dni=${dni}`);
+      const turista = res.data; // backend debe devolver el objeto exacto o null/undefined
+
+      if (turista) {
+        setNombreTurista(turista.nombre_completo);
+        setReserva(prev => ({ ...prev, id_turista: turista.id_turista }));
+      } else {
+        setNombreTurista("");
+        setReserva(prev => ({ ...prev, id_turista: "" }));
+        Swal.fire("Atención", "No se encontró un turista con ese DNI", "warning");
+      }
+    } catch (err) {
+      console.error("Error buscando turista por DNI:", err);
       setNombreTurista("");
-      setReserva((prev) => ({ ...prev, id_turista: "" }));
-      Swal.fire("Atención", "No se encontró un turista con ese DNI", "warning");
+      setReserva(prev => ({ ...prev, id_turista: "" }));
+      Swal.fire("Error", "No se pudo buscar el turista", "error");
     }
   };
 
   const handleExcursionChange = async (e) => {
     const id_excursion = e.target.value;
-    setReserva((prev) => ({ ...prev, id_excursion, id_fecha: "" }));
+    setReserva(prev => ({ ...prev, id_excursion, id_fecha: "" }));
 
     if (id_excursion) {
       try {
         const res = await axios.get(
           `http://localhost:8000/api/excursiones/${id_excursion}/fechas`
         );
-        setFechasExcursion(res.data);
+        setFechasExcursion(Array.isArray(res.data) ? res.data : []);
       } catch (err) {
         console.error("Error al cargar fechas:", err);
         Swal.fire("Error", "No se pudieron cargar las fechas", "error");
@@ -81,7 +90,7 @@ export default function CreateReserva() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setReserva((prev) => ({
+    setReserva(prev => ({
       ...prev,
       [name]: name === "cantidad_personas" ? Number(value) : value,
     }));
@@ -96,7 +105,7 @@ export default function CreateReserva() {
 
     setSaving(true);
     try {
-      const res = await axios.post("http://localhost:8000/api/reservas", reserva);
+      await axios.post("http://localhost:8000/api/reservas", reserva);
       Swal.fire({
         icon: "success",
         title: "Reserva creada",
@@ -104,7 +113,6 @@ export default function CreateReserva() {
         timer: 2000,
         showConfirmButton: false,
       });
-
       navigate("/dashboard-admin/reservas");
     } catch (err) {
       console.error(err);
@@ -134,8 +142,9 @@ export default function CreateReserva() {
               <Form.Control
                 type="text"
                 name="dni"
-                value={reserva.dni}
+                value={reserva.dni || ""}
                 onChange={handleChange}
+                onKeyDown={(e) => { if (e.key === "Enter") buscarTuristaPorDNI(); }}
                 onBlur={buscarTuristaPorDNI}
                 placeholder="Ingrese DNI del turista"
                 required
@@ -146,7 +155,7 @@ export default function CreateReserva() {
               <Form.Label>Nombre y Apellido</Form.Label>
               <Form.Control
                 type="text"
-                value={nombreTurista}
+                value={nombreTurista || ""}
                 readOnly
                 placeholder="Se completa automáticamente"
               />
