@@ -1,9 +1,10 @@
-//Exporto o requiero EXPRESS y mysql
+// Exporto o requiero EXPRESS y mysql
 import dotenv from "dotenv";
 dotenv.config();
 
 import express from "express";
 import cors from "cors";
+
 import usuariosRoutes from "./routes/usuarios.routes.js";
 import reservasRoutes from "./routes/reservas.routes.js";
 import turistasRoutes from "./routes/turistas.routes.js";
@@ -17,16 +18,29 @@ import carritoRoutes from "./routes/carrito.routes.js";
 import pagosRoutes from "./routes/pagos.routes.js";
 import contactoRoutes from "./routes/contacto.routes.js";
 
-import cloudinaryRoutes from './routes/cloudinary.routes.js'; 
-import excursionUploadRoutes from './routes/uploadExcursiones.routes.js';
+import cloudinaryRoutes from "./routes/cloudinary.routes.js";
+import excursionUploadRoutes from "./routes/uploadExcursiones.routes.js";
 import resenasMultimediaRoutes from "./routes/reseniaMultimedia.routes.js";
 
-const app = express()
+const app = express();
 
-//Se usa la libreria y metodos internos
-app.use(express.json())
-app.use(cors())
+// Middlewares básicos
+app.use(express.json());
 
+// CORS: permitir front local y el de Vercel
+const allowedOrigins = [
+  "http://localhost:5173",                    // desarrollo
+  "https://altotucuman-turismo.vercel.app"    // producción
+];
+
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+  })
+);
+
+// Rutas
 app.use("/api/usuarios", usuariosRoutes);
 app.use("/api/reservas", reservasRoutes);
 app.use("/api/turistas", turistasRoutes);
@@ -40,16 +54,17 @@ app.use("/api/auth/turistas", authTuristasRoutes);
 app.use("/api/pagos", pagosRoutes);
 app.use("/api", contactoRoutes);
 
-app.use('/api', cloudinaryRoutes);
-app.use('/api', excursionUploadRoutes);
+app.use("/api", cloudinaryRoutes);
+app.use("/api", excursionUploadRoutes);
 app.use("/api", resenasMultimediaRoutes);
 
-// Servir archivos estáticos (imágenes)
-
+// Endpoint raíz
 app.get("/", (req, res) => {
   res.send("API MAAVYT 🚀🏞");
 });
-//Levanta el servidor o escucha
-app.listen(8000,()=>{
-    console.log("Escuchando puerto 8000");
-})
+
+// Levanta el servidor o escucha
+const PORT = process.env.PORT || 8000;
+app.listen(PORT, () => {
+  console.log(`Escuchando puerto ${PORT}`);
+});
