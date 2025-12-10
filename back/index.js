@@ -23,6 +23,8 @@ import resenasMultimediaRoutes from "./routes/reseniaMultimedia.routes.js";
 
 const app = express()
 
+const PORT = process.env.PORT || 8000;
+
 //Se usa la libreria y metodos internos
 app.use(express.json())
 app.use(cors())
@@ -50,6 +52,6 @@ app.get("/", (req, res) => {
   res.send("API MAAVYT 🚀🏞");
 });
 //Levanta el servidor o escucha
-app.listen(8000,()=>{
-    console.log("Escuchando puerto 8000");
+app.listen(PORT,()=>{
+    console.log(`Escuchando puerto ${PORT}`);
 })
