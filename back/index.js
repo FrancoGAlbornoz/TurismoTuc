@@ -18,8 +18,10 @@ import carritoRoutes from "./routes/carrito.routes.js";
 import pagosRoutes from "./routes/pagos.routes.js";
 import contactoRoutes from "./routes/contacto.routes.js";
 
-import cloudinaryRoutes from "./routes/cloudinary.routes.js";
-import excursionUploadRoutes from "./routes/uploadExcursiones.routes.js";
+import botRoutes from "./routes/bot.routes.js";
+
+import cloudinaryRoutes from './routes/cloudinary.routes.js'; 
+import excursionUploadRoutes from './routes/uploadExcursiones.routes.js';
 import resenasMultimediaRoutes from "./routes/reseniaMultimedia.routes.js";
 
 const app = express();
@@ -52,10 +54,12 @@ app.use("/api/carrito", carritoRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/auth/turistas", authTuristasRoutes);
 app.use("/api/pagos", pagosRoutes);
-app.use("/api", contactoRoutes);
 
-app.use("/api", cloudinaryRoutes);
-app.use("/api", excursionUploadRoutes);
+app.use("/api/bot", botRoutes);
+
+app.use("/api", contactoRoutes);
+app.use('/api', cloudinaryRoutes);
+app.use('/api', excursionUploadRoutes);
 app.use("/api", resenasMultimediaRoutes);
 
 // Endpoint raíz
