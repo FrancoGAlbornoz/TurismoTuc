@@ -19,15 +19,19 @@ export default function ViewPago() {
 
   useEffect(() => {
     const fetchPago = async () => {
-      try {
-        const res = await axios.get("http://localhost:8000/api/pagos");
-        const encontrado = res.data.find((p) => p.id_pago === Number(id));
-        setPago(encontrado);
-      } catch (err) {
-        console.error("Error al obtener pago:", err);
-        setError("No se pudo cargar la información del pago.");
-      }
-    };
+  try {
+    const res = await axios.get("http://localhost:8000/api/pagos");
+    
+    // CORRECCIÓN: Acceder a .data.data porque la API devuelve un objeto paginado
+    const listaPagos = res.data.data || []; 
+    const encontrado = listaPagos.find((p) => p.id_pago === Number(id));
+    
+    setPago(encontrado);
+  } catch (err) {
+    console.error("Error al obtener pago:", err);
+    setError("No se pudo cargar la información del pago.");
+  }
+};
     fetchPago();
   }, [id]);
 

@@ -95,7 +95,7 @@ export default function CarritoItem({ item }) {
           </div>
 
           <p className="text-success fw-semibold mt-2 mb-0">
-            Subtotal: ${subtotalCalc.toLocaleString("es-AR")}
+            SUBTOTAL: ${subtotalCalc.toLocaleString("es-AR")}
           </p>
         </div>
 
@@ -105,7 +105,7 @@ export default function CarritoItem({ item }) {
             size="sm"
             onClick={() => removeItem(item.id_item)}
           >
-            Quitar
+            QUITAR
           </Button>
         </div>
       </Card.Body>

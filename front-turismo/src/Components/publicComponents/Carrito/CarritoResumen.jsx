@@ -34,7 +34,7 @@ export default function CarritoResumen({
   return (
     <Card className="shadow-sm border-0 rounded-4">
       <Card.Body>
-        <h5 className="fw-bold mb-3">Resumen</h5>
+        <h5 className="fw-bold mb-3">RESUMEN DE PAGO</h5>
 
         <div className="d-flex justify-content-between mb-2">
           <span>Subtotal</span>
@@ -49,24 +49,24 @@ export default function CarritoResumen({
         <hr />
 
         <div className="d-flex justify-content-between mb-3">
-          <span className="fw-bold">Total</span>
+          <span className="fw-bold">TOTAL</span>
           <span className="fw-bold">${Number(total).toLocaleString("es-AR")}</span>
         </div>
 
         <Button
-          variant="warning"
+          variant="success"
           className="w-100 mb-2 fw-semibold"
           onClick={handleIrAReservar}
         >
-          Ir a reservar
+          IR A RESERVAR
         </Button>
 
         <Button
-          variant="outline-secondary"
+          variant="warning"
           className="w-100 fw-semibold"
           onClick={handleSeguirExplorando}
         >
-          Seguir explorando
+          SEGUIR EXPLORANDO
         </Button>
       </Card.Body>
     </Card>

@@ -162,7 +162,7 @@ export const registrarTransferencia = async (req, res) => {
       INSERT INTO Pagos (id_reserva, id_medio_pago, monto, estado_pago, moneda, referencia)
       VALUES (
         ?,
-        (SELECT id_medio_pago FROM MediosPago WHERE nombre_medio='Transferencia/Depósito' LIMIT 1),
+        (SELECT id_medio_pago FROM MediosPago WHERE nombre_medio = 'Transferencia Bancaria' LIMIT 1),
         ?,
         'pendiente',
         'ARS',

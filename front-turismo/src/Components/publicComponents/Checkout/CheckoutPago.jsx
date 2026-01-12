@@ -6,7 +6,7 @@ import axios from "axios";
 import useCarritoStore from "../../../store/useCarritoStore";
 
 export default function CheckoutPago({ turista, onNext }) {
-  const [metodo, setMetodo] = useState("");
+  // Ahora el método por defecto es Transferencia y la referencia es obligatoria
   const [referencia, setReferencia] = useState("");
   const [procesandoPago, setProcesandoPago] = useState(false);
   const [msgError, setMsgError] = useState("");
@@ -16,7 +16,6 @@ export default function CheckoutPago({ turista, onNext }) {
   const [idCarrito, setIdCarrito] = useState(null);
   const [item, setItem] = useState(null);
 
-  // 🔹 Traer carrito abierto del turista y sus ítems
   useEffect(() => {
     const cargarCarrito = async () => {
       try {
@@ -57,7 +56,6 @@ export default function CheckoutPago({ turista, onNext }) {
     cargarCarrito();
   }, [turista]);
 
-  // 🧩 Crear reserva
   const crearReserva = async () => {
     if (!item) {
       setMsgError("No hay ítems en el carrito.");
@@ -74,38 +72,23 @@ export default function CheckoutPago({ turista, onNext }) {
     return res.data;
   };
 
-  // 💳 Pago Payway
-  const pagarPayway = async (id_reserva) => {
-    const res = await axios.post(
-      "http://localhost:8000/api/pagos/payway/iniciar",
-      { id_reserva }
-    );
-    return res.data;
-  };
-
-  // 💸 Pago transferencia
   const pagarTransferencia = async (id_reserva) => {
+    // Se envía la referencia obligatoria al backend
     const res = await axios.post(
       "http://localhost:8000/api/pagos/transferencia",
       {
         id_reserva,
-        referencia: referencia || null,
+        referencia: referencia, 
       }
     );
     return res.data;
   };
 
-  // ===========================
-  // 🟢 Confirmar y procesar pago
-  // ===========================
   const handleConfirmar = async () => {
     try {
-      if (!metodo) {
-        setMsgError("Seleccioná un método de pago.");
-        return;
-      }
-      if (!item) {
-        setMsgError("No hay ítems en el carrito.");
+      // Validación extra de seguridad para la referencia
+      if (!referencia.trim()) {
+        setMsgError("Por favor, ingresá el número de comprobante o referencia.");
         return;
       }
 
@@ -115,20 +98,14 @@ export default function CheckoutPago({ turista, onNext }) {
 
       await new Promise((r) => setTimeout(r, 2000));
 
-      // 1️⃣ Crear reserva
       const reserva = await crearReserva();
       const id_reserva = reserva.id_reserva;
       const id_excursion = item.id_excursion;
       const id_turista = turista.id_turista || turista.id;
 
-      // 2️⃣ Procesar pago
-      if (metodo === "Payway") {
-        await pagarPayway(id_reserva);
-      } else {
-        await pagarTransferencia(id_reserva);
-      }
+      // Se procesa únicamente mediante transferencia
+      await pagarTransferencia(id_reserva);
 
-      // 3️⃣ Vaciar carrito en backend y frontend
       try {
         await axios.delete(
           `http://localhost:8000/api/carrito/vaciar/${id_turista}`
@@ -138,9 +115,8 @@ export default function CheckoutPago({ turista, onNext }) {
       }
 
       const carritoStore = useCarritoStore.getState();
-      carritoStore.clearCarrito(); // 🔹 limpia Zustand + localStorage
+      carritoStore.clearCarrito();
 
-      // 4️⃣ SweetAlert + refuerzo limpieza antes de navegar
       await Swal.fire({
         title: "🌿 ¡Un último paso para que tu excursión sea perfecta!",
         text: "Queremos conocer algunos detalles para adaptar tu experiencia.",
@@ -148,18 +124,9 @@ export default function CheckoutPago({ turista, onNext }) {
         confirmButtonText: "Completar ahora",
         confirmButtonColor: "#0e7667",
         background: "#f9f9f9",
-        backdrop: `
-          rgba(0,0,0,0.4)
-          url("https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZDFwcTl4MW16ZzFiN2tsc2V4ZjFzNWJpbGlzOGdsb3lpMWVxN2R2YSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/26xBukhP3V2oe3f3O/giphy.gif")
-          center
-          no-repeat
-        `,
       });
 
-      // 🧹 Refuerzo adicional (por si el usuario navega atrás)
       carritoStore.clearCarrito();
-
-      // 5️⃣ Redirigir al formulario de personalización
       navigate(`/reserva/${id_reserva}/personalizacion/${id_excursion}`);
     } catch (err) {
       console.error("Error en el proceso de pago:", err);
@@ -171,18 +138,15 @@ export default function CheckoutPago({ turista, onNext }) {
     }
   };
 
-  // ===========================
-  // 🧱 Render
-  // ===========================
   return (
     <Card className="p-4 shadow-sm">
-      <h4 className="mb-3">Elegí cómo pagar</h4>
+      <h4 className="mb-3 text-success">Pago por Transferencia</h4>
 
       {msgError && <Alert variant="danger">{msgError}</Alert>}
       {msgInfo && procesandoPago && <Alert variant="info">{msgInfo}</Alert>}
 
       {item && (
-        <Alert variant="light" className="mb-3">
+        <Alert variant="light" className="mb-3 border">
           <div>
             <h5 className="mb-1 text-success">
               {item.excursion || "Excursión"}
@@ -197,67 +161,48 @@ export default function CheckoutPago({ turista, onNext }) {
                   })
                 : "No disponible"}
             </p>
-            <p className="mb-1">
-              <strong>Personas:</strong> {item.cantidad_personas}
-            </p>
-            <p className="mb-1">
-              <strong>Precio por persona:</strong> $
-              {item.precio_unitario?.toLocaleString("es-AR") ?? "—"}
-            </p>
             <p className="mb-0">
-              <strong>Total:</strong> $
+              <strong>Total a transferir:</strong> $
               {item.subtotal?.toLocaleString("es-AR") ?? "—"}
             </p>
           </div>
         </Alert>
       )}
 
-      <div className="d-flex gap-3 mb-4">
-        <Button
-          variant={metodo === "Payway" ? "success" : "outline-success"}
-          className="flex-fill"
-          onClick={() => setMetodo("Payway")}
-          disabled={procesandoPago}
-        >
-          Payway (tarjetas)
-        </Button>
-        <Button
-          variant={metodo === "Transferencia" ? "success" : "outline-success"}
-          className="flex-fill"
-          onClick={() => setMetodo("Transferencia")}
-          disabled={procesandoPago}
-        >
-          Transferencia / Depósito
-        </Button>
-      </div>
-
-      {metodo === "Transferencia" && (
-        <div className="border rounded p-3 mb-3">
-          <p className="mb-2">
-            Transferí el total al <strong>alias</strong>{" "}
-            <code>AGENCIATUCUMAN.mp</code> o al <strong>CBU</strong> 000...000
-          </p>
-          <Form.Control
-            placeholder="Nro. de operación / referencia (opcional)"
+      <div className="border rounded p-3 mb-3 bg-light">
+        <p className="mb-2">
+          Transferí el total al <strong>alias</strong>{" "}
+          <code>AGENCIATUCUMAN.mp</code> o al <strong>CBU</strong> 000...000
+        </p>
+        <Form.Group>
+          <Form.Label className="fw-bold">Nro. de operación / referencia *</Form.Label>
+          <Form.Control 
+            required
+            placeholder="Ingresá el comprobante aquí"
             value={referencia}
             onChange={(e) => setReferencia(e.target.value)}
             disabled={procesandoPago}
+            isInvalid={!referencia && msgError.includes("comprobante")}
           />
-        </div>
-      )}
+          <Form.Control.Feedback type="invalid">
+            Este campo es obligatorio para confirmar tu reserva.
+          </Form.Control.Feedback>
+        </Form.Group>
+      </div>
 
       <Button
         variant="success"
         className="w-100"
         onClick={handleConfirmar}
-        disabled={procesandoPago || !item}
+        // El botón se deshabilita si no hay referencia escrita
+        disabled={procesandoPago || !item || !referencia.trim()}
       >
         {procesandoPago ? (
           <>
             <Spinner as="span" animation="border" size="sm" /> Procesando pago...
           </>
         ) : (
-          "Confirmar y pagar"
+          "Confirmar y enviar comprobante"
         )}
       </Button>
     </Card>
