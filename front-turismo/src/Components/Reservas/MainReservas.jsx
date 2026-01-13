@@ -411,7 +411,7 @@ export default function ReservasMain() {
                   <td>${parseFloat(r.monto_total).toFixed(2)}</td>
                   <td>
                     <span
-                      className={`badge ${
+                      className={`badge text-uppercase ${
                         r.estado_reserva === "confirmada"
                           ? "bg-success"
                           : r.estado_reserva === "pendiente"

@@ -13,17 +13,16 @@ import {
 } from "react-bootstrap";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import axios from "axios";
 import useTuristaStore from "../../store/useTuristaStore";
 
 export default function PerfilTurista() {
-  const { t } = useTranslation();
   const { turista, token, setTurista } = useTuristaStore();
   const [reservas, setReservas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [editMode, setEditMode] = useState(false);
+  
   const [formData, setFormData] = useState({
     nombre: "",
     apellido: "",
@@ -33,24 +32,22 @@ export default function PerfilTurista() {
     direccion: "",
     nacionalidad: "",
   });
+  
   const navigate = useNavigate();
+  const turistaId = turista?.id_turista || turista?.id;
 
   useEffect(() => {
     const fetchReservas = async () => {
-      if (!turista) return;
+      if (!turistaId) return;
       try {
         const res = await axios.get(
-          `http://localhost:8000/api/turistas/${turista.id}/reservas`,
+          `http://localhost:8000/api/turistas/${turistaId}/reservas`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        
         const data = res.data || [];
-        
-        // Ordenamos: más recientes primero y máximo 10
         const procesadas = data
           .sort((a, b) => b.id_reserva - a.id_reserva)
           .slice(0, 10);
-          
         setReservas(procesadas);
       } catch (err) {
         console.error("Error al cargar reservas:", err);
@@ -72,20 +69,24 @@ export default function PerfilTurista() {
       });
       fetchReservas();
     }
-  }, [turista, token]);
+  }, [turista, turistaId, token]);
 
   const handleUpdate = async (e) => {
     e.preventDefault();
+    if (!turistaId) return;
+
     try {
       const res = await axios.put(
-        `http://localhost:8000/api/turistas/${turista.id}`,
+        `http://localhost:8000/api/turistas/${turistaId}`,
         formData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setTurista(res.data.turista);
+      const turistaActualizado = res.data.turista || res.data;
+      setTurista(turistaActualizado);
       setEditMode(false);
       Swal.fire("¡Éxito!", "Tus datos han sido actualizados.", "success");
     } catch (err) {
+      console.error("Error al actualizar:", err);
       Swal.fire("Error", "No se pudo actualizar el perfil.", "error");
     }
   };
@@ -93,16 +94,15 @@ export default function PerfilTurista() {
   if (loading) return (
     <div className="text-center mt-5">
       <Spinner animation="border" variant="success" />
-      <p className="mt-2 text-success">Cargando tu perfil...</p>
+      <p className="mt-2 text-success">Cargando perfil...</p>
     </div>
   );
 
   return (
     <Container className="py-5">
-      {/* Título Principal Personalizado */}
       <div className="mb-5">
         <h2 className="fw-bold text-success display-6 mb-1">
-          ¡Hola, {turista.nombre}! 👋
+          ¡Hola, {turista?.nombre}! 👋
         </h2>
         <p className="text-muted fs-5">
           Gestioná tu información y revisá tus últimas aventuras.
@@ -143,12 +143,20 @@ export default function PerfilTurista() {
                       onChange={(e) => setFormData({...formData, apellido: e.target.value})} 
                     />
                   </Form.Group>
-                  <Form.Group className="mb-3">
+                  <Form.Group className="mb-2">
                     <Form.Label className="small fw-bold">Teléfono</Form.Label>
                     <Form.Control 
                       size="sm" 
                       value={formData.telefono} 
                       onChange={(e) => setFormData({...formData, telefono: e.target.value})} 
+                    />
+                  </Form.Group>
+                  <Form.Group className="mb-3">
+                    <Form.Label className="small fw-bold">Domicilio / Dirección</Form.Label>
+                    <Form.Control 
+                      size="sm" 
+                      value={formData.direccion} 
+                      onChange={(e) => setFormData({...formData, direccion: e.target.value})} 
                     />
                   </Form.Group>
                   <div className="d-grid gap-2">
@@ -158,16 +166,17 @@ export default function PerfilTurista() {
                 </Form>
               ) : (
                 <div className="text-dark">
-                  <p className="mb-2"><strong>Nombre:</strong> {turista.nombre} {turista.apellido}</p>
-                  <p className="mb-2"><strong>Email:</strong> {turista.email}</p>
-                  <p className="mb-0"><strong>Teléfono:</strong> {turista.telefono || "-"}</p>
+                  <p className="mb-2"><strong>Nombre:</strong> {turista?.nombre} {turista?.apellido}</p>
+                  <p className="mb-2"><strong>Email:</strong> {turista?.email}</p>
+                  <p className="mb-2"><strong>Teléfono:</strong> {turista?.telefono || "-"}</p>
+                  <p className="mb-0"><strong>Domicilio:</strong> {turista?.direccion || "No especificado"}</p>
                 </div>
               )}
             </Card.Body>
           </Card>
         </Col>
 
-        {/* Columna Derecha: Tabla de Reservas */}
+        {/* Columna Derecha: Reservas */}
         <Col lg={8}>
           <Card className="shadow-sm border-0">
             <Card.Header className="bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
@@ -177,60 +186,60 @@ export default function PerfilTurista() {
               <Badge bg="success" pill>Últimas 10</Badge>
             </Card.Header>
             <Card.Body className="p-0">
-              {error && <Alert variant="danger" className="m-3">{error}</Alert>}
-              
-              {reservas.length === 0 ? (
-                <div className="text-center py-5">
-                  <p className="text-muted">Aún no tienes reservas realizadas.</p>
+              <Alert variant="warning" className="m-3 border-0 shadow-sm d-flex align-items-center">
+                <i className="bi bi-clock-history me-3 fs-4 text-warning"></i>
+                <div>
+                  <strong>¡Recordatorio importante!</strong> Deberás presentarte en nuestra agencia  (Rivadavia 1051), con una identificacion, en el horario pactado para la salida de tu excursión. ¡Te esperamos!
                 </div>
-              ) : (
-                <Table hover responsive className="align-middle mb-0">
-                  <thead className="table-light">
-                    <tr>
-                      <th className="ps-3 text-success">Excursión</th>
-                      <th className="text-success">Fecha de excursión</th>
-                      <th className="text-success">Estado</th>
-                      <th className="text-center text-success">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {reservas.map((r) => (
+              </Alert>
+              
+              <Table hover responsive className="align-middle mb-0">
+                <thead className="table-light">
+                  <tr>
+                    <th className="ps-3 text-success">Excursión</th>
+                    <th className="text-success">Fecha</th>
+                    <th className="text-success text-center">Horario</th>
+                    <th className="text-success">Estado</th>
+                    <th className="text-success">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reservas.length > 0 ? (
+                    reservas.map((r) => (
                       <tr key={r.id_reserva}>
                         <td className="ps-3 py-3">
                           <div className="fw-bold">{r.excursion_nombre}</div>
                           <small className="text-muted">{r.cantidad_personas} personas</small>
                         </td>
-                        <td>
-                          {new Date(r.fecha_salida).toLocaleDateString("es-AR")}
+                        <td>{new Date(r.fecha_salida).toLocaleDateString("es-AR")}</td>
+                        <td className="text-center fw-bold text-dark">
+                          {r.hora_salida ? r.hora_salida.slice(0, 5) : new Date(r.fecha_salida).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} hs
                         </td>
                         <td>
-                          <Badge 
-                            bg={
-                              r.estado_reserva === "confirmada" ? "success" :
-                              r.estado_reserva === "pendiente" ? "warning text-dark" :
-                              r.estado_reserva === "finalizada" ? "primary" : "secondary"
-                            }
-                          >
-                            {r.estado_reserva.toUpperCase()}
+                          <Badge bg={
+                            r.estado_reserva === "confirmada" ? "success" : 
+                            r.estado_reserva === "pendiente" ? "warning text-dark" : 
+                            r.estado_reserva === "finalizada" ? "primary" : "secondary"
+                          }>
+                            {(r.estado_reserva || "Pendiente").toUpperCase()}
                           </Badge>
                         </td>
                         <td className="text-center">
                           {r.estado_reserva === "finalizada" && (
-                            <Button
-                              variant="outline-success"
-                              size="sm"
-                              className="rounded-pill"
-                              onClick={() => navigate(`/calificar/${r.id_reserva}`)}
-                            >
-                              <i className="bi bi-star-fill me-1"></i> Calificar
+                            <Button variant="outline-success" size="sm" className="rounded-pill" onClick={() => navigate(`/calificar/${r.id_reserva}`)}>
+                              Calificar
                             </Button>
                           )}
                         </td>
                       </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              )}
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="5" className="text-center py-4 text-muted">Aún no tienes reservas registradas.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </Table>
             </Card.Body>
           </Card>
         </Col>

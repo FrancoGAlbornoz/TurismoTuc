@@ -100,19 +100,22 @@ export default function MainExcursiones() {
                     <td>${e.precio_base}</td>
                     <td>
                       <span
-                        className={`badge ${
+                        className={`badge text-uppercase ${
+                          // <-- Agregamos text-uppercase
                           e.estado === "activa" ? "bg-success" : "bg-warning"
                         }`}
                       >
                         {e.estado}
                       </span>
                     </td>
+
+                    {/* --- OPCIONAL: CATEGORÍAS TAMBIÉN EN MAYÚSCULAS --- */}
                     <td>
                       {e.categorias?.length > 0 ? (
                         e.categorias.map((cat, idx) => (
                           <span
                             key={`${e.id_excursion}-${cat.id_categoria_excursion}-${idx}`}
-                            className="badge bg-info me-1"
+                            className="badge bg-info text-uppercase me-1" // <-- Agregamos text-uppercase aquí también
                           >
                             {cat.nombre_categoria}
                           </span>

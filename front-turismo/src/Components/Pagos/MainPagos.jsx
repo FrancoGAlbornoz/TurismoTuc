@@ -51,7 +51,7 @@ export default function MainPagos() {
 
   const actualizarEstado = async (id_pago, nuevo_estado) => {
     const confirmacion = await Swal.fire({
-      title: `¿Confirmar cambio a "${nuevo_estado}"?`,
+      title: `¿Confirmar cambio a "${nuevo_estado.toUpperCase()}"?`,
       text: "Esta acción actualizará el estado del pago.",
       icon: "question",
       showCancelButton: true,
@@ -70,7 +70,7 @@ export default function MainPagos() {
           p.id_pago === id_pago ? { ...p, estado_pago: nuevo_estado } : p
         )
       );
-      setMensaje(`Pago actualizado a "${nuevo_estado}"`);
+      setMensaje(`Pago actualizado a "${nuevo_estado.toUpperCase()}"`);
       setTimeout(() => setMensaje(""), 2500);
     } catch (err) {
       console.error("Error al actualizar pago:", err);
@@ -132,7 +132,13 @@ export default function MainPagos() {
               </tr>
             </thead>
             <tbody>
-              {pagos.length > 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan="8" className="text-center py-4">
+                    <Spinner animation="border" variant="success" />
+                  </td>
+                </tr>
+              ) : pagos.length > 0 ? (
                 pagos.map((p) => (
                   <tr key={p.id_pago}>
                     <td>{p.id_pago}</td>
@@ -143,6 +149,7 @@ export default function MainPagos() {
                     <td>${p.monto?.toLocaleString("es-AR")}</td>
                     <td>
                       <Badge
+                        className="text-uppercase" // <-- Cambio aquí para mayúsculas visuales
                         bg={
                           p.estado_pago === "aprobado"
                             ? "success"
@@ -213,6 +220,12 @@ export default function MainPagos() {
               )}
             </tbody>
           </Table>
+          
+          {totalPages > 1 && (
+            <div className="d-flex justify-content-center mt-3">
+              {renderPagination()}
+            </div>
+          )}
         </Card.Body>
       </Card>
     </div>

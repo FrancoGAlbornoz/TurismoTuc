@@ -137,7 +137,11 @@ export default function MainResenias() {
                   <td>{r.comentario || "—"}</td>
                   <td>{new Date(r.fecha_resena).toLocaleDateString()}</td>
                   <td>
-                    <Badge bg={r.estado === "publicada" ? "success" : "secondary"}>
+                    {/* ESTADO EN MAYÚSCULAS */}
+                    <Badge 
+                      className="text-uppercase" 
+                      bg={r.estado === "publicada" ? "success" : "secondary"}
+                    >
                       {r.estado}
                     </Badge>
                   </td>
@@ -184,4 +188,3 @@ export default function MainResenias() {
     </Card>
   );
 }
-

@@ -96,9 +96,11 @@ export default function MainUsuarios() {
                     </td>
                     <td>{u.email}</td>
                     <td>{u.telefono || "—"}</td>
-                    <td>{u.nombre_rol}</td>
+                    <td className="text-uppercase">{u.nombre_rol}</td>
                     <td>
+                      {/* LÍNEA 101 APROX: APLICANDO MAYÚSCULAS */}
                       <Badge
+                        className="text-uppercase"
                         bg={u.estado === "activo" ? "success" : "secondary"}
                       >
                         {u.estado || "pendiente"}

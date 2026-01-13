@@ -83,12 +83,7 @@ export default function MainFechasExcursion() {
             excursiones.map((e) => (
               <div key={e.id_excursion} className="mb-4">
                 <h6 className="fw-bold text-success">{e.titulo}</h6>
-                <Table
-                  responsive
-                  hover
-                  size="sm"
-                  className="mb-0 align-middle"
-                >
+                <Table responsive hover size="sm" className="mb-0 align-middle">
                   <thead className="table-light">
                     <tr>
                       <th>Fecha</th>
@@ -107,9 +102,10 @@ export default function MainFechasExcursion() {
                           <td>{f.hora_salida || "—"}</td>
                           <td>{f.cupo_maximo}</td>
                           <td>{f.cupo_disponible}</td>
-                          <td>
+                          <td className>
                             <span
-                              className={`badge ${
+                              className={`badge text-uppercase ${
+                                // <-- Agregamos text-uppercase aquí
                                 f.estado === "abierta"
                                   ? "bg-success"
                                   : "bg-secondary"
@@ -154,9 +150,7 @@ export default function MainFechasExcursion() {
               </div>
             ))
           ) : (
-            <p className="text-muted mb-0">
-              No hay excursiones registradas.
-            </p>
+            <p className="text-muted mb-0">No hay excursiones registradas.</p>
           )}
         </Card.Body>
       </Card>

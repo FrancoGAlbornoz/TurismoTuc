@@ -14,7 +14,9 @@ export default function MainExcursionesGuia() {
   useEffect(() => {
     const fetchExcursiones = async () => {
       try {
-        const res = await axios.get(`http://localhost:8000/api/excursiones/guia/${user.id}`);
+        const res = await axios.get(
+          `http://localhost:8000/api/excursiones/guia/${user.id}`
+        );
         setExcursiones(res.data);
       } catch (err) {
         console.error("Error al obtener excursiones:", err);
@@ -61,8 +63,14 @@ export default function MainExcursionesGuia() {
                 <tr key={e.id_excursion}>
                   <td>{e.titulo}</td>
                   <td>{e.ubicacion}</td>
+                  {/* --- ESTADO EN MAYÚSCULAS --- */}
                   <td>
-                    <span className={`badge ${e.estado === "activa" ? "bg-success" : "bg-secondary"}`}>
+                    <span
+                      className={`badge text-uppercase ${
+                        // <-- Agregamos text-uppercase
+                        e.estado === "activa" ? "bg-success" : "bg-secondary"
+                      }`}
+                    >
                       {e.estado}
                     </span>
                   </td>
@@ -75,7 +83,11 @@ export default function MainExcursionesGuia() {
                     <Button
                       variant="outline-primary"
                       size="sm"
-                      onClick={() => navigate(`/dashboard-guia/excursiones/${e.id_excursion}/participantes`)}
+                      onClick={() =>
+                        navigate(
+                          `/dashboard-guia/excursiones/${e.id_excursion}/participantes`
+                        )
+                      }
                     >
                       Ver participantes
                     </Button>
