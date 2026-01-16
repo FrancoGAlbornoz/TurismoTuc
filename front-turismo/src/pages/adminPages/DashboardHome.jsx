@@ -118,7 +118,7 @@ export default function DashboardHome() {
                   <th>Estado</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="align-middle">
                 {reservasHoy.map((r, i) => (
                   <tr key={i}>
                     <td>{r.id_reserva}</td>
@@ -127,7 +127,7 @@ export default function DashboardHome() {
                     <td>{r.cantidad_personas}</td>
                     <td>
                       <span
-                        className={`badge px-3 py-2 ${
+                        className={`badge text-uppercase px-3 py-2 ${
                           r.estado_reserva === "confirmada"
                             ? "bg-success"
                             : r.estado_reserva === "pendiente"

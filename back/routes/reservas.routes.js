@@ -12,6 +12,7 @@ import {
   createPago,
   deletePago,
   buscarReservasPorDNI,
+  cancelarReservaTurista,
 } from "../controllers/reservas.controller.js";
 
 const router = express.Router();
@@ -25,6 +26,7 @@ router.put("/:id", updateReserva);
 router.delete("/:id", deleteReserva);
 router.put("/restore/:id", restoreReserva);
 router.get("/excursion/:id_excursion/participantes", getParticipantesPorExcursion);
+router.put("/:id/cancelar", cancelarReservaTurista);
 
 
 // Pagos

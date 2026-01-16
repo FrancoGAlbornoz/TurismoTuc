@@ -487,3 +487,55 @@ export const buscarReservasPorDNI = (req, res) => {
     return res.json(rows);
   });
 };
+
+
+// AGREGAR AL FINAL DE reservas.controller.js
+export const cancelarReservaTurista = async (req, res) => {
+  const { id } = req.params;
+  const connection = await pool.promise().getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    // 1. Obtener datos de la reserva para saber qué fecha y cuántos lugares liberar
+    const [reservaRows] = await connection.query(
+      "SELECT id_fecha, cantidad_personas, estado_reserva FROM Reservas WHERE id_reserva = ?",
+      [id]
+    );
+
+    if (reservaRows.length === 0) {
+      await connection.rollback();
+      return res.status(404).json({ message: "Reserva no encontrada" });
+    }
+
+    const { id_fecha, cantidad_personas, estado_reserva } = reservaRows[0];
+
+    // Validación: No cancelar si ya está cancelada o finalizada
+    if (estado_reserva === 'cancelada' || estado_reserva === 'finalizada') {
+      await connection.rollback();
+      return res.status(400).json({ message: `No se puede cancelar una reserva en estado: ${estado_reserva}` });
+    }
+
+    // 2. Cambiar estado a 'cancelada'
+    await connection.query(
+      "UPDATE Reservas SET estado_reserva = 'cancelada' WHERE id_reserva = ?",
+      [id]
+    );
+
+    // 3. Devolver los cupos a la fecha correspondiente
+    await connection.query(
+      "UPDATE FechasExcursion SET cupo_disponible = cupo_disponible + ? WHERE id_fecha = ?",
+      [cantidad_personas, id_fecha]
+    );
+
+    await connection.commit();
+    res.json({ message: "Reserva cancelada y cupos liberados correctamente." });
+
+  } catch (error) {
+    await connection.rollback();
+    console.error("Error en la transacción de cancelación:", error);
+    res.status(500).json({ message: "Error interno del servidor" });
+  } finally {
+    connection.release();
+  }
+};

@@ -271,7 +271,8 @@ export const getReservasByTurista = (req, res) => {
   const sql = `
     SELECT 
       r.id_reserva,
-      e.titulo AS excursion,
+      e.titulo AS excursion_nombre, -- Cambiado de 'excursion' a 'excursion_nombre' para tu React
+      CONCAT(u.nombre, ' ', u.apellido) AS guia_nombre, -- Traemos al guía
       e.ubicacion,
       r.cantidad_personas,
       r.monto_total,
@@ -282,6 +283,7 @@ export const getReservasByTurista = (req, res) => {
     FROM Reservas r
     JOIN FechasExcursion f ON r.id_fecha = f.id_fecha
     JOIN Excursiones e ON f.id_excursion = e.id_excursion
+    LEFT JOIN Usuarios u ON e.id_guia = u.id_usuario -- Unión para obtener el guía asignado
     WHERE r.id_turista = ? 
       AND r.eliminado = 0
     ORDER BY r.fecha_reserva DESC;
@@ -290,7 +292,7 @@ export const getReservasByTurista = (req, res) => {
   pool.query(sql, [id], (err, results) => {
     if (err) {
       console.error("Error al obtener reservas del turista:", err.message);
-      return res.status(500).json({ message: "Error al obtener reservas del turista", error: err.message });
+      return res.status(500).json({ message: "Error al obtener reservas", error: err.message });
     }
     res.json(results);
   });
