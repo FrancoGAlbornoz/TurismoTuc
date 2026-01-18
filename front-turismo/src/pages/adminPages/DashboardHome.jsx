@@ -131,8 +131,8 @@ export default function DashboardHome() {
                           r.estado_reserva === "confirmada"
                             ? "bg-success"
                             : r.estado_reserva === "pendiente"
-                            ? "bg-warning text-dark"
-                            : "bg-danger"
+                              ? "bg-warning text-dark"
+                              : "bg-danger"
                         }`}
                       >
                         {r.estado_reserva}
@@ -152,28 +152,50 @@ export default function DashboardHome() {
 
       {/* --- PRÓXIMAS RESERVAS --- */}
       <Card className="shadow-sm mb-5">
-        <Card.Header className="bg-primary text-white fw-bold">
-          Próximas Reservas
+        <Card.Header className="bg-primary text-white fw-bold d-flex justify-content-between align-items-center">
+          <span>Próximas Reservas (Logística de Contacto)</span>
+          <small>Top 10 cronológico</small>
         </Card.Header>
         <Card.Body>
           {reservasFuturas.length > 0 ? (
-            <ul className="list-group list-group-flush">
+            <div className="list-group list-group-flush">
               {reservasFuturas.map((r, i) => (
-                <li
+                <div
                   key={i}
-                  className="list-group-item d-flex justify-content-between align-items-center"
+                  className="list-group-item d-flex justify-content-between align-items-center py-3"
                 >
-                  <span>
-                    <strong>{r.fecha_excursion}</strong> — {r.excursion}
-                    <br />
-                    <small className="text-muted">{r.turista}</small>
-                  </span>
-                  <span className="badge bg-success">
-                    🚌 {r.cantidad_personas} pers.
-                  </span>
-                </li>
+                  <div className="d-flex flex-column">
+                    <span className="fw-bold text-primary">
+                      {new Date(r.fecha).toLocaleDateString()} — {r.excursion}
+                    </span>
+                    <span className="mb-1">👤 {r.turista}</span>
+                    <div className="d-flex gap-3 mt-1">
+                      {/* Email link */}
+                      <small className="text-muted">
+                        <i className="bi bi-envelope"></i> {r.email}
+                      </small>
+                      {/* WhatsApp Link Directo */}
+                      <a
+                        href={`https://wa.me/${r.telefono?.replace(/\D/g, "")}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-success text-decoration-none small fw-bold"
+                      >
+                        <i className="bi bi-whatsapp"></i> {r.telefono}
+                      </a>
+                    </div>
+                  </div>
+                  <div className="text-end">
+                    <span className="badge bg-success d-block mb-1">
+                      🚌 {r.cantidad_personas} personas
+                    </span>
+                    <span className="badge bg-light text-dark border">
+                      {r.estado_reserva}
+                    </span>
+                  </div>
+                </div>
               ))}
-            </ul>
+            </div>
           ) : (
             <p className="text-muted text-center m-0">
               No hay reservas próximas registradas.

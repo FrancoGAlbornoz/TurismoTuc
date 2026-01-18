@@ -5,16 +5,15 @@ import Swal from "sweetalert2";
 import axios from "axios";
 import useCarritoStore from "../../../store/useCarritoStore";
 
-export default function CheckoutPago({ turista, onNext }) {
-  // Ahora el método por defecto es Transferencia y la referencia es obligatoria
+export default function CheckoutPago({ turista }) {
   const [referencia, setReferencia] = useState("");
   const [procesandoPago, setProcesandoPago] = useState(false);
   const [msgError, setMsgError] = useState("");
   const [msgInfo, setMsgInfo] = useState("");
   const navigate = useNavigate();
 
-  const [idCarrito, setIdCarrito] = useState(null);
-  const [item, setItem] = useState(null);
+  // CAMBIO 1: Manejamos 'items' (plural, array) en lugar de 'item'
+  const [items, setItems] = useState([]);
 
   useEffect(() => {
     const cargarCarrito = async () => {
@@ -22,9 +21,7 @@ export default function CheckoutPago({ turista, onNext }) {
         setMsgError("");
         const id_turista = turista.id_turista || turista.id;
 
-        const carRes = await axios.get(
-          `http://localhost:8000/api/carrito/${id_turista}`
-        );
+        const carRes = await axios.get(`http://localhost:8000/api/carrito/${id_turista}`);
 
         if (!carRes.data) {
           setMsgInfo("Tu carrito está vacío.");
@@ -32,161 +29,139 @@ export default function CheckoutPago({ turista, onNext }) {
           return;
         }
 
-        const id_carrito = carRes.data.id_carrito;
-        setIdCarrito(id_carrito);
-
-        const itemsRes = await axios.get(
-          `http://localhost:8000/api/carrito/${id_carrito}/items`
-        );
+        const itemsRes = await axios.get(`http://localhost:8000/api/carrito/${carRes.data.id_carrito}/items`);
 
         if (!itemsRes.data || itemsRes.data.length === 0) {
-          setMsgInfo(
-            "Tu carrito está vacío. Volvé al catálogo y agregá una excursión."
-          );
+          setMsgInfo("Tu carrito está vacío. Volvé al catálogo.");
           return;
         }
 
-        setItem(itemsRes.data[0]);
+        // CAMBIO 2: Guardamos TODO el array de excursiones
+        setItems(itemsRes.data);
+
       } catch (e) {
         console.error(e);
-        setMsgError("No se pudo obtener el carrito. Probá recargar la página.");
+        setMsgError("No se pudo obtener el carrito.");
       }
     };
 
     cargarCarrito();
   }, [turista]);
 
-  const crearReserva = async () => {
-    if (!item) {
-      setMsgError("No hay ítems en el carrito.");
-      return null;
+  const handleConfirmar = async () => {
+    // Validación: referencia obligatoria
+    if (!referencia.trim()) {
+      setMsgError("Por favor, ingresá el número de comprobante.");
+      return;
     }
 
-    const payload = {
-      id_turista: turista.id_turista || turista.id,
-      id_fecha: item.id_fecha,
-      cantidad_personas: item.cantidad_personas,
-    };
+    setProcesandoPago(true);
+    setMsgError("");
+    setMsgInfo("Procesando tus reservas...");
 
-    const res = await axios.post("http://localhost:8000/api/reservas", payload);
-    return res.data;
-  };
+    const id_turista = turista.id_turista || turista.id;
+    const reservasConfirmadas = []; // Aquí acumularemos los IDs generados
 
-  const pagarTransferencia = async (id_reserva) => {
-    // Se envía la referencia obligatoria al backend
-    const res = await axios.post(
-      "http://localhost:8000/api/pagos/transferencia",
-      {
-        id_reserva,
-        referencia: referencia, 
-      }
-    );
-    return res.data;
-  };
-
-  const handleConfirmar = async () => {
     try {
-      // Validación extra de seguridad para la referencia
-      if (!referencia.trim()) {
-        setMsgError("Por favor, ingresá el número de comprobante o referencia.");
-        return;
+      // CAMBIO 3: Bucle para procesar CADA ítem del carrito
+      for (const item of items) {
+        // A. Crear Reserva individual
+        const payloadReserva = {
+          id_turista,
+          id_fecha: item.id_fecha,
+          cantidad_personas: item.cantidad_personas,
+        };
+        const resReserva = await axios.post("http://localhost:8000/api/reservas", payloadReserva);
+        const nuevoIdReserva = resReserva.data.id_reserva;
+
+        // B. Registrar Pago para esa reserva
+        await axios.post("http://localhost:8000/api/pagos/transferencia", {
+          id_reserva: nuevoIdReserva,
+          referencia: referencia,
+        });
+
+        // C. Guardar datos para la siguiente pantalla
+        reservasConfirmadas.push({
+          id_reserva: nuevoIdReserva,
+          id_excursion: item.id_excursion,
+          nombre_excursion: item.excursion 
+        });
       }
 
-      setProcesandoPago(true);
-      setMsgError("");
-      setMsgInfo("Procesando tu pago...");
-
-      await new Promise((r) => setTimeout(r, 2000));
-
-      const reserva = await crearReserva();
-      const id_reserva = reserva.id_reserva;
-      const id_excursion = item.id_excursion;
-      const id_turista = turista.id_turista || turista.id;
-
-      // Se procesa únicamente mediante transferencia
-      await pagarTransferencia(id_reserva);
-
+      // Limpieza del carrito al finalizar todo el bucle
       try {
-        await axios.delete(
-          `http://localhost:8000/api/carrito/vaciar/${id_turista}`
-        );
+        await axios.delete(`http://localhost:8000/api/carrito/vaciar/${id_turista}`);
       } catch (error) {
-        console.warn("⚠️ No se pudo limpiar el carrito en el backend:", error);
+        console.warn("No se pudo limpiar carrito en backend", error);
       }
+      useCarritoStore.getState().clearCarrito();
 
-      const carritoStore = useCarritoStore.getState();
-      carritoStore.clearCarrito();
-
+      // Mensaje de éxito
       await Swal.fire({
-        title: "🌿 ¡Un último paso para que tu excursión sea perfecta!",
-        text: "Queremos conocer algunos detalles para adaptar tu experiencia.",
+        title: "¡Pago exitoso!",
+        text: "Tus reservas fueron confirmadas. Ahora personalicemos tu experiencia.",
         icon: "success",
-        confirmButtonText: "Completar ahora",
         confirmButtonColor: "#0e7667",
-        background: "#f9f9f9",
       });
 
-      carritoStore.clearCarrito();
-      navigate(`/reserva/${id_reserva}/personalizacion/${id_excursion}`);
+      // CAMBIO 4: Navegación pasando el ARRAY de reservas (no por URL, sino por state)
+      navigate("/preguntas-personalizadas", { 
+        state: { reservasRealizadas: reservasConfirmadas } 
+      });
+
     } catch (err) {
-      console.error("Error en el proceso de pago:", err);
-      const apiMsg = err?.response?.data?.message;
-      setMsgError(apiMsg || "Error al crear la reserva/pago.");
+      console.error("Error en pago:", err);
+      setMsgError("Hubo un error al procesar las reservas. Verificá tu conexión.");
     } finally {
       setProcesandoPago(false);
       setMsgInfo("");
     }
   };
 
+  // Cálculo del total (sumando números, no concatenando strings)
+  const totalGeneral = items.reduce((acc, it) => acc + (Number(it.subtotal) || 0), 0);
+
   return (
     <Card className="p-4 shadow-sm">
       <h4 className="mb-3 text-success">Pago por Transferencia</h4>
 
       {msgError && <Alert variant="danger">{msgError}</Alert>}
-      {msgInfo && procesandoPago && <Alert variant="info">{msgInfo}</Alert>}
+      {msgInfo && <Alert variant="info">{msgInfo}</Alert>}
 
-      {item && (
-        <Alert variant="light" className="mb-3 border">
-          <div>
-            <h5 className="mb-1 text-success">
-              {item.excursion || "Excursión"}
-            </h5>
-            <p className="mb-1">
-              <strong>Fecha:</strong>{" "}
-              {item.fecha
-                ? new Date(item.fecha).toLocaleDateString("es-AR", {
-                    day: "2-digit",
-                    month: "long",
-                    year: "numeric",
-                  })
-                : "No disponible"}
-            </p>
-            <p className="mb-0">
-              <strong>Total a transferir:</strong> $
-              {item.subtotal?.toLocaleString("es-AR") ?? "—"}
-            </p>
-          </div>
-        </Alert>
+      {/* CAMBIO 5: Renderizar lista completa de ítems */}
+      {items.length > 0 ? (
+        items.map((it, idx) => (
+          <Alert key={idx} variant="light" className="mb-2 border p-2">
+            <div className="d-flex justify-content-between align-items-center">
+              <div>
+                <strong className="text-success">{it.excursion}</strong>
+                <div className="small text-muted">
+                  {it.fecha ? new Date(it.fecha).toLocaleDateString("es-AR") : ""} - {it.cantidad_personas} pers.
+                </div>
+              </div>
+              <span className="fw-bold">${it.subtotal?.toLocaleString("es-AR")}</span>
+            </div>
+          </Alert>
+        ))
+      ) : (
+        <p>Cargando detalles...</p>
       )}
 
+      <div className="text-end mb-3">
+        <h5>Total a transferir: <span className="text-success">${totalGeneral.toLocaleString("es-AR")}</span></h5>
+      </div>
+
       <div className="border rounded p-3 mb-3 bg-light">
-        <p className="mb-2">
-          Transferí el total al <strong>alias</strong>{" "}
-          <code>AGENCIATUCUMAN.mp</code> o al <strong>CBU</strong> 000...000
-        </p>
+        <p className="mb-2">Transferí al Alias: <strong>AGENCIATUCUMAN.mp</strong></p>
         <Form.Group>
-          <Form.Label className="fw-bold">Nro. de operación / referencia *</Form.Label>
+          <Form.Label className="fw-bold small">Nro. de comprobante *</Form.Label>
           <Form.Control 
             required
             placeholder="Ingresá el comprobante aquí"
             value={referencia}
             onChange={(e) => setReferencia(e.target.value)}
             disabled={procesandoPago}
-            isInvalid={!referencia && msgError.includes("comprobante")}
           />
-          <Form.Control.Feedback type="invalid">
-            Este campo es obligatorio para confirmar tu reserva.
-          </Form.Control.Feedback>
         </Form.Group>
       </div>
 
@@ -194,16 +169,9 @@ export default function CheckoutPago({ turista, onNext }) {
         variant="success"
         className="w-100"
         onClick={handleConfirmar}
-        // El botón se deshabilita si no hay referencia escrita
-        disabled={procesandoPago || !item || !referencia.trim()}
+        disabled={procesandoPago || items.length === 0 || !referencia.trim()}
       >
-        {procesandoPago ? (
-          <>
-            <Spinner as="span" animation="border" size="sm" /> Procesando pago...
-          </>
-        ) : (
-          "Confirmar y enviar comprobante"
-        )}
+        {procesandoPago ? <Spinner as="span" animation="border" size="sm" /> : "Confirmar todas las reservas"}
       </Button>
     </Card>
   );

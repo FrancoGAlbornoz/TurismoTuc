@@ -195,22 +195,28 @@ export const addRespuestaPersonalizacion = (req, res) => {
 
 
 
-// ======================================
-// GUARDAR RESPUESTAS PERSONALIZADAS
+
+// GUARDAR RESPUESTAS PERSONALIZADAS (Múltiples Reservas)
 // ======================================
 export const guardarRespuestas = (req, res) => {
-  const { id_reserva, respuestas } = req.body;
+  const { bloques } = req.body; // Recibe un array de bloques
 
-  if (!id_reserva || !Array.isArray(respuestas)) {
-    return res.status(400).json({ message: "Datos incompletos" });
+  if (!bloques || !Array.isArray(bloques)) {
+    return res.status(400).json({ message: "Formato de datos no válido" });
   }
 
-  const sql = `
-    INSERT INTO RespuestasPersonalizacion (id_reserva, id_pregunta, valor_respuesta)
-    VALUES ?
-  `;
+  const values = [];
+  bloques.forEach((bloque) => {
+    bloque.respuestas.forEach((r) => {
+      values.push([bloque.id_reserva, r.id_pregunta, r.valor_respuesta || ""]);
+    });
+  });
 
-  const values = respuestas.map((r) => [id_reserva, r.id_pregunta, r.valor_respuesta || ""]);
+  if (values.length === 0) {
+    return res.status(400).json({ message: "No hay respuestas para guardar" });
+  }
+
+  const sql = `INSERT INTO RespuestasPersonalizacion (id_reserva, id_pregunta, valor_respuesta) VALUES ?`;
 
   pool.query(sql, [values], (err, result) => {
     if (err) {
