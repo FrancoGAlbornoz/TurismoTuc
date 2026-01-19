@@ -226,3 +226,47 @@ export const guardarRespuestas = (req, res) => {
     res.json({ message: "Respuestas guardadas correctamente" });
   });
 };
+
+// 1. Obtener el listado (Usamos solo lo que tenés en la DB)
+export const getTodasLasAsignaciones = (req, res) => {
+  const sql = `
+    SELECT 
+      ep.id_excursion, 
+      ep.id_pregunta,
+      e.titulo AS nombre_excursion,
+      p.texto_pregunta
+    FROM ExcursionPreguntas ep
+    JOIN Excursiones e ON ep.id_excursion = e.id_excursion
+    JOIN PreguntasPersonalizacion p ON ep.id_pregunta = p.id_pregunta
+    WHERE ep.eliminado = 0
+    ORDER BY e.titulo ASC
+  `;
+
+  pool.query(sql, (err, results) => {
+    if (err) {
+      console.error("Error SQL:", err);
+      return res.status(500).json({ message: "Error al traer asignaciones" });
+    }
+    res.json(results);
+  });
+};
+
+// 2. Quitar una pregunta (Con LIMIT 1 para las repetidas)
+export const deleteAsignacion = (req, res) => {
+  const { id_excursion, id_pregunta } = req.params;
+  
+  const sql = `
+    UPDATE ExcursionPreguntas 
+    SET eliminado = 1 
+    WHERE id_excursion = ? AND id_pregunta = ? AND eliminado = 0
+    LIMIT 1
+  `;
+
+  pool.query(sql, [id_excursion, id_pregunta], (err, result) => {
+    if (err) {
+      console.error("Error SQL al eliminar:", err);
+      return res.status(500).json({ message: "Error al quitar la pregunta" });
+    }
+    res.json({ message: "Pregunta quitada correctamente" });
+  });
+};
