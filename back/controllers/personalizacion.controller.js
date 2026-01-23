@@ -195,22 +195,28 @@ export const addRespuestaPersonalizacion = (req, res) => {
 
 
 
-// ======================================
-// GUARDAR RESPUESTAS PERSONALIZADAS
+
+// GUARDAR RESPUESTAS PERSONALIZADAS (Múltiples Reservas)
 // ======================================
 export const guardarRespuestas = (req, res) => {
-  const { id_reserva, respuestas } = req.body;
+  const { bloques } = req.body; // Recibe un array de bloques
 
-  if (!id_reserva || !Array.isArray(respuestas)) {
-    return res.status(400).json({ message: "Datos incompletos" });
+  if (!bloques || !Array.isArray(bloques)) {
+    return res.status(400).json({ message: "Formato de datos no válido" });
   }
 
-  const sql = `
-    INSERT INTO RespuestasPersonalizacion (id_reserva, id_pregunta, valor_respuesta)
-    VALUES ?
-  `;
+  const values = [];
+  bloques.forEach((bloque) => {
+    bloque.respuestas.forEach((r) => {
+      values.push([bloque.id_reserva, r.id_pregunta, r.valor_respuesta || ""]);
+    });
+  });
 
-  const values = respuestas.map((r) => [id_reserva, r.id_pregunta, r.valor_respuesta || ""]);
+  if (values.length === 0) {
+    return res.status(400).json({ message: "No hay respuestas para guardar" });
+  }
+
+  const sql = `INSERT INTO RespuestasPersonalizacion (id_reserva, id_pregunta, valor_respuesta) VALUES ?`;
 
   pool.query(sql, [values], (err, result) => {
     if (err) {
@@ -218,5 +224,49 @@ export const guardarRespuestas = (req, res) => {
       return res.status(500).json({ message: "Error al guardar respuestas" });
     }
     res.json({ message: "Respuestas guardadas correctamente" });
+  });
+};
+
+// 1. Obtener el listado (Usamos solo lo que tenés en la DB)
+export const getTodasLasAsignaciones = (req, res) => {
+  const sql = `
+    SELECT 
+      ep.id_excursion, 
+      ep.id_pregunta,
+      e.titulo AS nombre_excursion,
+      p.texto_pregunta
+    FROM ExcursionPreguntas ep
+    JOIN Excursiones e ON ep.id_excursion = e.id_excursion
+    JOIN PreguntasPersonalizacion p ON ep.id_pregunta = p.id_pregunta
+    WHERE ep.eliminado = 0
+    ORDER BY e.titulo ASC
+  `;
+
+  pool.query(sql, (err, results) => {
+    if (err) {
+      console.error("Error SQL:", err);
+      return res.status(500).json({ message: "Error al traer asignaciones" });
+    }
+    res.json(results);
+  });
+};
+
+// 2. Quitar una pregunta (Con LIMIT 1 para las repetidas)
+export const deleteAsignacion = (req, res) => {
+  const { id_excursion, id_pregunta } = req.params;
+  
+  const sql = `
+    UPDATE ExcursionPreguntas 
+    SET eliminado = 1 
+    WHERE id_excursion = ? AND id_pregunta = ? AND eliminado = 0
+    LIMIT 1
+  `;
+
+  pool.query(sql, [id_excursion, id_pregunta], (err, result) => {
+    if (err) {
+      console.error("Error SQL al eliminar:", err);
+      return res.status(500).json({ message: "Error al quitar la pregunta" });
+    }
+    res.json({ message: "Pregunta quitada correctamente" });
   });
 };

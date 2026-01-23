@@ -127,7 +127,7 @@ function App() {
         />
 
         <Route
-          path="/reserva/:id_reserva/personalizacion/:id_excursion" element={
+          path="/preguntas-personalizadas" element={
             <>
               <Header />
               <PreguntasPersonalizadas />
