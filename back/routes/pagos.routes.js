@@ -1,7 +1,12 @@
 import express from "express";
-import { iniciarPagoPayway, callbackPayway, registrarTransferencia, getPagos, updatePagoEstado, deletePago } from "../controllers/pagos.controller.js";
+import { crearPago, webhookMercadoPago, iniciarPagoPayway, callbackPayway, registrarTransferencia, getPagos, updatePagoEstado, deletePago } from "../controllers/pagos.controller.js";
 
 const router = express.Router();
+
+//Simulacion mercadopago
+router.post("/crear-pago", crearPago);
+router.post("/webhook/mercadopago", webhookMercadoPago);
+
 
 // 🟢 Simulación Payway
 router.post("/payway/iniciar", iniciarPagoPayway);

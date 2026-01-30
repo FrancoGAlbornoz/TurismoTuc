@@ -11,59 +11,69 @@ const useCarritoStore = create((set, get) => ({
   // Obtener carrito del turista
   // =============================
   fetchCarrito: async () => {
-  const { turista, initSession } = useTuristaStore.getState();
-
-  if (!turista) await initSession();
-
-  const turistaActual = useTuristaStore.getState().turista;
-  const idTurista =
-    turistaActual?.id_turista ||
-    turistaActual?.id ||
-    turistaActual?.id_usuario;
-
-  if (!idTurista) {
-    console.warn("⚠️ No hay turista logueado o falta id_turista");
-    return;
-  }
-
-  try {
-    const resCarrito = await axios.get(
-      `http://localhost:8000/api/carrito/${idTurista}`
-    );
-
-    const carrito = resCarrito.data;
-
-    // 🛡️ NUEVO: defender cuando no hay carrito o no tiene id_carrito
-    if (!carrito || !carrito.id_carrito) {
-      console.warn(
-        "⚠️ No se encontró carrito para este turista. Usando carrito vacío."
-      );
+    //  Si venimos de un pago exitoso, no volver a cargar carrito
+    if (sessionStorage.getItem("pago_exitoso") === "true") {
+      console.log("🚫 Carrito bloqueado por pago exitoso");
       set({ carrito: null, items: [] });
       localStorage.removeItem("carrito");
       localStorage.removeItem("items_carrito");
       return;
     }
 
-    const resItems = await axios.get(
-      `http://localhost:8000/api/carrito/${carrito.id_carrito}/items`
-    );
+    const { turista, initSession } = useTuristaStore.getState();
 
-    const data = resItems.data || [];
-    set({ carrito, items: data });
+    if (!turista) await initSession();
 
-    // 💾 Guardar en localStorage
-    localStorage.setItem("carrito", JSON.stringify(carrito));
-    localStorage.setItem("items_carrito", JSON.stringify(data));
-  } catch (err) {
-    console.error("Error al obtener carrito:", err);
-  }
-},
+    const turistaActual = useTuristaStore.getState().turista;
+    const idTurista =
+      turistaActual?.id_turista ||
+      turistaActual?.id ||
+      turistaActual?.id_usuario;
 
+    if (!idTurista) {
+      console.warn("⚠️ No hay turista logueado o falta id_turista");
+      return;
+    }
+
+    try {
+      const resCarrito = await axios.get(
+        `http://localhost:8000/api/carrito/${idTurista}`,
+      );
+
+      const carrito = resCarrito.data;
+
+      // 🛡️ NUEVO: defender cuando no hay carrito o no tiene id_carrito
+      if (!carrito || !carrito.id_carrito) {
+        console.warn(
+          "⚠️ No se encontró carrito para este turista. Usando carrito vacío.",
+        );
+        set({ carrito: null, items: [] });
+        localStorage.removeItem("carrito");
+        localStorage.removeItem("items_carrito");
+        return;
+      }
+
+      const resItems = await axios.get(
+        `http://localhost:8000/api/carrito/${carrito.id_carrito}/items`,
+      );
+
+      const data = resItems.data || [];
+      set({ carrito, items: data });
+
+      // 💾 Guardar en localStorage
+      localStorage.setItem("carrito", JSON.stringify(carrito));
+      localStorage.setItem("items_carrito", JSON.stringify(data));
+    } catch (err) {
+      console.error("Error al obtener carrito:", err);
+    }
+  },
 
   // =============================
   // Agregar item
   // =============================
   addItem: async (id_fecha, cantidad_personas) => {
+    sessionStorage.removeItem("pago_exitoso");
+
     const { turista } = useTuristaStore.getState();
     const { fetchCarrito } = get();
 
@@ -75,8 +85,7 @@ const useCarritoStore = create((set, get) => ({
       return;
     }
 
-    const idTurista =
-      turista.id_turista || turista.id || turista.id_usuario;
+    const idTurista = turista.id_turista || turista.id || turista.id_usuario;
 
     try {
       await axios.post("http://localhost:8000/api/carrito/item", {
@@ -116,7 +125,7 @@ const useCarritoStore = create((set, get) => ({
       }));
       localStorage.setItem(
         "items_carrito",
-        JSON.stringify(get().items.filter((i) => i.id_item !== id_item))
+        JSON.stringify(get().items.filter((i) => i.id_item !== id_item)),
       );
     } catch (err) {
       console.error("Error al eliminar item:", err);
@@ -144,7 +153,7 @@ const useCarritoStore = create((set, get) => ({
     try {
       const res = await axios.put(
         `http://localhost:8000/api/carrito/item/${id_item}`,
-        { cantidad_personas: nuevaCantidad }
+        { cantidad_personas: nuevaCantidad },
       );
 
       const { nuevaCantidad: cant, nuevoSubtotal } = res.data;
@@ -152,7 +161,7 @@ const useCarritoStore = create((set, get) => ({
       const nuevosItems = get().items.map((i) =>
         i.id_item === id_item
           ? { ...i, cantidad_personas: cant, subtotal: nuevoSubtotal }
-          : i
+          : i,
       );
 
       set({ items: nuevosItems });

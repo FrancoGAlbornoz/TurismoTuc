@@ -6,8 +6,10 @@ import axios from "axios";
 import useCarritoStore from "../../../store/useCarritoStore";
 
 export default function CheckoutPago({ turista }) {
+  const [idCarrito, setIdCarrito] = useState(null);
   const [referencia, setReferencia] = useState("");
   const [procesandoPago, setProcesandoPago] = useState(false);
+  const [reservasPendientes, setReservasPendientes] = useState([]);
   const [msgError, setMsgError] = useState("");
   const [msgInfo, setMsgInfo] = useState("");
   const navigate = useNavigate();
@@ -21,7 +23,9 @@ export default function CheckoutPago({ turista }) {
         setMsgError("");
         const id_turista = turista.id_turista || turista.id;
 
-        const carRes = await axios.get(`http://localhost:8000/api/carrito/${id_turista}`);
+        const carRes = await axios.get(
+          `http://localhost:8000/api/carrito/${id_turista}`,
+        );
 
         if (!carRes.data) {
           setMsgInfo("Tu carrito está vacío.");
@@ -29,7 +33,9 @@ export default function CheckoutPago({ turista }) {
           return;
         }
 
-        const itemsRes = await axios.get(`http://localhost:8000/api/carrito/${carRes.data.id_carrito}/items`);
+        const itemsRes = await axios.get(
+          `http://localhost:8000/api/carrito/${carRes.data.id_carrito}/items`,
+        );
 
         if (!itemsRes.data || itemsRes.data.length === 0) {
           setMsgInfo("Tu carrito está vacío. Volvé al catálogo.");
@@ -39,6 +45,7 @@ export default function CheckoutPago({ turista }) {
         // CAMBIO 2: Guardamos TODO el array de excursiones
         setItems(itemsRes.data);
 
+        setIdCarrito(carRes.data.id_carrito);
       } catch (e) {
         console.error(e);
         setMsgError("No se pudo obtener el carrito.");
@@ -71,7 +78,10 @@ export default function CheckoutPago({ turista }) {
           id_fecha: item.id_fecha,
           cantidad_personas: item.cantidad_personas,
         };
-        const resReserva = await axios.post("http://localhost:8000/api/reservas", payloadReserva);
+        const resReserva = await axios.post(
+          "http://localhost:8000/api/reservas",
+          payloadReserva,
+        );
         const nuevoIdReserva = resReserva.data.id_reserva;
 
         // B. Registrar Pago para esa reserva
@@ -84,13 +94,15 @@ export default function CheckoutPago({ turista }) {
         reservasConfirmadas.push({
           id_reserva: nuevoIdReserva,
           id_excursion: item.id_excursion,
-          nombre_excursion: item.excursion 
+          nombre_excursion: item.excursion,
         });
       }
 
       // Limpieza del carrito al finalizar todo el bucle
       try {
-        await axios.delete(`http://localhost:8000/api/carrito/vaciar/${id_turista}`);
+        await axios.delete(
+          `http://localhost:8000/api/carrito/vaciar/${id_turista}`,
+        );
       } catch (error) {
         console.warn("No se pudo limpiar carrito en backend", error);
       }
@@ -105,21 +117,84 @@ export default function CheckoutPago({ turista }) {
       });
 
       // CAMBIO 4: Navegación pasando el ARRAY de reservas (no por URL, sino por state)
-      navigate("/preguntas-personalizadas", { 
-        state: { reservasRealizadas: reservasConfirmadas } 
+      navigate("/preguntas-personalizadas", {
+        state: { reservasRealizadas: reservasConfirmadas },
       });
-
     } catch (err) {
       console.error("Error en pago:", err);
-      setMsgError("Hubo un error al procesar las reservas. Verificá tu conexión.");
+      setMsgError(
+        "Hubo un error al procesar las reservas. Verificá tu conexión.",
+      );
     } finally {
       setProcesandoPago(false);
       setMsgInfo("");
     }
   };
 
-  // Cálculo del total (sumando números, no concatenando strings)
-  const totalGeneral = items.reduce((acc, it) => acc + (Number(it.subtotal) || 0), 0);
+  const crearReservasPendientes = async () => {
+    const id_turista = turista.id_turista || turista.id;
+    const ids = [];
+
+    for (const item of items) {
+      const res = await axios.post("http://localhost:8000/api/reservas", {
+        id_turista,
+        id_fecha: item.id_fecha,
+        cantidad_personas: item.cantidad_personas,
+        monto_total: item.subtotal,
+      });
+
+      ids.push(res.data.id_reserva);
+    }
+
+    setReservasPendientes(ids);
+    return ids;
+  };
+
+  const handlePagarMercadoPago = async () => {
+    try {
+      setProcesandoPago(true);
+      setMsgError("");
+      setMsgInfo("Preparando reservas...");
+
+      // 1️⃣ Crear reservas
+      const reservasIds = await crearReservasPendientes();
+
+      setMsgInfo("Redirigiendo a Mercado Pago...");
+
+      const mpItems = items.map((it) => {
+        const cantidad = Number(it.cantidad_personas);
+        const subtotal = Number(it.subtotal);
+
+        return {
+          nombre: it.excursion,
+          cantidad: cantidad,
+          precio: Number((subtotal / cantidad).toFixed(2)),
+        };
+      });
+
+      const response = await axios.post(
+        "http://localhost:8000/api/pagos/crear-pago",
+        {
+          items: mpItems,
+          id_turista: turista.id_turista || turista.id,
+          reservas: reservasIds,
+        },
+      );
+
+      window.location.href = response.data.init_point;
+    } catch (error) {
+      console.error("Error Mercado Pago:", error);
+      setMsgError("No se pudo iniciar el pago con Mercado Pago.");
+    } finally {
+      setProcesandoPago(false);
+      setMsgInfo("");
+    }
+  };
+
+  const totalGeneral = items.reduce(
+    (acc, it) => acc + Number(it.subtotal || 0),
+    0,
+  );
 
   return (
     <Card className="p-4 shadow-sm">
@@ -136,10 +211,15 @@ export default function CheckoutPago({ turista }) {
               <div>
                 <strong className="text-success">{it.excursion}</strong>
                 <div className="small text-muted">
-                  {it.fecha ? new Date(it.fecha).toLocaleDateString("es-AR") : ""} - {it.cantidad_personas} pers.
+                  {it.fecha
+                    ? new Date(it.fecha).toLocaleDateString("es-AR")
+                    : ""}{" "}
+                  - {it.cantidad_personas} pers.
                 </div>
               </div>
-              <span className="fw-bold">${it.subtotal?.toLocaleString("es-AR")}</span>
+              <span className="fw-bold">
+                ${it.subtotal?.toLocaleString("es-AR")}
+              </span>
             </div>
           </Alert>
         ))
@@ -148,14 +228,24 @@ export default function CheckoutPago({ turista }) {
       )}
 
       <div className="text-end mb-3">
-        <h5>Total a transferir: <span className="text-success">${totalGeneral.toLocaleString("es-AR")}</span></h5>
+        <h5>
+          Total a transferir:{" "}
+          <span className="text-success">
+            ${totalGeneral.toLocaleString("es-AR")}
+          </span>
+        </h5>
       </div>
 
+      {/* === TRANSFERENCIA === */}
       <div className="border rounded p-3 mb-3 bg-light">
-        <p className="mb-2">Transferí al Alias: <strong>AGENCIATUCUMAN.mp</strong></p>
+        <p className="mb-2">
+          Transferí al Alias: <strong>AGENCIATUCUMAN.mp</strong>
+        </p>
         <Form.Group>
-          <Form.Label className="fw-bold small">Nro. de comprobante *</Form.Label>
-          <Form.Control 
+          <Form.Label className="fw-bold small">
+            Nro. de comprobante *
+          </Form.Label>
+          <Form.Control
             required
             placeholder="Ingresá el comprobante aquí"
             value={referencia}
@@ -167,11 +257,31 @@ export default function CheckoutPago({ turista }) {
 
       <Button
         variant="success"
-        className="w-100"
+        className="w-100 mb-2"
         onClick={handleConfirmar}
         disabled={procesandoPago || items.length === 0 || !referencia.trim()}
       >
-        {procesandoPago ? <Spinner as="span" animation="border" size="sm" /> : "Confirmar todas las reservas"}
+        {procesandoPago ? (
+          <Spinner as="span" animation="border" size="sm" />
+        ) : (
+          "Confirmar por transferencia"
+        )}
+      </Button>
+
+      <hr />
+
+      {/* === MERCADO PAGO === */}
+      <Button
+        variant="primary"
+        className="w-100"
+        onClick={handlePagarMercadoPago}
+        disabled={procesandoPago || items.length === 0}
+      >
+        {procesandoPago ? (
+          <Spinner as="span" animation="border" size="sm" />
+        ) : (
+          "Pagar con Mercado Pago"
+        )}
       </Button>
     </Card>
   );

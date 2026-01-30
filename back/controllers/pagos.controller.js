@@ -1,5 +1,7 @@
 import { pool } from "../config/DB.js";
 import "dotenv/config.js";
+import mercadopago from "mercadopago";
+import { preferenceClient } from "../config/mercadopago.js";
 
 /* ============================================================
    💳 SIMULACIÓN LOCAL DE PAYWAY
@@ -18,7 +20,7 @@ export const iniciarPagoPayway = async (req, res) => {
       JOIN Turistas t ON r.id_turista = t.id_turista
       WHERE r.id_reserva = ?
       `,
-      [id_reserva]
+      [id_reserva],
     );
 
     if (rows.length === 0)
@@ -48,7 +50,7 @@ export const iniciarPagoPayway = async (req, res) => {
         'ARS'
       )
       `,
-      [id_reserva, reserva.monto_total]
+      [id_reserva, reserva.monto_total],
     );
 
     // 4️⃣ Actualizar reserva a confirmada
@@ -58,7 +60,7 @@ export const iniciarPagoPayway = async (req, res) => {
       SET estado_reserva = 'confirmada'
       WHERE id_reserva = ?
       `,
-      [id_reserva]
+      [id_reserva],
     );
 
     // 5️⃣ 🔹 Descontar cupo solo al confirmar pago
@@ -69,7 +71,7 @@ export const iniciarPagoPayway = async (req, res) => {
       SET f.cupo_disponible = GREATEST(f.cupo_disponible - r.cantidad_personas, 0)
       WHERE r.id_reserva = ? AND r.estado_reserva = 'confirmada'
       `,
-      [id_reserva]
+      [id_reserva],
     );
 
     console.log(`✅ Pago simulado con éxito para la reserva ${id_reserva}`);
@@ -112,7 +114,7 @@ export const callbackPayway = async (req, res) => {
         r.estado_reserva = ?
       WHERE p.id_reserva = ?
       `,
-      [estadoPago, estadoReserva, id_reserva]
+      [estadoPago, estadoReserva, id_reserva],
     );
 
     // 🔹 Si se aprueba → descontar cupo
@@ -124,7 +126,7 @@ export const callbackPayway = async (req, res) => {
         SET f.cupo_disponible = GREATEST(f.cupo_disponible - r.cantidad_personas, 0)
         WHERE r.id_reserva = ?
         `,
-        [id_reserva]
+        [id_reserva],
       );
     }
 
@@ -149,7 +151,7 @@ export const registrarTransferencia = async (req, res) => {
       FROM Reservas
       WHERE id_reserva = ? AND eliminado = 0
       `,
-      [id_reserva]
+      [id_reserva],
     );
 
     if (rows.length === 0)
@@ -169,7 +171,7 @@ export const registrarTransferencia = async (req, res) => {
         ?
       )
       `,
-      [id_reserva, reserva.monto_total, referencia || null]
+      [id_reserva, reserva.monto_total, referencia || null],
     );
 
     await pool.promise().query(
@@ -178,7 +180,7 @@ export const registrarTransferencia = async (req, res) => {
       SET estado_reserva = 'pendiente'
       WHERE id_reserva = ?
       `,
-      [id_reserva]
+      [id_reserva],
     );
 
     console.log(`✅ Transferencia registrada para reserva ${id_reserva}`);
@@ -300,7 +302,7 @@ export const updatePagoEstado = async (req, res) => {
       INNER JOIN Reservas r ON p.id_reserva = r.id_reserva
       WHERE p.id_pago = ?
       `,
-      [id_pago]
+      [id_pago],
     );
 
     if (rows.length === 0) {
@@ -316,7 +318,7 @@ export const updatePagoEstado = async (req, res) => {
       SET estado_pago = ?, referencia = COALESCE(?, referencia)
       WHERE id_pago = ?
       `,
-      [nuevo_estado, referencia, id_pago]
+      [nuevo_estado, referencia, id_pago],
     );
 
     // 🔸 Si se aprueba → descontar cupo y confirmar reserva
@@ -327,7 +329,7 @@ export const updatePagoEstado = async (req, res) => {
         SET cupo_disponible = GREATEST(cupo_disponible - ?, 0)
         WHERE id_fecha = ? AND cupo_disponible >= ?
         `,
-        [pago.cantidad_personas, pago.id_fecha, pago.cantidad_personas]
+        [pago.cantidad_personas, pago.id_fecha, pago.cantidad_personas],
       );
 
       await pool.promise().query(
@@ -336,7 +338,7 @@ export const updatePagoEstado = async (req, res) => {
         SET estado_reserva = 'confirmada'
         WHERE id_reserva = ?
         `,
-        [pago.id_reserva]
+        [pago.id_reserva],
       );
     }
 
@@ -348,7 +350,7 @@ export const updatePagoEstado = async (req, res) => {
         SET estado_reserva = 'cancelada'
         WHERE id_reserva = ?
         `,
-        [pago.id_reserva]
+        [pago.id_reserva],
       );
     }
 
@@ -370,5 +372,158 @@ export const deletePago = async (req, res) => {
   } catch (err) {
     console.error("❌ Error al eliminar pago:", err);
     res.status(500).json({ message: "Error al eliminar pago" });
+  }
+};
+
+/* ============================================================
+   💳 SIMULACIÓN MERCADOPAGO
+   ============================================================ */
+
+export const crearPago = async (req, res) => {
+  try {
+    const { items, id_turista, reservas } = req.body;
+
+    const preference = {
+      items: items.map((item) => ({
+        title: item.nombre,
+        quantity: Number(item.cantidad),
+        unit_price: Number(item.precio),
+        currency_id: "ARS",
+      })),
+
+      back_urls: {
+        success:
+          "https://epizootically-semitropical-jannie.ngrok-free.dev/pago-exitoso",
+        failure:
+          "https://epizootically-semitropical-jannie.ngrok-free.dev/pago-fallido",
+        pending:
+          "https://epizootically-semitropical-jannie.ngrok-free.dev/pago-pendiente",
+      },
+
+      auto_return: "approved",
+
+      notification_url:
+        "https://epizootically-semitropical-jannie.ngrok-free.dev/api/pagos/webhook/mercadopago",
+
+      metadata: {
+        id_turista,
+        reservas,
+      },
+    };
+
+    console.log(
+      "🧪 Preference enviada a MP:",
+      JSON.stringify(preference, null, 2),
+    );
+
+    const response = await preferenceClient.create({
+      body: preference,
+    });
+
+    console.log("🟢 RESPONSE MP COMPLETO:", response);
+
+    const initPoint = response.init_point;
+
+    if (!initPoint) {
+      console.error("❌ init_point no encontrado", response);
+      return res.status(500).json({
+        message: "No se pudo obtener init_point",
+      });
+    }
+
+    res.json({
+      init_point: initPoint,
+    });
+  } catch (error) {
+    console.error("❌ Error creando pago:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const webhookMercadoPago = async (req, res) => {
+  try {
+    const paymentId = req.body?.data?.id;
+
+    // MercadoPago SIEMPRE espera 200
+    if (!paymentId) {
+      return res.sendStatus(200);
+    }
+
+    // 1️⃣ Buscar el pago real
+    const payment = await mercadopago.payment.findById(paymentId);
+
+    // 2️⃣ Solo pagos aprobados
+    if (payment.body.status !== "approved") {
+      return res.sendStatus(200);
+    }
+
+    // 3️⃣ Metadata segura
+    const metadata = payment.body.metadata || {};
+    const reservas = metadata.reservas || [];
+    const id_turista = metadata.id_turista;
+
+    if (!id_turista) {
+      console.warn("⚠️ Pago aprobado sin id_turista");
+      return res.sendStatus(200);
+    }
+
+    // 4️⃣ Marcar reservas como pagadas (idempotente)
+    if (reservas.length > 0) {
+      await pool.promise().query(
+        `
+        UPDATE Reservas
+        SET pago_recibido = 1
+        WHERE id_reserva IN (?)
+        `,
+        [reservas],
+      );
+    }
+
+    // 5️⃣ Obtener TODOS los carritos abiertos del turista
+    const [carritos] = await pool.promise().query(
+      `
+      SELECT id_carrito
+      FROM Carrito
+      WHERE id_turista = ?
+        AND estado = 'abierto'
+        AND eliminado = 0
+      `,
+      [id_turista],
+    );
+
+    if (carritos.length === 0) {
+      return res.sendStatus(200);
+    }
+
+    const idsCarritos = carritos.map((c) => c.id_carrito);
+
+    // 6️⃣ 🧹 Eliminar items de esos carritos
+    await pool.promise().query(
+      `
+      UPDATE CarritoItems
+      SET eliminado = 1,
+          fecha_eliminacion = NOW()
+      WHERE id_carrito IN (?)
+        AND eliminado = 0
+      `,
+      [idsCarritos],
+    );
+
+    // 7️⃣ 🔒 Cerrar carritos
+    await pool.promise().query(
+      `
+      UPDATE Carrito
+      SET estado = 'cerrado'
+      WHERE id_carrito IN (?)
+      `,
+      [idsCarritos],
+    );
+
+    console.log("✅ Pago confirmado. Carritos cerrados:", idsCarritos);
+
+    return res.sendStatus(200);
+  } catch (error) {
+    console.error("❌ Error webhook MercadoPago:", error);
+    return res.sendStatus(200);
   }
 };
