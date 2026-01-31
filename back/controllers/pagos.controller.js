@@ -76,7 +76,47 @@ export const iniciarPagoPayway = async (req, res) => {
 
     console.log(`✅ Pago simulado con éxito para la reserva ${id_reserva}`);
 
-    // 6️⃣ Devolver al frontend
+    // 6️⃣ 🧹 Cerrar carritos del turista (IGUAL que MercadoPago)
+    const [carritos] = await pool.promise().query(
+      `
+      SELECT id_carrito
+      FROM Carrito
+      WHERE id_turista = ?
+        AND estado = 'abierto'
+        AND eliminado = 0
+      `,
+      [reserva.id_turista],
+    );
+
+    if (carritos.length > 0) {
+      const idsCarritos = carritos.map((c) => c.id_carrito);
+
+      // eliminar items
+      await pool.promise().query(
+        `
+    UPDATE CarritoItems
+    SET eliminado = 1,
+        fecha_eliminacion = NOW()
+    WHERE id_carrito IN (?)
+      AND eliminado = 0
+    `,
+        [idsCarritos],
+      );
+
+      // cerrar carritos
+      await pool.promise().query(
+        `
+    UPDATE Carrito
+    SET estado = 'cerrado'
+    WHERE id_carrito IN (?)
+    `,
+        [idsCarritos],
+      );
+
+      console.log("🧹 Carritos cerrados por Payway:", idsCarritos);
+    }
+
+    // 7 Devolver al frontend
     res.status(200).json({
       message: "Pago simulado correctamente (modo local)",
       data: {
@@ -383,6 +423,29 @@ export const crearPago = async (req, res) => {
   try {
     const { items, id_turista, reservas } = req.body;
 
+    // 🔎 1️⃣ OBTENER CARRITO ABIERTO DEL TURISTA (OBLIGATORIO)
+    const [carritoRows] = await pool.promise().query(
+      `
+      SELECT id_carrito
+      FROM Carrito
+      WHERE id_turista = ?
+        AND estado = 'abierto'
+        AND eliminado = 0
+      ORDER BY id_carrito DESC
+      LIMIT 1
+      `,
+      [id_turista],
+    );
+
+    if (carritoRows.length === 0) {
+      return res.status(400).json({
+        message: "No hay carrito abierto para crear el pago",
+      });
+    }
+
+    const id_carrito = carritoRows[0].id_carrito;
+
+    // 🧾 2️⃣ CREAR PREFERENCE DE MERCADOPAGO
     const preference = {
       items: items.map((item) => ({
         title: item.nombre,
@@ -405,9 +468,11 @@ export const crearPago = async (req, res) => {
       notification_url:
         "https://epizootically-semitropical-jannie.ngrok-free.dev/api/pagos/webhook/mercadopago",
 
+      // 🔑 3️⃣ METADATA CLAVE PARA EL WEBHOOK
       metadata: {
         id_turista,
         reservas,
+        id_carrito,
       },
     };
 
@@ -420,8 +485,6 @@ export const crearPago = async (req, res) => {
       body: preference,
     });
 
-    console.log("🟢 RESPONSE MP COMPLETO:", response);
-
     const initPoint = response.init_point;
 
     if (!initPoint) {
@@ -431,9 +494,7 @@ export const crearPago = async (req, res) => {
       });
     }
 
-    res.json({
-      init_point: initPoint,
-    });
+    res.json({ init_point: initPoint });
   } catch (error) {
     console.error("❌ Error creando pago:", error);
     res.status(500).json({ message: error.message });
@@ -444,31 +505,27 @@ export const webhookMercadoPago = async (req, res) => {
   try {
     const paymentId = req.body?.data?.id;
 
-    // MercadoPago SIEMPRE espera 200
-    if (!paymentId) {
-      return res.sendStatus(200);
-    }
+    // MP siempre espera 200
+    if (!paymentId) return res.sendStatus(200);
 
-    // 1️⃣ Buscar el pago real
+    // 1️⃣ Obtener pago real
     const payment = await mercadopago.payment.findById(paymentId);
 
-    // 2️⃣ Solo pagos aprobados
     if (payment.body.status !== "approved") {
       return res.sendStatus(200);
     }
 
-    // 3️⃣ Metadata segura
+    // 2️⃣ Metadata
     const metadata = payment.body.metadata || {};
-    const reservas = metadata.reservas || [];
-    const id_turista = metadata.id_turista;
+    const { id_turista, reservas, id_carrito } = metadata;
 
-    if (!id_turista) {
-      console.warn("⚠️ Pago aprobado sin id_turista");
+    if (!id_turista || !id_carrito) {
+      console.warn("⚠️ Pago aprobado sin metadata completa", metadata);
       return res.sendStatus(200);
     }
 
-    // 4️⃣ Marcar reservas como pagadas (idempotente)
-    if (reservas.length > 0) {
+    // 3️⃣ Marcar reservas como pagadas (idempotente)
+    if (Array.isArray(reservas) && reservas.length > 0) {
       await pool.promise().query(
         `
         UPDATE Reservas
@@ -479,47 +536,31 @@ export const webhookMercadoPago = async (req, res) => {
       );
     }
 
-    // 5️⃣ Obtener TODOS los carritos abiertos del turista
-    const [carritos] = await pool.promise().query(
-      `
-      SELECT id_carrito
-      FROM Carrito
-      WHERE id_turista = ?
-        AND estado = 'abierto'
-        AND eliminado = 0
-      `,
-      [id_turista],
-    );
-
-    if (carritos.length === 0) {
-      return res.sendStatus(200);
-    }
-
-    const idsCarritos = carritos.map((c) => c.id_carrito);
-
-    // 6️⃣ 🧹 Eliminar items de esos carritos
+    // 4️⃣ Eliminar items del carrito
     await pool.promise().query(
       `
       UPDATE CarritoItems
       SET eliminado = 1,
           fecha_eliminacion = NOW()
-      WHERE id_carrito IN (?)
+      WHERE id_carrito = ?
         AND eliminado = 0
       `,
-      [idsCarritos],
+      [id_carrito],
     );
 
-    // 7️⃣ 🔒 Cerrar carritos
+    // 5️⃣ Cerrar carrito (solo si sigue abierto)
     await pool.promise().query(
       `
       UPDATE Carrito
       SET estado = 'cerrado'
-      WHERE id_carrito IN (?)
+      WHERE id_carrito = ?
+        AND estado = 'abierto'
+        AND eliminado = 0
       `,
-      [idsCarritos],
+      [id_carrito],
     );
 
-    console.log("✅ Pago confirmado. Carritos cerrados:", idsCarritos);
+    console.log("✅ Pago aprobado. Carrito cerrado:", id_carrito);
 
     return res.sendStatus(200);
   } catch (error) {

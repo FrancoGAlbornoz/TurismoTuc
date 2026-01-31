@@ -11,15 +11,6 @@ const useCarritoStore = create((set, get) => ({
   // Obtener carrito del turista
   // =============================
   fetchCarrito: async () => {
-    //  Si venimos de un pago exitoso, no volver a cargar carrito
-    if (sessionStorage.getItem("pago_exitoso") === "true") {
-      console.log("🚫 Carrito bloqueado por pago exitoso");
-      set({ carrito: null, items: [] });
-      localStorage.removeItem("carrito");
-      localStorage.removeItem("items_carrito");
-      return;
-    }
-
     const { turista, initSession } = useTuristaStore.getState();
 
     if (!turista) await initSession();
@@ -31,7 +22,7 @@ const useCarritoStore = create((set, get) => ({
       turistaActual?.id_usuario;
 
     if (!idTurista) {
-      console.warn("⚠️ No hay turista logueado o falta id_turista");
+      console.warn(" No hay turista logueado o falta id_turista");
       return;
     }
 
@@ -42,7 +33,7 @@ const useCarritoStore = create((set, get) => ({
 
       const carrito = resCarrito.data;
 
-      // 🛡️ NUEVO: defender cuando no hay carrito o no tiene id_carrito
+      // NUEVO: defender cuando no hay carrito o no tiene id_carrito
       if (!carrito || !carrito.id_carrito) {
         console.warn(
           "⚠️ No se encontró carrito para este turista. Usando carrito vacío.",
@@ -61,8 +52,8 @@ const useCarritoStore = create((set, get) => ({
       set({ carrito, items: data });
 
       // 💾 Guardar en localStorage
-      localStorage.setItem("carrito", JSON.stringify(carrito));
-      localStorage.setItem("items_carrito", JSON.stringify(data));
+      // localStorage.setItem("carrito", JSON.stringify(carrito));
+      // localStorage.setItem("items_carrito", JSON.stringify(data));
     } catch (err) {
       console.error("Error al obtener carrito:", err);
     }
@@ -123,10 +114,10 @@ const useCarritoStore = create((set, get) => ({
       set((state) => ({
         items: state.items.filter((i) => i.id_item !== id_item),
       }));
-      localStorage.setItem(
-        "items_carrito",
-        JSON.stringify(get().items.filter((i) => i.id_item !== id_item)),
-      );
+      // localStorage.setItem(
+      //   "items_carrito",
+      //   JSON.stringify(get().items.filter((i) => i.id_item !== id_item)),
+      // );
     } catch (err) {
       console.error("Error al eliminar item:", err);
       Swal.fire({
@@ -191,8 +182,8 @@ const useCarritoStore = create((set, get) => ({
   // =============================
   clearCarrito: () => {
     set({ carrito: null, items: [] });
-    localStorage.removeItem("carrito");
-    localStorage.removeItem("items_carrito");
+    // localStorage.removeItem("carrito");
+    // localStorage.removeItem("items_carrito");
   },
 }));
 
