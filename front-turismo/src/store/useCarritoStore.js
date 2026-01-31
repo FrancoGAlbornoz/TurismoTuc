@@ -156,7 +156,7 @@ const useCarritoStore = create((set, get) => ({
       );
 
       set({ items: nuevosItems });
-      localStorage.setItem("items_carrito", JSON.stringify(nuevosItems));
+      // localStorage.setItem("items_carrito", JSON.stringify(nuevosItems));
     } catch (err) {
       console.error("Error al actualizar cantidad:", err);
       Swal.fire({

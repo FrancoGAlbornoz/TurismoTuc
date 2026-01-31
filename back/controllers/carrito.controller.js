@@ -348,3 +348,21 @@ export const updateCantidadItem = async (req, res) => {
 //     res.status(500).json({ message: "Error al vaciar carrito." });
 //   }
 // };
+
+// =============================
+// CERRAR / CONFIRMAR CARRITO (uso interno - webhook)
+// =============================
+export const confirmarCarrito = async (id_carrito) => {
+  if (!id_carrito) return;
+
+  await pool.promise().query(
+    `
+    UPDATE Carrito
+    SET estado = 'confirmado'
+    WHERE id_carrito = ?
+      AND estado = 'abierto'
+      AND eliminado = 0
+    `,
+    [id_carrito],
+  );
+};

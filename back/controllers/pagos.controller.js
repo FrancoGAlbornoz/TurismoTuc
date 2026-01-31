@@ -1,7 +1,10 @@
 import { pool } from "../config/DB.js";
 import "dotenv/config.js";
 import mercadopago from "mercadopago";
-import { preferenceClient } from "../config/mercadopago.js";
+import { preferenceClient , paymentClient} from "../config/mercadopago.js";
+import { confirmarCarrito } from "./carrito.controller.js";
+
+
 
 /* ============================================================
    💳 SIMULACIÓN LOCAL DE PAYWAY
@@ -509,22 +512,33 @@ export const webhookMercadoPago = async (req, res) => {
     if (!paymentId) return res.sendStatus(200);
 
     // 1️⃣ Obtener pago real
-    const payment = await mercadopago.payment.findById(paymentId);
+    const payment = await paymentClient.get({ id: paymentId });
 
-    if (payment.body.status !== "approved") {
+    if (payment.status !== "approved") {
       return res.sendStatus(200);
     }
 
     // 2️⃣ Metadata
-    const metadata = payment.body.metadata || {};
-    const { id_turista, reservas, id_carrito } = metadata;
+    const { id_turista, reservas, id_carrito } = payment.metadata || {};
 
-    if (!id_turista || !id_carrito) {
-      console.warn("⚠️ Pago aprobado sin metadata completa", metadata);
+    if (!id_carrito) {
+      console.warn("⚠️ Pago aprobado sin id_carrito");
       return res.sendStatus(200);
     }
 
-    // 3️⃣ Marcar reservas como pagadas (idempotente)
+    // 3️⃣ Confirmar carrito
+    await pool.promise().query(
+      `
+      UPDATE Carrito
+      SET estado = 'confirmado'
+      WHERE id_carrito = ?
+        AND estado = 'abierto'
+        AND eliminado = 0
+      `,
+      [id_carrito]
+    );
+
+    // 4️⃣ Marcar reservas como pagadas
     if (Array.isArray(reservas) && reservas.length > 0) {
       await pool.promise().query(
         `
@@ -532,39 +546,15 @@ export const webhookMercadoPago = async (req, res) => {
         SET pago_recibido = 1
         WHERE id_reserva IN (?)
         `,
-        [reservas],
+        [reservas]
       );
     }
 
-    // 4️⃣ Eliminar items del carrito
-    await pool.promise().query(
-      `
-      UPDATE CarritoItems
-      SET eliminado = 1,
-          fecha_eliminacion = NOW()
-      WHERE id_carrito = ?
-        AND eliminado = 0
-      `,
-      [id_carrito],
-    );
-
-    // 5️⃣ Cerrar carrito (solo si sigue abierto)
-    await pool.promise().query(
-      `
-      UPDATE Carrito
-      SET estado = 'cerrado'
-      WHERE id_carrito = ?
-        AND estado = 'abierto'
-        AND eliminado = 0
-      `,
-      [id_carrito],
-    );
-
-    console.log("✅ Pago aprobado. Carrito cerrado:", id_carrito);
+    console.log("Pago aprobado. Carrito confirmado:", id_carrito);
 
     return res.sendStatus(200);
   } catch (error) {
-    console.error("❌ Error webhook MercadoPago:", error);
+    console.error("Error webhook MercadoPago:", error);
     return res.sendStatus(200);
   }
 };
