@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { Card, Table, Spinner } from "react-bootstrap";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import Swal from "sweetalert2";
+import { Card, Table, Spinner, Button } from "react-bootstrap";
 
 export default function DashboardHome() {
   const [metricas, setMetricas] = useState(null);
@@ -31,6 +34,61 @@ export default function DashboardHome() {
 
     fetchDashboardData();
   }, []);
+
+  const imprimirReservasHoy = () => {
+    if (!reservasHoy || reservasHoy.length === 0) {
+      Swal.fire({
+        icon: "info",
+        title: "Sin reservas",
+        text: "No hay reservas registradas para hoy.",
+        confirmButtonColor: "#198754", // verde bootstrap
+      });
+      return;
+    }
+
+    const now = new Date();
+    const fechaLabel = now.toLocaleDateString();
+    const horaLabel = now.toLocaleTimeString();
+
+    const doc = new jsPDF({ orientation: "portrait" });
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.text("Turismo Tucumán - Reporte", 14, 14);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text("Listado de reservas de hoy", 14, 22);
+    doc.text(`Fecha: ${fechaLabel}   Hora: ${horaLabel}`, 14, 28);
+
+    const totalReservas = reservasHoy.length;
+    const totalPersonas = reservasHoy.reduce(
+      (acc, r) => acc + (Number(r.cantidad_personas) || 0),
+      0,
+    );
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Resumen:", 14, 36);
+
+    doc.setFont("helvetica", "normal");
+    doc.text(`• Reservas: ${totalReservas}`, 14, 42);
+    doc.text(`• Personas: ${totalPersonas}`, 14, 48);
+
+    autoTable(doc, {
+      startY: 56,
+      head: [["ID", "Turista", "Excursión", "Personas", "Estado"]],
+      body: reservasHoy.map((r) => [
+        String(r.id_reserva ?? "-"),
+        String(r.turista ?? "-"),
+        String(r.excursion ?? "-"),
+        String(r.cantidad_personas ?? "-"),
+        String(r.estado_reserva ?? "-").toUpperCase(),
+      ]),
+      styles: { fontSize: 9 },
+    });
+
+    doc.save(`reservas_hoy_${now.toISOString().slice(0, 10)}.pdf`);
+  };
 
   if (loading)
     return (
@@ -63,6 +121,15 @@ export default function DashboardHome() {
               <h2 className="fw-bold text-success">
                 {metricas?.reservas_hoy || 0}
               </h2>
+              <div className="d-grid mt-2">
+                <Button
+                  variant="outline-success"
+                  size="sm"
+                  onClick={imprimirReservasHoy}
+                >
+                  🖨️ Imprimir listado de hoy
+                </Button>
+              </div>
             </Card.Body>
           </Card>
         </div>
