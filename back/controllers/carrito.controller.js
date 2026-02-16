@@ -209,22 +209,68 @@ export const getItemsCarrito = (req, res) => {
 // =============================
 // ELIMINAR ITEM
 // =============================
-export const deleteItemCarrito = (req, res) => {
+export const deleteItemCarrito = async (req, res) => {
   const { id_item } = req.params;
-  const sql = `
-    UPDATE CarritoItems
-    SET eliminado = 1, fecha_eliminacion = NOW()
-    WHERE id_item = ?
-  `;
-  pool.query(sql, [id_item], (err, result) => {
-    if (err) {
-      console.error("Error al eliminar item:", err);
-      return res.status(500).json({ message: "Error al eliminar item" });
-    }
-    if (result.affectedRows === 0)
+
+  try {
+    // 1 Obtener el id_carrito del item
+    const [[item]] = await pool.promise().query(
+      `
+      SELECT id_carrito
+      FROM CarritoItems
+      WHERE id_item = ? AND eliminado = 0
+      `,
+      [id_item],
+    );
+
+    if (!item) {
       return res.status(404).json({ message: "Item no encontrado" });
-    res.json({ message: "Item eliminado (baja lógica) correctamente" });
-  });
+    }
+
+    const { id_carrito } = item;
+
+    // 2 Eliminar el item (baja lógica)
+    await pool.promise().query(
+      `
+      UPDATE CarritoItems
+      SET eliminado = 1, fecha_eliminacion = NOW()
+      WHERE id_item = ?
+      `,
+      [id_item],
+    );
+
+    // 3 Ver si quedaron items activos en el carrito
+    const [[{ total }]] = await pool.promise().query(
+      `
+      SELECT COUNT(*) AS total
+      FROM CarritoItems
+      WHERE id_carrito = ? AND eliminado = 0
+      `,
+      [id_carrito],
+    );
+
+    // 4 Si no quedan items → cancelar el carrito
+    if (total === 0) {
+      await pool.promise().query(
+        `
+        UPDATE Carrito
+        SET estado = 'cancelado'
+        WHERE id_carrito = ? AND estado = 'abierto'
+        `,
+        [id_carrito],
+      );
+    }
+
+    res.json({
+      message:
+        total === 0
+          ? "Item eliminado y carrito cancelado"
+          : "Item eliminado correctamente",
+    });
+  } catch (err) {
+    console.error("❌ Error al eliminar item:", err);
+    res.status(500).json({ message: "Error al eliminar item" });
+  }
 };
 
 export const updateCantidadItem = async (req, res) => {
@@ -303,8 +349,9 @@ export const updateCantidadItem = async (req, res) => {
   }
 };
 
-// 🔹 Vaciar carrito luego de pagar
+//  Vaciar carrito luego de pagar
 // export const vaciarCarrito = async (req, res) => {
+
 //   const { id_turista } = req.params;
 
 //   try {
@@ -352,6 +399,7 @@ export const updateCantidadItem = async (req, res) => {
 // =============================
 // CERRAR / CONFIRMAR CARRITO (uso interno - webhook)
 // =============================
+
 export const confirmarCarrito = async (id_carrito) => {
   if (!id_carrito) return;
 

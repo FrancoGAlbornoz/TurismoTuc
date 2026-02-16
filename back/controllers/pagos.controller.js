@@ -1,8 +1,6 @@
 import { pool } from "../config/DB.js";
 import "dotenv/config.js";
-import mercadopago from "mercadopago";
 import { preferenceClient , paymentClient} from "../config/mercadopago.js";
-import { confirmarCarrito } from "./carrito.controller.js";
 
 
 
