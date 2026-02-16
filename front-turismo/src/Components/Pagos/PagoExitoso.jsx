@@ -32,10 +32,17 @@ export default function PagoExitoso() {
   //   sessionStorage.setItem("pago_exitoso", "true");
   // }, [clearCarrito, setCarrito, id_turista]);
   useEffect(() => {
-    clearCarrito(); // Limpieza inmediata (UI)
-    localStorage.removeItem("carrito");
-    fetchCarrito(); // Sincroniza con backend
-    sessionStorage.setItem("pago_exitoso", "true");
+    const syncCarrito = async () => {
+      clearCarrito(); // Limpiar estado local primero
+      try {
+        await fetchCarrito(); // Traer estado real desde backend
+      } catch (err) {
+        console.error("Error sincronizando carrito post-pago", err);
+      }
+      sessionStorage.setItem("pago_exitoso", "true");
+    };
+
+    syncCarrito();
   }, [clearCarrito, fetchCarrito]);
 
   return (

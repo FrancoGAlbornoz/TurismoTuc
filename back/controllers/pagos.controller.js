@@ -509,14 +509,14 @@ export const webhookMercadoPago = async (req, res) => {
     // MP siempre espera 200
     if (!paymentId) return res.sendStatus(200);
 
-    // 1️⃣ Obtener pago real
+    //  Obtener pago real
     const payment = await paymentClient.get({ id: paymentId });
 
     if (payment.status !== "approved") {
       return res.sendStatus(200);
     }
 
-    // 2️⃣ Metadata
+    //  Metadata
     const { id_turista, reservas, id_carrito } = payment.metadata || {};
 
     if (!id_carrito) {
@@ -524,7 +524,7 @@ export const webhookMercadoPago = async (req, res) => {
       return res.sendStatus(200);
     }
 
-    // 3️⃣ Confirmar carrito
+    //  Confirmar carrito
     await pool.promise().query(
       `
       UPDATE Carrito
@@ -536,7 +536,7 @@ export const webhookMercadoPago = async (req, res) => {
       [id_carrito]
     );
 
-    // 4️⃣ Marcar reservas como pagadas
+    //  Marcar reservas como pagadas
     if (Array.isArray(reservas) && reservas.length > 0) {
       await pool.promise().query(
         `
@@ -547,6 +547,22 @@ export const webhookMercadoPago = async (req, res) => {
         [reservas]
       );
     }
+
+    //  Vaciar carrito (baja lógica de items)
+    await pool.promise().query(
+      `UPDATE CarritoItems
+       SET eliminado = 1, fecha_eliminacion = NOW()
+       WHERE id_carrito = ?`,
+      [id_carrito]
+    );
+
+    //  Opcional: cerrar carrito
+    await pool.promise().query(
+      `UPDATE Carrito
+       SET estado = 'cerrado'
+       WHERE id_carrito = ?`,
+      [id_carrito]
+    );
 
     console.log("Pago aprobado. Carrito confirmado:", id_carrito);
 
