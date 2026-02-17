@@ -540,9 +540,9 @@ export const webhookMercadoPago = async (req, res) => {
     if (Array.isArray(reservas) && reservas.length > 0) {
       await pool.promise().query(
         `
-        UPDATE Reservas
-        SET pago_recibido = 1
-        WHERE id_reserva IN (?)
+        UPDATE Pagos
+        SET estado_pago = 'aprobado'
+        WHERE id_pago = ?
         `,
         [reservas]
       );
