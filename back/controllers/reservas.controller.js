@@ -236,7 +236,6 @@ export const createReserva = (req, res) => {
 };
 
 // Actualizar estado o datos de una reserva
-// Actualizar estado o datos de una reserva
 export const updateReserva = (req, res) => {
   const { id } = req.params;
   const {
@@ -245,7 +244,7 @@ export const updateReserva = (req, res) => {
     cantidad_personas,
     monto_total,
     estado_reserva,
-  } = req.body;
+  } = req.body;a
 
   // Validaciones simples
   if (!id_fecha || !cantidad_personas || !estado_reserva) {
