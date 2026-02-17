@@ -260,4 +260,50 @@ export const eliminarMultimedia = async (req, res) => {
   }
 };
 
+export const subirComprobante = async (req, res) => {
+  try {
+    const { id_pago, id_reserva } = req.body;
 
+    // Necesitamos al menos uno para asociar
+    if (!id_pago && !id_reserva) {
+      return res.status(400).json({ message: "Falta id_pago o id_reserva" });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ message: "Falta archivo" });
+    }
+
+    // URL pública para ver/descargar
+    const urlPublica = `/uploads/comprobantes/${req.file.filename}`;
+
+    // ⚠️ ACÁ TENÉS QUE AJUSTAR A TU TABLA REAL
+    // Ejemplo genérico: multimedia(id_pago, id_reserva, tipo, url, nombre, mime, size)
+    const tipo = "comprobante";
+
+    // Si tu tabla no tiene estos campos, no pasa nada: me pegás el schema y lo adapto.
+    const [result] = await pool.query(
+      `INSERT INTO multimedia (id_pago, id_reserva, tipo, url, nombre, mime, size)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        id_pago || null,
+        id_reserva || null,
+        tipo,
+        urlPublica,
+        req.file.originalname,
+        req.file.mimetype,
+        req.file.size,
+      ]
+    );
+
+    return res.status(201).json({
+      id_multimedia: result.insertId,
+      url: urlPublica,
+      nombre: req.file.originalname,
+      mime: req.file.mimetype,
+      size: req.file.size,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: "Error al guardar comprobante" });
+  }
+};

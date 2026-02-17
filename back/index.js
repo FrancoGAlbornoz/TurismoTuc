@@ -24,6 +24,9 @@ import cloudinaryRoutes from './routes/cloudinary.routes.js';
 import excursionUploadRoutes from './routes/uploadExcursiones.routes.js';
 import resenasMultimediaRoutes from "./routes/reseniaMultimedia.routes.js";
 
+import path from "path";
+import { fileURLToPath } from "url";
+
 const app = express();
 
 // Middlewares básicos
@@ -34,6 +37,9 @@ const allowedOrigins = [
   "http://localhost:5173",                    // desarrollo
   "https://altotucuman-turismo.vercel.app"    // producción
 ];
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 app.use(
   cors({
@@ -61,6 +67,8 @@ app.use("/api", contactoRoutes);
 app.use('/api', cloudinaryRoutes);
 app.use('/api', excursionUploadRoutes);
 app.use("/api", resenasMultimediaRoutes);
+
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Endpoint raíz
 app.get("/", (req, res) => {
