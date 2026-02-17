@@ -1,5 +1,8 @@
 import { pool } from "../config/DB.js";
 import "dotenv/config.js";
+import { preferenceClient , paymentClient} from "../config/mercadopago.js";
+
+
 
 /* ============================================================
    💳 SIMULACIÓN LOCAL DE PAYWAY
@@ -18,7 +21,7 @@ export const iniciarPagoPayway = async (req, res) => {
       JOIN Turistas t ON r.id_turista = t.id_turista
       WHERE r.id_reserva = ?
       `,
-      [id_reserva]
+      [id_reserva],
     );
 
     if (rows.length === 0)
@@ -48,7 +51,7 @@ export const iniciarPagoPayway = async (req, res) => {
         'ARS'
       )
       `,
-      [id_reserva, reserva.monto_total]
+      [id_reserva, reserva.monto_total],
     );
 
     // 4️⃣ Actualizar reserva a confirmada
@@ -58,7 +61,7 @@ export const iniciarPagoPayway = async (req, res) => {
       SET estado_reserva = 'confirmada'
       WHERE id_reserva = ?
       `,
-      [id_reserva]
+      [id_reserva],
     );
 
     // 5️⃣ 🔹 Descontar cupo solo al confirmar pago
@@ -69,12 +72,52 @@ export const iniciarPagoPayway = async (req, res) => {
       SET f.cupo_disponible = GREATEST(f.cupo_disponible - r.cantidad_personas, 0)
       WHERE r.id_reserva = ? AND r.estado_reserva = 'confirmada'
       `,
-      [id_reserva]
+      [id_reserva],
     );
 
     console.log(`✅ Pago simulado con éxito para la reserva ${id_reserva}`);
 
-    // 6️⃣ Devolver al frontend
+    // 6️⃣ 🧹 Cerrar carritos del turista (IGUAL que MercadoPago)
+    const [carritos] = await pool.promise().query(
+      `
+      SELECT id_carrito
+      FROM Carrito
+      WHERE id_turista = ?
+        AND estado = 'abierto'
+        AND eliminado = 0
+      `,
+      [reserva.id_turista],
+    );
+
+    if (carritos.length > 0) {
+      const idsCarritos = carritos.map((c) => c.id_carrito);
+
+      // eliminar items
+      await pool.promise().query(
+        `
+    UPDATE CarritoItems
+    SET eliminado = 1,
+        fecha_eliminacion = NOW()
+    WHERE id_carrito IN (?)
+      AND eliminado = 0
+    `,
+        [idsCarritos],
+      );
+
+      // cerrar carritos
+      await pool.promise().query(
+        `
+    UPDATE Carrito
+    SET estado = 'cerrado'
+    WHERE id_carrito IN (?)
+    `,
+        [idsCarritos],
+      );
+
+      console.log("🧹 Carritos cerrados por Payway:", idsCarritos);
+    }
+
+    // 7 Devolver al frontend
     res.status(200).json({
       message: "Pago simulado correctamente (modo local)",
       data: {
@@ -112,7 +155,7 @@ export const callbackPayway = async (req, res) => {
         r.estado_reserva = ?
       WHERE p.id_reserva = ?
       `,
-      [estadoPago, estadoReserva, id_reserva]
+      [estadoPago, estadoReserva, id_reserva],
     );
 
     // 🔹 Si se aprueba → descontar cupo
@@ -124,7 +167,7 @@ export const callbackPayway = async (req, res) => {
         SET f.cupo_disponible = GREATEST(f.cupo_disponible - r.cantidad_personas, 0)
         WHERE r.id_reserva = ?
         `,
-        [id_reserva]
+        [id_reserva],
       );
     }
 
@@ -149,7 +192,7 @@ export const registrarTransferencia = async (req, res) => {
       FROM Reservas
       WHERE id_reserva = ? AND eliminado = 0
       `,
-      [id_reserva]
+      [id_reserva],
     );
 
     if (rows.length === 0)
@@ -169,7 +212,7 @@ export const registrarTransferencia = async (req, res) => {
         ?
       )
       `,
-      [id_reserva, reserva.monto_total, referencia || null]
+      [id_reserva, reserva.monto_total, referencia || null],
     );
 
     await pool.promise().query(
@@ -178,7 +221,7 @@ export const registrarTransferencia = async (req, res) => {
       SET estado_reserva = 'pendiente'
       WHERE id_reserva = ?
       `,
-      [id_reserva]
+      [id_reserva],
     );
 
     console.log(`✅ Transferencia registrada para reserva ${id_reserva}`);
@@ -300,7 +343,7 @@ export const updatePagoEstado = async (req, res) => {
       INNER JOIN Reservas r ON p.id_reserva = r.id_reserva
       WHERE p.id_pago = ?
       `,
-      [id_pago]
+      [id_pago],
     );
 
     if (rows.length === 0) {
@@ -316,7 +359,7 @@ export const updatePagoEstado = async (req, res) => {
       SET estado_pago = ?, referencia = COALESCE(?, referencia)
       WHERE id_pago = ?
       `,
-      [nuevo_estado, referencia, id_pago]
+      [nuevo_estado, referencia, id_pago],
     );
 
     // 🔸 Si se aprueba → descontar cupo y confirmar reserva
@@ -327,7 +370,7 @@ export const updatePagoEstado = async (req, res) => {
         SET cupo_disponible = GREATEST(cupo_disponible - ?, 0)
         WHERE id_fecha = ? AND cupo_disponible >= ?
         `,
-        [pago.cantidad_personas, pago.id_fecha, pago.cantidad_personas]
+        [pago.cantidad_personas, pago.id_fecha, pago.cantidad_personas],
       );
 
       await pool.promise().query(
@@ -336,7 +379,7 @@ export const updatePagoEstado = async (req, res) => {
         SET estado_reserva = 'confirmada'
         WHERE id_reserva = ?
         `,
-        [pago.id_reserva]
+        [pago.id_reserva],
       );
     }
 
@@ -348,7 +391,7 @@ export const updatePagoEstado = async (req, res) => {
         SET estado_reserva = 'cancelada'
         WHERE id_reserva = ?
         `,
-        [pago.id_reserva]
+        [pago.id_reserva],
       );
     }
 
@@ -370,5 +413,162 @@ export const deletePago = async (req, res) => {
   } catch (err) {
     console.error("❌ Error al eliminar pago:", err);
     res.status(500).json({ message: "Error al eliminar pago" });
+  }
+};
+
+/* ============================================================
+   💳 SIMULACIÓN MERCADOPAGO
+   ============================================================ */
+
+export const crearPago = async (req, res) => {
+  try {
+    const { items, id_turista, reservas } = req.body;
+
+    // 🔎 1️⃣ OBTENER CARRITO ABIERTO DEL TURISTA (OBLIGATORIO)
+    const [carritoRows] = await pool.promise().query(
+      `
+      SELECT id_carrito
+      FROM Carrito
+      WHERE id_turista = ?
+        AND estado = 'abierto'
+        AND eliminado = 0
+      ORDER BY id_carrito DESC
+      LIMIT 1
+      `,
+      [id_turista],
+    );
+
+    if (carritoRows.length === 0) {
+      return res.status(400).json({
+        message: "No hay carrito abierto para crear el pago",
+      });
+    }
+
+    const id_carrito = carritoRows[0].id_carrito;
+
+    // 🧾 2️⃣ CREAR PREFERENCE DE MERCADOPAGO
+    const preference = {
+      items: items.map((item) => ({
+        title: item.nombre,
+        quantity: Number(item.cantidad),
+        unit_price: Number(item.precio),
+        currency_id: "ARS",
+      })),
+
+      back_urls: {
+        success:
+          "https://epizootically-semitropical-jannie.ngrok-free.dev/pago-exitoso",
+        failure:
+          "https://epizootically-semitropical-jannie.ngrok-free.dev/pago-fallido",
+        pending:
+          "https://epizootically-semitropical-jannie.ngrok-free.dev/pago-pendiente",
+      },
+
+      auto_return: "approved",
+
+      notification_url:
+        "https://epizootically-semitropical-jannie.ngrok-free.dev/api/pagos/webhook/mercadopago",
+
+      // 🔑 3️⃣ METADATA CLAVE PARA EL WEBHOOK
+      metadata: {
+        id_turista,
+        reservas,
+        id_carrito,
+      },
+    };
+
+    console.log(
+      "🧪 Preference enviada a MP:",
+      JSON.stringify(preference, null, 2),
+    );
+
+    const response = await preferenceClient.create({
+      body: preference,
+    });
+
+    const initPoint = response.init_point;
+
+    if (!initPoint) {
+      console.error("❌ init_point no encontrado", response);
+      return res.status(500).json({
+        message: "No se pudo obtener init_point",
+      });
+    }
+
+    res.json({ init_point: initPoint });
+  } catch (error) {
+    console.error("❌ Error creando pago:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const webhookMercadoPago = async (req, res) => {
+  try {
+    const paymentId = req.body?.data?.id;
+
+    // MP siempre espera 200
+    if (!paymentId) return res.sendStatus(200);
+
+    //  Obtener pago real
+    const payment = await paymentClient.get({ id: paymentId });
+
+    if (payment.status !== "approved") {
+      return res.sendStatus(200);
+    }
+
+    //  Metadata
+    const { id_turista, reservas, id_carrito } = payment.metadata || {};
+
+    if (!id_carrito) {
+      console.warn("⚠️ Pago aprobado sin id_carrito");
+      return res.sendStatus(200);
+    }
+
+    //  Confirmar carrito
+    await pool.promise().query(
+      `
+      UPDATE Carrito
+      SET estado = 'confirmado'
+      WHERE id_carrito = ?
+        AND estado = 'abierto'
+        AND eliminado = 0
+      `,
+      [id_carrito]
+    );
+
+    //  Marcar reservas como pagadas
+    if (Array.isArray(reservas) && reservas.length > 0) {
+      await pool.promise().query(
+        `
+        UPDATE Pagos
+        SET estado_pago = 'aprobado'
+        WHERE id_pago = ?
+        `,
+        [reservas]
+      );
+    }
+
+    //  Vaciar carrito (baja lógica de items)
+    await pool.promise().query(
+      `UPDATE CarritoItems
+       SET eliminado = 1, fecha_eliminacion = NOW()
+       WHERE id_carrito = ?`,
+      [id_carrito]
+    );
+
+    //  Opcional: cerrar carrito
+    await pool.promise().query(
+      `UPDATE Carrito
+       SET estado = 'cerrado'
+       WHERE id_carrito = ?`,
+      [id_carrito]
+    );
+
+    console.log("Pago aprobado. Carrito confirmado:", id_carrito);
+
+    return res.sendStatus(200);
+  } catch (error) {
+    console.error("Error webhook MercadoPago:", error);
+    return res.sendStatus(200);
   }
 };

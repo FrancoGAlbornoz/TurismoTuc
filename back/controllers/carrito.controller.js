@@ -13,21 +13,29 @@ export const getCarritoByTurista = async (req, res) => {
   try {
     const [results] = await pool.promise().query(
       `
-      SELECT c.id_carrito, c.estado, c.fecha_creacion
+      SELECT 
+        c.id_carrito,
+        c.estado,
+        c.fecha_creacion
       FROM Carrito c
-      WHERE c.id_turista = ? AND c.eliminado = 0 AND c.estado = 'abierto'
+      INNER JOIN CarritoItems ci 
+        ON ci.id_carrito = c.id_carrito
+       AND ci.eliminado = 0
+      WHERE c.id_turista = ?
+        AND c.eliminado = 0
+        AND c.estado = 'abierto'
+      GROUP BY c.id_carrito
       ORDER BY c.id_carrito DESC
       LIMIT 1
       `,
-      [id_turista]
+      [id_turista],
     );
 
-    // 🚫 Si no hay carrito abierto, devolvemos null (NO creamos uno nuevo)
+    // ✅ Si NO hay carrito válido → null
     if (results.length === 0) {
       return res.json(null);
     }
 
-    // ✅ Si hay, lo devolvemos normalmente
     res.json(results[0]);
   } catch (err) {
     console.error("❌ Error al obtener carrito:", err);
@@ -35,14 +43,10 @@ export const getCarritoByTurista = async (req, res) => {
   }
 };
 
-
-
-
 // Crear carrito manual (casi no lo usás)
 export const createCarrito = (req, res) => {
   const { id_turista } = req.body;
-  if (!id_turista)
-    return res.status(400).json({ message: "Falta id_turista" });
+  if (!id_turista) return res.status(400).json({ message: "Falta id_turista" });
 
   const sql = `
     INSERT INTO Carrito (id_turista, estado)
@@ -66,7 +70,7 @@ export const addItemCarrito = async (req, res) => {
   const { id_turista, id_fecha, cantidad_personas } = req.body;
 
   try {
-    // 1. Traer la fecha + excursión con precio real
+    // 1️⃣ Traer fecha + excursión con precio real
     const [fechaRes] = await pool.promise().query(
       `
       SELECT 
@@ -82,7 +86,7 @@ export const addItemCarrito = async (req, res) => {
       JOIN Excursiones e ON f.id_excursion = e.id_excursion
       WHERE f.id_fecha = ? AND f.eliminado = 0
       `,
-      [id_fecha]
+      [id_fecha],
     );
 
     if (fechaRes.length === 0) {
@@ -91,50 +95,60 @@ export const addItemCarrito = async (req, res) => {
 
     const fecha = fechaRes[0];
 
-    // Validar que hay cupos disponibles
     if (cantidad_personas > fecha.cupo_disponible) {
-      return res
-        .status(400)
-        .json({
-          message: `Solo quedan ${fecha.cupo_disponible} lugares disponibles.`,
-        });
+      return res.status(400).json({
+        message: `Solo quedan ${fecha.cupo_disponible} lugares disponibles.`,
+      });
     }
 
-    // 2. Buscar o crear carrito abierto
-    const [carritoRes] = await pool
-      .promise()
-      .query(
-        "SELECT id_carrito FROM Carrito WHERE id_turista = ? AND estado = 'abierto'",
-        [id_turista]
-      );
+    // 2️⃣ Buscar carrito abierto VÁLIDO (con items activos)
+    const [carritoRes] = await pool.promise().query(
+      `
+      SELECT c.id_carrito
+      FROM Carrito c
+      INNER JOIN CarritoItems ci 
+        ON ci.id_carrito = c.id_carrito
+       AND ci.eliminado = 0
+      WHERE c.id_turista = ?
+        AND c.estado = 'abierto'
+        AND c.eliminado = 0
+      GROUP BY c.id_carrito
+      ORDER BY c.id_carrito DESC
+      LIMIT 1
+      `,
+      [id_turista],
+    );
 
     let id_carrito;
-    if (carritoRes.length > 0) {
-      id_carrito = carritoRes[0].id_carrito;
-    } else {
-      const [nuevoCarrito] = await pool
-        .promise()
-        .query(
-          "INSERT INTO Carrito (id_turista, estado) VALUES (?, 'abierto')",
-          [id_turista]
-        );
+
+    // 3️⃣ Si no hay carrito válido → crear uno nuevo
+    if (carritoRes.length === 0) {
+      const [nuevoCarrito] = await pool.promise().query(
+        `
+        INSERT INTO Carrito (id_turista, estado)
+        VALUES (?, 'abierto')
+        `,
+        [id_turista],
+      );
       id_carrito = nuevoCarrito.insertId;
+    } else {
+      id_carrito = carritoRes[0].id_carrito;
     }
 
     const subtotal = fecha.precio * cantidad_personas;
 
-    // 3. Insertar ítem (sin tocar cupos todavía)
+    // 4️⃣ Insertar ítem
     await pool.promise().query(
       `
       INSERT INTO CarritoItems 
         (id_carrito, id_fecha, cantidad_personas, precio_unitario, subtotal)
       VALUES (?, ?, ?, ?, ?)
       `,
-      [id_carrito, id_fecha, cantidad_personas, fecha.precio, subtotal]
+      [id_carrito, id_fecha, cantidad_personas, fecha.precio, subtotal],
     );
 
     res.json({
-      message: "Excursión agregada al carrito (sin afectar cupos)",
+      message: "Excursión agregada al carrito",
       subtotal,
       precio_unitario: fecha.precio,
       titulo: fecha.titulo,
@@ -144,7 +158,6 @@ export const addItemCarrito = async (req, res) => {
     res.status(500).json({ message: "Error al agregar item al carrito" });
   }
 };
-
 
 // =============================
 // OBTENER ITEMS DEL CARRITO
@@ -196,24 +209,69 @@ export const getItemsCarrito = (req, res) => {
 // =============================
 // ELIMINAR ITEM
 // =============================
-export const deleteItemCarrito = (req, res) => {
+export const deleteItemCarrito = async (req, res) => {
   const { id_item } = req.params;
-  const sql = `
-    UPDATE CarritoItems
-    SET eliminado = 1, fecha_eliminacion = NOW()
-    WHERE id_item = ?
-  `;
-  pool.query(sql, [id_item], (err, result) => {
-    if (err) {
-      console.error("Error al eliminar item:", err);
-      return res.status(500).json({ message: "Error al eliminar item" });
-    }
-    if (result.affectedRows === 0)
-      return res.status(404).json({ message: "Item no encontrado" });
-    res.json({ message: "Item eliminado (baja lógica) correctamente" });
-  });
-};
 
+  try {
+    // 1 Obtener el id_carrito del item
+    const [[item]] = await pool.promise().query(
+      `
+      SELECT id_carrito
+      FROM CarritoItems
+      WHERE id_item = ? AND eliminado = 0
+      `,
+      [id_item],
+    );
+
+    if (!item) {
+      return res.status(404).json({ message: "Item no encontrado" });
+    }
+
+    const { id_carrito } = item;
+
+    // 2 Eliminar el item (baja lógica)
+    await pool.promise().query(
+      `
+      UPDATE CarritoItems
+      SET eliminado = 1, fecha_eliminacion = NOW()
+      WHERE id_item = ?
+      `,
+      [id_item],
+    );
+
+    // 3 Ver si quedaron items activos en el carrito
+    const [[{ total }]] = await pool.promise().query(
+      `
+      SELECT COUNT(*) AS total
+      FROM CarritoItems
+      WHERE id_carrito = ? AND eliminado = 0
+      `,
+      [id_carrito],
+    );
+
+    // 4 Si no quedan items → cancelar el carrito
+    if (total === 0) {
+      await pool.promise().query(
+        `
+        UPDATE Carrito
+        SET estado = 'cancelado'
+        WHERE id_carrito = ? AND estado = 'abierto'
+        `,
+        [id_carrito],
+      );
+    }
+
+    res.json({
+      message:
+        total === 0
+          ? "Item eliminado y carrito cancelado"
+          : "Item eliminado correctamente",
+    });
+  } catch (err) {
+    console.error("❌ Error al eliminar item:", err);
+    res.status(500).json({ message: "Error al eliminar item" });
+  }
+};
 
 export const updateCantidadItem = async (req, res) => {
   const { id_item } = req.params;
@@ -245,19 +303,17 @@ export const updateCantidadItem = async (req, res) => {
       JOIN Excursiones e ON f.id_excursion = e.id_excursion
       WHERE ci.id_item = ? AND ci.eliminado = 0
       `,
-      [id_item]
+      [id_item],
     );
 
     if (rows.length === 0) {
-      return res.status(404).json({ message: "Ítem no encontrado o eliminado." });
+      return res
+        .status(404)
+        .json({ message: "Ítem no encontrado o eliminado." });
     }
 
-    const {
-      id_fecha,
-      cantidad_actual,
-      cupo_disponible,
-      precio_unitario,
-    } = rows[0];
+    const { id_fecha, cantidad_actual, cupo_disponible, precio_unitario } =
+      rows[0];
 
     // 3️⃣ Calcular el cupo real disponible
     const cupoReal = (cupo_disponible ?? 0) + cantidad_actual;
@@ -278,7 +334,7 @@ export const updateCantidadItem = async (req, res) => {
       SET cantidad_personas = ?, subtotal = ?
       WHERE id_item = ? AND eliminado = 0
       `,
-      [nuevaCantidad, nuevoSubtotal, id_item]
+      [nuevaCantidad, nuevoSubtotal, id_item],
     );
 
     res.json({
@@ -293,49 +349,68 @@ export const updateCantidadItem = async (req, res) => {
   }
 };
 
+//  Vaciar carrito luego de pagar
+// export const vaciarCarrito = async (req, res) => {
 
-// 🔹 Vaciar carrito luego de pagar
-export const vaciarCarrito = async (req, res) => {
-  const { id_turista } = req.params;
+//   const { id_turista } = req.params;
 
-  try {
-    // 1️⃣ Obtener carrito abierto del turista
-    const [carritoRows] = await pool.promise().query(
-      `
-      SELECT id_carrito 
-      FROM Carrito 
-      WHERE id_turista = ? AND estado = 'abierto' AND eliminado = 0
-      ORDER BY id_carrito DESC
-      LIMIT 1
-      `,
-      [id_turista]
-    );
+//   try {
+//     // 1️⃣ Obtener carrito abierto del turista
+//     const [carritoRows] = await pool.promise().query(
+//       `
+//       SELECT id_carrito
+//       FROM Carrito
+//       WHERE id_turista = ? AND estado = 'abierto' AND eliminado = 0
+//       ORDER BY id_carrito DESC
+//       LIMIT 1
+//       `,
+//       [id_turista]
+//     );
 
-    if (carritoRows.length === 0) {
-      return res.status(404).json({ message: "No hay carrito abierto para vaciar." });
-    }
+//     if (carritoRows.length === 0) {
+//       return res.status(404).json({ message: "No hay carrito abierto para vaciar." });
+//     }
 
-    const id_carrito = carritoRows[0].id_carrito;
+//     const id_carrito = carritoRows[0].id_carrito;
 
-    // 2️⃣ Eliminar ítems correctamente (nombre correcto de la tabla)
-    await pool.promise().query(
-      `DELETE FROM CarritoItems WHERE id_carrito = ?`,
-      [id_carrito]
-    );
+//     // 2️⃣ Eliminar ítems correctamente (nombre correcto de la tabla)
+//     await pool.promise().query(
+//       `DELETE FROM CarritoItems WHERE id_carrito = ?`,
+//       [id_carrito]
+//     );
 
-    // 3️⃣ Marcar carrito como cerrado
-    await pool.promise().query(
-      `UPDATE Carrito SET estado = 'cerrado' WHERE id_carrito = ?`,
-      [id_carrito]
-    );
+//     // 3️⃣ Marcar carrito como cerrado
+//     await pool.promise().query(
+//       `UPDATE Carrito SET estado = 'cerrado' WHERE id_carrito = ?`,
+//       [id_carrito]
+//     );
 
-    res.json({
-      message: "🧹 Carrito vaciado y cerrado correctamente.",
-      id_carrito,
-    });
+//     res.json({
+//       message: "🧹 Carrito vaciado y cerrado correctamente.",
+//       id_carrito,
+//     });
 
-  } catch (err) {
-    console.error("❌ Error al vaciar carrito:", err);
-    res.status(500).json({ message: "Error al vaciar carrito." });
-  }
+//   } catch (err) {
+//     console.error("❌ Error al vaciar carrito:", err);
+//     res.status(500).json({ message: "Error al vaciar carrito." });
+//   }
+// };
+
+// =============================
+// CERRAR / CONFIRMAR CARRITO (uso interno - webhook)
+// =============================
+
+export const confirmarCarrito = async (id_carrito) => {
+  if (!id_carrito) return;
+
+  await pool.promise().query(
+    `
+    UPDATE Carrito
+    SET estado = 'confirmado'
+    WHERE id_carrito = ?
+      AND estado = 'abierto'
+      AND eliminado = 0
+    `,
+    [id_carrito],
+  );
 };

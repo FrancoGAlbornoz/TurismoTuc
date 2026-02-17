@@ -27,10 +27,10 @@ export const getReservas = (req, res) => {
     condiciones.push(`r.estado_reserva = '${estadoreserva}'`);
   }
 
-    // Filtro por fechas
+  // Filtro por fechas
   if (fechaDesde && fechaHasta) {
     condiciones.push(
-      `DATE(r.fecha_reserva) BETWEEN '${fechaDesde}' AND '${fechaHasta}'`
+      `DATE(r.fecha_reserva) BETWEEN '${fechaDesde}' AND '${fechaHasta}'`,
     );
   } else if (fechaDesde) {
     condiciones.push(`DATE(r.fecha_reserva) >= '${fechaDesde}'`);
@@ -148,76 +148,93 @@ export const getReservaById = (req, res) => {
   });
 };
 
-// Crear nueva reserva (versión corregida)
 // Crear nueva reserva (sin modificar cupos todavía)
 export const createReserva = (req, res) => {
   const { id_turista, id_fecha, cantidad_personas, estado_reserva } = req.body;
 
-  console.log(" Datos recibidos para crear reserva:", req.body);
-
-  // Validar datos obligatorios
   if (!id_turista || !id_fecha || !cantidad_personas) {
     return res.status(400).json({ message: "Faltan datos obligatorios" });
   }
 
-  // Obtener precio base de la excursión (sin restar cupos)
-  const sqlPrecio = `
-    SELECT e.precio_base
-    FROM FechasExcursion f
-    JOIN Excursiones e ON f.id_excursion = e.id_excursion
-    WHERE f.id_fecha = ? AND f.eliminado = 0
+  // 🔎 1️⃣ Verificar si ya existe una pendiente igual
+  const sqlExiste = `
+    SELECT id_reserva 
+    FROM Reservas
+    WHERE id_turista = ?
+      AND id_fecha = ?
+      AND estado_reserva = 'pendiente'
+      AND eliminado = 0
   `;
 
-  pool.query(sqlPrecio, [id_fecha], (err, results) => {
-    if (err) {
-      console.error("Error al obtener precio de excursión:", err);
-      return res.status(500).json({ message: "Error al calcular monto total" });
+  pool.query(sqlExiste, [id_turista, id_fecha], (errExiste, existeRows) => {
+    if (errExiste) {
+      console.error("Error al verificar reserva existente:", errExiste);
+      return res.status(500).json({ message: "Error al verificar reserva" });
     }
 
-    if (results.length === 0) {
-      return res
-        .status(404)
-        .json({ message: "Fecha de excursión no encontrada" });
+    if (existeRows.length > 0) {
+      return res.status(200).json({
+        message: "Ya existe una reserva pendiente para esta excursión",
+        id_reserva: existeRows[0].id_reserva,
+      });
     }
 
-    const precioBase = results[0].precio_base;
-    const monto_total = precioBase * cantidad_personas;
-
-    // Insertar la reserva como pendiente (sin tocar cupos aún)
-    const sqlInsert = `
-      INSERT INTO Reservas
-      (id_fecha, id_turista, cantidad_personas, monto_total, estado_reserva)
-      VALUES (?, ?, ?, ?, ?)
+    // 🔎 2️⃣ Obtener precio
+    const sqlPrecio = `
+      SELECT e.precio_base
+      FROM FechasExcursion f
+      JOIN Excursiones e ON f.id_excursion = e.id_excursion
+      WHERE f.id_fecha = ? AND f.eliminado = 0
     `;
 
-    pool.query(
-      sqlInsert,
-      [
-        id_fecha,
-        id_turista,
-        cantidad_personas,
-        monto_total,
-        estado_reserva || "pendiente",
-      ],
-      (err2, result) => {
-        if (err2) {
-          console.error("Error al crear reserva:", err2);
-          return res.status(500).json({ message: "Error al crear reserva" });
-        }
-
-        console.log(`✅ Reserva creada con ID ${result.insertId}`);
-
-        res.status(201).json({
-          message: "Reserva creada correctamente (pendiente de pago)",
-          id_reserva: result.insertId,
-          monto_total,
-        });
+    pool.query(sqlPrecio, [id_fecha], (err, results) => {
+      if (err) {
+        console.error("Error al obtener precio:", err);
+        return res
+          .status(500)
+          .json({ message: "Error al calcular monto total" });
       }
-    );
+
+      if (results.length === 0) {
+        return res.status(404).json({ message: "Fecha no encontrada" });
+      }
+
+      const precioBase = results[0].precio_base;
+      const monto_total = precioBase * cantidad_personas;
+
+      // 🔎 3️⃣ Insertar
+      const sqlInsert = `
+        INSERT INTO Reservas
+        (id_fecha, id_turista, cantidad_personas, monto_total, estado_reserva)
+        VALUES (?, ?, ?, ?, ?)
+      `;
+
+      pool.query(
+        sqlInsert,
+        [
+          id_fecha,
+          id_turista,
+          cantidad_personas,
+          monto_total,
+          estado_reserva || "pendiente",
+        ],
+        (err2, result) => {
+          if (err2) {
+            console.error("Error al crear reserva:", err2);
+            return res.status(500).json({ message: "Error al crear reserva" });
+          }
+
+          res.status(201).json({
+            message: "Reserva creada correctamente",
+            id_reserva: result.insertId,
+            monto_total,
+          });
+        },
+      );
+    });
   });
 };
 
-// Actualizar estado o datos de una reserva
 // Actualizar estado o datos de una reserva
 export const updateReserva = (req, res) => {
   const { id } = req.params;
@@ -227,7 +244,7 @@ export const updateReserva = (req, res) => {
     cantidad_personas,
     monto_total,
     estado_reserva,
-  } = req.body;
+  } = req.body;a
 
   // Validaciones simples
   if (!id_fecha || !cantidad_personas || !estado_reserva) {
@@ -280,10 +297,9 @@ export const updateReserva = (req, res) => {
       } else {
         res.json({ message: "Reserva actualizada correctamente" });
       }
-    }
+    },
   );
 };
-
 
 // Baja lógica de reserva
 export const deleteReserva = (req, res) => {
@@ -426,7 +442,6 @@ export const getParticipantesPorExcursion = (req, res) => {
   });
 };
 
-
 // =============================
 // Buscar reservas por DNI
 export const buscarReservasPorDNI = (req, res) => {
@@ -488,7 +503,6 @@ export const buscarReservasPorDNI = (req, res) => {
   });
 };
 
-
 // AGREGAR AL FINAL DE reservas.controller.js
 export const cancelarReservaTurista = async (req, res) => {
   const { id } = req.params;
@@ -500,7 +514,7 @@ export const cancelarReservaTurista = async (req, res) => {
     // 1. Obtener datos de la reserva para saber qué fecha y cuántos lugares liberar
     const [reservaRows] = await connection.query(
       "SELECT id_fecha, cantidad_personas, estado_reserva FROM Reservas WHERE id_reserva = ?",
-      [id]
+      [id],
     );
 
     if (reservaRows.length === 0) {
@@ -511,26 +525,29 @@ export const cancelarReservaTurista = async (req, res) => {
     const { id_fecha, cantidad_personas, estado_reserva } = reservaRows[0];
 
     // Validación: No cancelar si ya está cancelada o finalizada
-    if (estado_reserva === 'cancelada' || estado_reserva === 'finalizada') {
+    if (estado_reserva === "cancelada" || estado_reserva === "finalizada") {
       await connection.rollback();
-      return res.status(400).json({ message: `No se puede cancelar una reserva en estado: ${estado_reserva}` });
+      return res
+        .status(400)
+        .json({
+          message: `No se puede cancelar una reserva en estado: ${estado_reserva}`,
+        });
     }
 
     // 2. Cambiar estado a 'cancelada'
     await connection.query(
       "UPDATE Reservas SET estado_reserva = 'cancelada' WHERE id_reserva = ?",
-      [id]
+      [id],
     );
 
     // 3. Devolver los cupos a la fecha correspondiente
     await connection.query(
       "UPDATE FechasExcursion SET cupo_disponible = cupo_disponible + ? WHERE id_fecha = ?",
-      [cantidad_personas, id_fecha]
+      [cantidad_personas, id_fecha],
     );
 
     await connection.commit();
     res.json({ message: "Reserva cancelada y cupos liberados correctamente." });
-
   } catch (error) {
     await connection.rollback();
     console.error("Error en la transacción de cancelación:", error);
