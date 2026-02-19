@@ -12,6 +12,7 @@ export default function CheckoutPago({ turista }) {
   const [reservasPendientes, setReservasPendientes] = useState([]);
   const [msgError, setMsgError] = useState("");
   const [msgInfo, setMsgInfo] = useState("");
+
   const [comprobanteFile, setComprobanteFile] = useState(null);
   const [comprobantePreview, setComprobantePreview] = useState(null);
 
@@ -44,7 +45,6 @@ export default function CheckoutPago({ turista }) {
         }
 
         setItems(itemsRes.data);
-
         setIdCarrito(carRes.data.id_carrito);
       } catch (e) {
         console.error(e);
@@ -62,11 +62,74 @@ export default function CheckoutPago({ turista }) {
     };
   }, [comprobantePreview]);
 
+  const handleComprobanteChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowed = [
+      "application/pdf",
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+    ];
+
+    if (!allowed.includes(file.type)) {
+      Swal.fire({
+        icon: "error",
+        title: "Formato no permitido",
+        text: "Subí un PDF o una imagen (JPG/PNG/WEBP).",
+        confirmButtonColor: "#0e7667",
+      });
+      e.target.value = "";
+      return;
+    }
+
+    const maxMB = 8;
+    if (file.size > maxMB * 1024 * 1024) {
+      Swal.fire({
+        icon: "warning",
+        title: "Archivo muy grande",
+        text: `El comprobante no puede superar ${maxMB}MB.`,
+        confirmButtonColor: "#0e7667",
+      });
+      e.target.value = "";
+      return;
+    }
+
+    if (comprobantePreview) URL.revokeObjectURL(comprobantePreview);
+
+    setComprobanteFile(file);
+
+    if (file.type.startsWith("image/")) {
+      setComprobantePreview(URL.createObjectURL(file));
+    } else {
+      setComprobantePreview(null);
+    }
+  };
+
+  const subirComprobante = async ({
+    id_reserva,
+    id_turista,
+    referenciaFinal,
+  }) => {
+    if (!comprobanteFile) return;
+
+    const fd = new FormData();
+    fd.append("archivo", comprobanteFile);
+    fd.append("id_reserva", id_reserva);
+    fd.append("id_turista", id_turista);
+    fd.append("descripcion", referenciaFinal ? `Ref: ${referenciaFinal}` : "");
+
+    await axios.post("http://localhost:8000/api/comprobantes", fd, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  };
+
   const handleConfirmar = async () => {
     const tieneReferencia = !!referencia.trim();
     const tieneArchivo = !!comprobanteFile;
 
-    // ✅ Debe tener al menos uno
+    // ✅ Debe tener al menos uno (archivo o número)
     if (!tieneReferencia && !tieneArchivo) {
       await Swal.fire({
         icon: "warning",
@@ -77,7 +140,6 @@ export default function CheckoutPago({ turista }) {
       return;
     }
 
-    // ✅ Si hay referencia, normalizala
     const referenciaFinal = tieneReferencia ? referencia.trim() : null;
 
     setProcesandoPago(true);
@@ -95,15 +157,10 @@ export default function CheckoutPago({ turista }) {
           id_fecha: item.id_fecha,
           cantidad_personas: item.cantidad_personas,
         };
-        const resReserva = await axios.post(
-          "http://localhost:8000/api/reservas",
-          payloadReserva,
-        );
-        const nuevoIdReserva = resReserva.data.id_reserva;
 
         const resReserva = await axios.post(
           "http://localhost:8000/api/reservas",
-          payloadReserva
+          payloadReserva,
         );
 
         const nuevoIdReserva = resReserva.data?.id_reserva;
@@ -112,13 +169,21 @@ export default function CheckoutPago({ turista }) {
         }
 
         // B) Registrar Pago (referencia opcional)
-        // ✅ OJO: ahora manda referenciaFinal (null si no hay)
         await axios.post("http://localhost:8000/api/pagos/transferencia", {
           id_reserva: nuevoIdReserva,
           referencia: referenciaFinal,
         });
 
-        // C) Guardar datos para la siguiente pantalla
+        // C) Subir comprobante si el usuario adjuntó archivo
+        if (comprobanteFile) {
+          await subirComprobante({
+            id_reserva: nuevoIdReserva,
+            id_turista,
+            referenciaFinal,
+          });
+        }
+
+        // D) Guardar datos para la siguiente pantalla
         reservasConfirmadas.push({
           id_reserva: nuevoIdReserva,
           id_excursion: item.id_excursion,
@@ -128,9 +193,9 @@ export default function CheckoutPago({ turista }) {
 
       // Vaciar carrito
       try {
-        await axios.delete(
-          `http://localhost:8000/api/carrito/vaciar/${id_turista}`,
-        );
+        await axios.delete(`http://localhost:8000/api/carrito/vaciar/${id_turista}`);
+        useCarritoStore.getState().clearCarrito();
+        
       } catch (error) {
         console.warn("No se pudo limpiar carrito en backend", error);
       }
@@ -143,7 +208,6 @@ export default function CheckoutPago({ turista }) {
         confirmButtonColor: "#0e7667",
       });
 
-      // CAMBIO 4: Navegación pasando el ARRAY de reservas (no por URL, sino por state)
       navigate("/preguntas-personalizadas", {
         state: { reservasRealizadas: reservasConfirmadas },
       });
@@ -225,7 +289,7 @@ export default function CheckoutPago({ turista }) {
 
   return (
     <Card className="p-4 shadow-sm">
-      <h4 className="mb-3 text-success">PAGO POR TRANSFERENCIA</h4>
+      <h4 className="mb-3 text-success">PAGO POR TRANSFERENCIA / MERCADO PAGO</h4>
 
       {msgError && <Alert variant="danger">{msgError}</Alert>}
       {msgInfo && <Alert variant="info">{msgInfo}</Alert>}
@@ -267,13 +331,72 @@ export default function CheckoutPago({ turista }) {
         <p className="mb-2">
           Transferí al Alias: <strong>AGENCIATUCUMAN.mp</strong>
         </p>
-        <Form.Group>
+
+        <div className="small text-muted mb-2">
+          Con subir el comprobante <strong>o</strong> ingresar el número
+          alcanza.
+        </div>
+
+        <Form.Group className="mt-2">
           <Form.Label className="fw-bold small">
-            Nro. de comprobante *
+            Comprobante (PDF o imagen) (opcional)
+          </Form.Label>
+
+          <Form.Control
+            type="file"
+            accept=".pdf,image/*"
+            onChange={handleComprobanteChange}
+            disabled={procesandoPago}
+          />
+
+          <div className="mt-2 small text-muted">
+            Podés subir PDF/JPG/PNG/WEBP. Máx 8MB.
+          </div>
+
+          {comprobanteFile && (
+            <Alert variant="light" className="mt-2 mb-0 border">
+              <div className="d-flex justify-content-between align-items-center">
+                <div>
+                  <div className="fw-bold">{comprobanteFile.name}</div>
+                  <div className="small text-muted">
+                    {(comprobanteFile.size / 1024 / 1024).toFixed(2)} MB
+                  </div>
+                </div>
+
+                <Button
+                  variant="outline-danger"
+                  size="sm"
+                  onClick={() => {
+                    if (comprobantePreview)
+                      URL.revokeObjectURL(comprobantePreview);
+                    setComprobanteFile(null);
+                    setComprobantePreview(null);
+                  }}
+                  disabled={procesandoPago}
+                >
+                  Quitar
+                </Button>
+              </div>
+
+              {comprobantePreview && (
+                <div className="mt-2">
+                  <img
+                    src={comprobantePreview}
+                    alt="Vista previa comprobante"
+                    style={{ maxWidth: "100%", borderRadius: 8 }}
+                  />
+                </div>
+              )}
+            </Alert>
+          )}
+        </Form.Group>
+
+        <Form.Group className="mt-3">
+          <Form.Label className="fw-bold small">
+            Nro. de comprobante (opcional)
           </Form.Label>
           <Form.Control
-            required
-            placeholder="Ingresá el comprobante aquí"
+            placeholder="Ingresá el número de comprobante"
             value={referencia}
             onChange={(e) => setReferencia(e.target.value)}
             disabled={procesandoPago}

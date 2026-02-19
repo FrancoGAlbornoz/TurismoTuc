@@ -9,8 +9,7 @@ const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, dir),
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
-    const safeExt = ext || (file.mimetype === "application/pdf" ? ".pdf" : "");
-    cb(null, `comp_${Date.now()}_${Math.round(Math.random() * 1e9)}${safeExt}`);
+    cb(null, `comp_${Date.now()}_${Math.round(Math.random() * 1e9)}${ext}`);
   },
 });
 
