@@ -244,7 +244,7 @@ export const updateReserva = (req, res) => {
     cantidad_personas,
     monto_total,
     estado_reserva,
-  } = req.body;a
+  } = req.body;
 
   // Validaciones simples
   if (!id_fecha || !cantidad_personas || !estado_reserva) {
