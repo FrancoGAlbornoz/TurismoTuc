@@ -79,6 +79,11 @@ app.get("/", (req, res) => {
   res.send("API MAAVYT 🚀🏞");
 });
 
+// Redirecciones post-pago (Mercado Pago)
+app.get("/pago-exitoso", (req, res) => {
+  res.redirect("http://localhost:5173/perfil-turista");
+});
+
 // Levanta el servidor o escucha
 const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
