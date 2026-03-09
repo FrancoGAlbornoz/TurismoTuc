@@ -191,16 +191,6 @@ function App() {
              RUTAS ADMINISTRATIVAS
         ========================== */}
         <Route
-          path="/admin"
-          element={
-            <>
-              <Header />
-              <Login />
-              <Footer />
-            </>
-          }
-        />
-        <Route
           path="/dashboard-admin/*"
           element={
             <ProtectedRoute allowedRoles={["Administrador"]}>
