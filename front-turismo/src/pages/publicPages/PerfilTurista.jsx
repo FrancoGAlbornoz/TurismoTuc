@@ -16,15 +16,16 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import useTuristaStore from "../../store/useTuristaStore";
 
-// --- IMPORT PAGINACIÓN (AJUSTÁ LA RUTA REAL)
-import Paginacion from "../../Components/Filtros/Paginacion"
+// --- IMPORT PAGINACIÓN ---
+import Paginacion from "../../Components/Filtros/Paginacion";
 
 // --- NUEVOS IMPORTS PARA EL VOUCHER ---
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 export default function PerfilTurista() {
-  const { turista, token, setTurista } = useTuristaStore();
+  const { turista, token, setTurista, initSession, hydrated } = useTuristaStore();
+
   const [reservas, setReservas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -47,9 +48,27 @@ export default function PerfilTurista() {
   const navigate = useNavigate();
   const turistaId = turista?.id_turista || turista?.id;
 
+  // Inicializar sesión desde localStorage
+  useEffect(() => {
+    initSession();
+  }, [initSession]);
+
+  // Si ya terminó de hidratar y no hay turista, redirigir al login
+  useEffect(() => {
+    if (!hydrated) return;
+
+    if (!turista) {
+      navigate("/login", { replace: true });
+    }
+  }, [hydrated, turista, navigate]);
+
   useEffect(() => {
     const fetchReservas = async () => {
-      if (!turistaId) return;
+      if (!turistaId) {
+        setLoading(false);
+        return;
+      }
+
       try {
         const res = await axios.get(
           `http://localhost:8000/api/turistas/${turistaId}/reservas`,
@@ -57,12 +76,10 @@ export default function PerfilTurista() {
         );
 
         const data = res.data || [];
-
-        // ✅ NO recortar a 10: ordenamos y guardamos todo
         const procesadas = data.sort((a, b) => b.id_reserva - a.id_reserva);
 
         setReservas(procesadas);
-        setCurrentPage(1); // cuando recarga data, volvemos a la primer página
+        setCurrentPage(1);
       } catch (err) {
         console.error("Error al cargar reservas:", err);
         setError("No se pudieron cargar tus reservas.");
@@ -70,6 +87,8 @@ export default function PerfilTurista() {
         setLoading(false);
       }
     };
+
+    if (!hydrated) return;
 
     if (turista) {
       setFormData({
@@ -82,8 +101,10 @@ export default function PerfilTurista() {
         nacionalidad: turista.nacionalidad || "",
       });
       fetchReservas();
+    } else {
+      setLoading(false);
     }
-  }, [turista, turistaId, token]);
+  }, [turista, turistaId, token, hydrated]);
 
   // --- PAGINACIÓN: totalPages + slice ---
   const totalPages = Math.ceil((reservas.length || 0) / PAGE_SIZE);
@@ -100,7 +121,7 @@ export default function PerfilTurista() {
     } else if (currentPage > totalPages) {
       setCurrentPage(totalPages);
     }
-  }, [reservas.length, totalPages]); // a propósito: recalcula cuando cambia el tamaño
+  }, [totalPages, currentPage]);
 
   const handleCancelarReserva = async (idReserva) => {
     const result = await Swal.fire({
@@ -148,9 +169,11 @@ export default function PerfilTurista() {
         formData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
+
       const turistaActualizado = res.data.turista || res.data;
       setTurista(turistaActualizado);
       setEditMode(false);
+
       Swal.fire("¡Éxito!", "Tus datos han sido actualizados.", "success");
     } catch (err) {
       console.error("Error al actualizar:", err);
@@ -158,19 +181,10 @@ export default function PerfilTurista() {
     }
   };
 
-  if (loading)
-    return (
-      <div className="text-center mt-5">
-        <Spinner animation="border" variant="success" />
-        <p className="mt-2 text-success">Cargando perfil...</p>
-      </div>
-    );
-
   const handleDescargarVoucher = (r) => {
     try {
       const doc = new jsPDF();
 
-      // Encabezado
       doc.setFont("helvetica", "bold");
       doc.setFontSize(20);
       doc.setTextColor(25, 135, 84);
@@ -215,6 +229,15 @@ export default function PerfilTurista() {
     }
   };
 
+  if (!hydrated || loading) {
+    return (
+      <div className="text-center mt-5">
+        <Spinner animation="border" variant="success" />
+        <p className="mt-2 text-success">Cargando perfil...</p>
+      </div>
+    );
+  }
+
   return (
     <Container className="py-5">
       <div className="mb-4">
@@ -225,7 +248,6 @@ export default function PerfilTurista() {
           Gestioná tu información y revisá tus últimas aventuras.
         </p>
 
-        {/* opcional: mostrar error arriba */}
         {error && (
           <Alert variant="danger" className="mt-3">
             {error}
@@ -342,7 +364,6 @@ export default function PerfilTurista() {
                 <i className="bi bi-journal-check me-2"></i>Mis Reservas
               </h5>
 
-              {/* ✅ ahora mostramos total real */}
               <Badge bg="success" pill>
                 Total: {reservas.length}
               </Badge>
@@ -392,9 +413,7 @@ export default function PerfilTurista() {
 
                         <td>
                           <div className="small fw-bold">
-                            {new Date(r.fecha_salida).toLocaleDateString(
-                              "es-AR"
-                            )}
+                            {new Date(r.fecha_salida).toLocaleDateString("es-AR")}
                           </div>
                           <div className="small text-muted">
                             {r.hora_salida?.slice(0, 5) || "--:--"} hs
@@ -475,7 +494,6 @@ export default function PerfilTurista() {
                 </tbody>
               </Table>
 
-              {/* ✅ PAGINADOR */}
               <div className="p-3">
                 <Paginacion
                   currentPage={currentPage}
