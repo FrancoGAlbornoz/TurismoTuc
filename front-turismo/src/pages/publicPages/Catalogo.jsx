@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import axios from "axios";
 import { Container, Row, Col } from "react-bootstrap";
@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import CatalogGrid from "../../Components/publicComponents/Catalogo/CatalogGrid";
 import FilterSidebar from "../../Components/publicComponents/Catalogo/FilterSidebar";
 import SortBar from "../../Components/publicComponents/Catalogo/SortBar";
+import Paginacion from "../../Components/Filtros/Paginacion"; // ajustá la ruta si hace falta
 import "../../styles/publicComponents/catalogo.css";
 
 // Hook para leer parámetros de la URL
@@ -21,19 +22,25 @@ export default function Catalogo() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // PAGINACIÓN
+  const PAGE_SIZE = 8;
+  const [currentPage, setCurrentPage] = useState(1);
+
   const query = useQuery();
   const categoriaSeleccionada = query.get("categoria");
 
-  // 🔹 Obtener excursiones (filtradas si hay categoría)
   const fetchExcursiones = async () => {
     try {
+      setLoading(true);
       let url = "http://localhost:8000/api/excursiones";
+
       if (categoriaSeleccionada) {
         url += `?categoria=${encodeURIComponent(categoriaSeleccionada)}`;
       }
 
       const res = await axios.get(url);
       setExcursiones(res.data);
+      setCurrentPage(1); // reset al cambiar data
     } catch (err) {
       console.error("Error al obtener excursiones:", err);
       setError("No se pudieron cargar las excursiones.");
@@ -46,15 +53,19 @@ export default function Catalogo() {
     fetchExcursiones();
   }, [categoriaSeleccionada]);
 
-  // Filtrado desde el sidebar
   const handleFilterChange = (data) => {
-    if (data) setExcursiones(data);
-    else fetchExcursiones();
+    if (data) {
+      setExcursiones(data);
+    } else {
+      fetchExcursiones();
+      return;
+    }
+    setCurrentPage(1);
   };
 
-  // Ordenamiento desde el sort bar
   const handleSortChange = (order) => {
     const sorted = [...excursiones];
+
     switch (order) {
       case "precio_asc":
         sorted.sort((a, b) => a.precio_base - b.precio_base);
@@ -63,16 +74,37 @@ export default function Catalogo() {
         sorted.sort((a, b) => b.precio_base - a.precio_base);
         break;
       case "fecha_nueva":
-        sorted.sort((a, b) => new Date(b.fecha_creacion) - new Date(a.fecha_creacion));
+        sorted.sort(
+          (a, b) => new Date(b.fecha_creacion) - new Date(a.fecha_creacion)
+        );
         break;
       case "fecha_vieja":
-        sorted.sort((a, b) => new Date(a.fecha_creacion) - new Date(b.fecha_creacion));
+        sorted.sort(
+          (a, b) => new Date(a.fecha_creacion) - new Date(b.fecha_creacion)
+        );
         break;
       default:
         return;
     }
+
     setExcursiones(sorted);
+    setCurrentPage(1);
   };
+
+  const totalPages = Math.ceil((excursiones.length || 0) / PAGE_SIZE);
+
+  const excursionesPaginadas = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return excursiones.slice(start, start + PAGE_SIZE);
+  }, [excursiones, currentPage]);
+
+  useEffect(() => {
+    if (totalPages <= 0) {
+      setCurrentPage(1);
+    } else if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
 
   return (
     <Container fluid className="catalogo-page py-4">
@@ -97,7 +129,16 @@ export default function Catalogo() {
           ) : excursiones.length === 0 ? (
             <p className="text-muted">{t("catalogo.empty")}</p>
           ) : (
-            <CatalogGrid excursiones={excursiones} />
+            <>
+              <CatalogGrid excursiones={excursionesPaginadas} />
+
+              <Paginacion
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                maxVisible={5}
+              />
+            </>
           )}
         </Col>
       </Row>

@@ -17,18 +17,25 @@ export const getRoles = (req, res) => {
 // USUARIOS
 // =========================
 export const getUsuarios = (req, res) => {
+  const { status = "active" } = req.query; // active | deleted | all
+
+  let where = "u.eliminado = 0";
+  if (status === "deleted") where = "u.eliminado = 1";
+  if (status === "all") where = "1=1";
+
   pool.query(
-    `SELECT u.id_usuario, u.nombre, u.apellido, u.email, u.telefono, r.nombre_rol, u.estado
+    `SELECT u.id_usuario, u.nombre, u.apellido, u.email, u.telefono,
+            r.nombre_rol, u.estado, u.eliminado, u.fecha_eliminacion
      FROM Usuarios u
      JOIN Roles r ON u.id_rol = r.id_rol
-     WHERE u.eliminado = 0`,
+     WHERE ${where}
+     ORDER BY u.id_usuario DESC`,
     (err, results) => {
       if (err) return res.status(500).json({ message: "Error al obtener usuarios" });
       res.json(results);
     }
   );
 };
-
 export const getUsuarioById = (req, res) => {
   const { id } = req.params;
   pool.query(
@@ -92,42 +99,6 @@ export const deleteUsuario = (req, res) => {
   });
 };
 
-// =========================
-// LOGIN
-// =========================
-export const loginUsuario = (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password)
-    return res.status(400).json({ success: false, message: "Faltan datos obligatorios" });
-
-  const sql = `
-    SELECT u.id_usuario, u.nombre, u.apellido, u.email, u.password, r.nombre_rol
-    FROM Usuarios u
-    JOIN Roles r ON u.id_rol = r.id_rol
-    WHERE u.email = ? AND u.eliminado = 0
-  `;
-  pool.query(sql, [email], async (err, results) => {
-    if (err) return res.status(500).json({ success: false, message: "Error interno del servidor" });
-    if (results.length === 0)
-      return res.status(401).json({ success: false, message: "Usuario no encontrado" });
-
-    const user = results[0];
-    const validPassword = await bcrypt.compare(password, user.password);
-    if (!validPassword)
-      return res.status(401).json({ success: false, message: "Contraseña incorrecta" });
-
-    res.json({
-      success: true,
-      user: {
-        id: user.id_usuario,
-        nombre: user.nombre,
-        apellido: user.apellido,
-        email: user.email,
-        rol: user.nombre_rol,
-      },
-    });
-  });
-};
 
 // =========================
 // RECUPERAR CONTRASEÑA
@@ -243,4 +214,20 @@ export const resetPassword = (req, res) => {
       }
     }
   );
+};
+
+
+export const restoreUsuario = (req, res) => {
+  const { id } = req.params;
+
+  const sql = `UPDATE Usuarios
+               SET eliminado=0, fecha_eliminacion=NULL
+               WHERE id_usuario=?`;
+
+  pool.query(sql, [id], (err, result) => {
+    if (err) return res.status(500).json({ message: "Error al restaurar usuario" });
+    if (result.affectedRows === 0)
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    res.json({ message: "Usuario restaurado correctamente" });
+  });
 };

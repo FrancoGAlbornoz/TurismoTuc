@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import axios from "axios";
@@ -12,7 +12,9 @@ import {
   Alert,
   Spinner,
 } from "react-bootstrap";
+import Swal from "sweetalert2";
 import useTuristaStore from "../../store/useTuristaStore";
+import useUserStore from "../../store/useUserStore";
 import "../../styles/components/login.css";
 
 export default function LoginTurista() {
@@ -22,9 +24,34 @@ export default function LoginTurista() {
   const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
-  const { setTurista } = useTuristaStore();
-
   const { t } = useTranslation();
+
+  const { turista, setTurista, clearTurista } = useTuristaStore();
+  const { user, setUser, clearUser } = useUserStore();
+
+  useEffect(() => {
+    if (user) {
+      const rol = user.rol
+        ?.toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+
+      if (rol === "administrador") {
+        navigate("/dashboard-admin", { replace: true });
+      } else if (rol === "guia turistico" || rol === "guía turístico") {
+        navigate("/dashboard-guia", { replace: true });
+      } else if (rol === "personal de ventas") {
+        navigate("/dashboard-empleados", { replace: true });
+      } else {
+        navigate("/", { replace: true });
+      }
+      return;
+    }
+
+    if (turista) {
+      navigate("/", { replace: true });
+    }
+  }, [user, turista, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,16 +59,74 @@ export default function LoginTurista() {
     setIsLoading(true);
 
     try {
-      const res = await axios.post("http://localhost:8000/api/auth/turistas/login", {
+      const res = await axios.post("http://localhost:8000/api/auth/login", {
         email,
         password,
       });
-      const { token, turista } = res.data;
-      setTurista(turista, token);
-      navigate("/");
+
+      if (!res.data.success) {
+        setError(res.data.message || "Error al iniciar sesión.");
+        return;
+      }
+
+      if (res.data.tipo === "turista") {
+        const { token, turista } = res.data;
+
+        clearUser();
+        setTurista(turista, token);
+
+        await Swal.fire({
+          icon: "success",
+          title: `¡Bienvenido ${turista.nombre}!`,
+          text: "Tu sesión fue iniciada correctamente.",
+          confirmButtonColor: "#198754",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+
+        navigate("/");
+        return;
+      }
+
+      if (res.data.tipo === "usuario") {
+        const userData = res.data.user;
+
+        clearTurista();
+        setUser(userData);
+
+        await Swal.fire({
+          icon: "success",
+          title: `Bienvenido ${userData.nombre}`,
+          text: "Accediendo al panel de administración...",
+          confirmButtonColor: "#198754",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+
+        const rol = userData.rol
+          ?.toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "");
+
+        if (rol === "administrador") {
+          navigate("/dashboard-admin");
+        } else if (rol === "guia turistico" || rol === "guía turístico") {
+          navigate("/dashboard-guia");
+        } else if (rol === "personal de ventas") {
+          navigate("/dashboard-empleados");
+        } else {
+          clearUser();
+          setError("No tiene permisos para acceder al panel.");
+        }
+        return;
+      }
+
+      setError("Respuesta inválida del servidor.");
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.message || "Email o contraseña incorrectos.");
+      setError(
+        err.response?.data?.message || "Email o contraseña incorrectos.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -58,7 +143,10 @@ export default function LoginTurista() {
                   <span className="brand-dot"></span>
                   <h1>{t("loginTurista.title")}</h1>
                 </div>
-                <h4 className="text-center text-success fw-bold mb-4">{t("loginTurista.subtitle")}</h4>
+
+                <h4 className="text-center text-success fw-bold mb-4">
+                  {t("loginTurista.subtitle")}
+                </h4>
 
                 {error && (
                   <Alert variant="danger" className="py-2 text-center">
@@ -87,10 +175,16 @@ export default function LoginTurista() {
                     />
                   </Form.Group>
 
-                  <Button type="submit" variant="success" className="w-100" disabled={isLoading}>
+                  <Button
+                    type="submit"
+                    variant="success"
+                    className="w-100"
+                    disabled={isLoading}
+                  >
                     {isLoading ? (
                       <>
-                        <Spinner size="sm" className="me-2" /> {t("loginTurista.loading")}
+                        <Spinner size="sm" className="me-2" />
+                        {t("loginTurista.loading")}
                       </>
                     ) : (
                       t("loginTurista.button")

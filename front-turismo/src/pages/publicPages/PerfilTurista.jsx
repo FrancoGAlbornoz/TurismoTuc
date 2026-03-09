@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   Container,
   Row,
@@ -16,6 +16,9 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import useTuristaStore from "../../store/useTuristaStore";
 
+// --- IMPORT PAGINACIÓN (AJUSTÁ LA RUTA REAL)
+import Paginacion from "../../Components/Filtros/Paginacion"
+
 // --- NUEVOS IMPORTS PARA EL VOUCHER ---
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -26,6 +29,10 @@ export default function PerfilTurista() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [editMode, setEditMode] = useState(false);
+
+  // --- PAGINACIÓN ---
+  const PAGE_SIZE = 10;
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [formData, setFormData] = useState({
     nombre: "",
@@ -48,11 +55,14 @@ export default function PerfilTurista() {
           `http://localhost:8000/api/turistas/${turistaId}/reservas`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
+
         const data = res.data || [];
-        const procesadas = data
-          .sort((a, b) => b.id_reserva - a.id_reserva)
-          .slice(0, 10);
+
+        // ✅ NO recortar a 10: ordenamos y guardamos todo
+        const procesadas = data.sort((a, b) => b.id_reserva - a.id_reserva);
+
         setReservas(procesadas);
+        setCurrentPage(1); // cuando recarga data, volvemos a la primer página
       } catch (err) {
         console.error("Error al cargar reservas:", err);
         setError("No se pudieron cargar tus reservas.");
@@ -74,6 +84,23 @@ export default function PerfilTurista() {
       fetchReservas();
     }
   }, [turista, turistaId, token]);
+
+  // --- PAGINACIÓN: totalPages + slice ---
+  const totalPages = Math.ceil((reservas.length || 0) / PAGE_SIZE);
+
+  const reservasPaginadas = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return reservas.slice(start, start + PAGE_SIZE);
+  }, [reservas, currentPage]);
+
+  // Si cambia la cantidad de reservas y la página queda fuera de rango, la ajustamos
+  useEffect(() => {
+    if (totalPages <= 0) {
+      setCurrentPage(1);
+    } else if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [reservas.length, totalPages]); // a propósito: recalcula cuando cambia el tamaño
 
   const handleCancelarReserva = async (idReserva) => {
     const result = await Swal.fire({
@@ -97,7 +124,9 @@ export default function PerfilTurista() {
 
         setReservas((prev) =>
           prev.map((r) =>
-            r.id_reserva === idReserva ? { ...r, estado_reserva: "cancelada" } : r
+            r.id_reserva === idReserva
+              ? { ...r, estado_reserva: "cancelada" }
+              : r
           )
         );
 
@@ -144,26 +173,39 @@ export default function PerfilTurista() {
       // Encabezado
       doc.setFont("helvetica", "bold");
       doc.setFontSize(20);
-      doc.setTextColor(25, 135, 84); 
+      doc.setTextColor(25, 135, 84);
       doc.text("MAAVYT TURISMO", 105, 20, { align: "center" });
-      
+
       doc.setFontSize(10);
       doc.setTextColor(100);
-      doc.text("Rivadavia 1051, San Miguel de Tucumán", 105, 27, { align: "center" });
+      doc.text(
+        "Rivadavia 1051, San Miguel de Tucumán",
+        105,
+        27,
+        { align: "center" }
+      );
       doc.line(20, 33, 190, 33);
 
-      // TABLA DE DATOS (CUIDADO ACÁ: Usamos autoTable(doc, ...))
       autoTable(doc, {
         startY: 45,
-        head: [['Detalles del Pasajero', 'Detalles del Viaje']],
+        head: [["Detalles del Pasajero", "Detalles del Viaje"]],
         body: [
-          [`Nombre: ${turista?.nombre} ${turista?.apellido}`, `Excursión: ${r.excursion_nombre}`],
-          [`DNI: ${turista?.dni}`, `Guía: ${r.guia_nombre || 'A asignar'}`],
-          [`Email: ${turista?.email}`, `Fecha: ${new Date(r.fecha_salida).toLocaleDateString()}`],
-          [`Tel: ${turista?.telefono || '-'}`, `Hora: ${r.hora_salida?.slice(0, 5) || '--:--'} hs`],
+          [
+            `Nombre: ${turista?.nombre} ${turista?.apellido}`,
+            `Excursión: ${r.excursion_nombre}`,
+          ],
+          [`DNI: ${turista?.dni}`, `Guía: ${r.guia_nombre || "A asignar"}`],
+          [
+            `Email: ${turista?.email}`,
+            `Fecha: ${new Date(r.fecha_salida).toLocaleDateString()}`,
+          ],
+          [
+            `Tel: ${turista?.telefono || "-"}`,
+            `Hora: ${r.hora_salida?.slice(0, 5) || "--:--"} hs`,
+          ],
         ],
         headStyles: { fillColor: [25, 135, 84] },
-        theme: 'grid'
+        theme: "grid",
       });
 
       doc.save(`Voucher_Maavyt_${r.id_reserva}.pdf`);
@@ -171,17 +213,24 @@ export default function PerfilTurista() {
       console.error("Error PDF:", err);
       Swal.fire("Error", "No se pudo generar el archivo.", "error");
     }
-  };  
+  };
 
   return (
     <Container className="py-5">
-      <div className="mb-5">
+      <div className="mb-4">
         <h2 className="fw-bold text-success display-6 mb-1">
           ¡Hola, {turista?.nombre}! 👋
         </h2>
         <p className="text-muted fs-5">
           Gestioná tu información y revisá tus últimas aventuras.
         </p>
+
+        {/* opcional: mostrar error arriba */}
+        {error && (
+          <Alert variant="danger" className="mt-3">
+            {error}
+          </Alert>
+        )}
       </div>
 
       <Row>
@@ -215,6 +264,7 @@ export default function PerfilTurista() {
                       }
                     />
                   </Form.Group>
+
                   <Form.Group className="mb-2">
                     <Form.Label className="small fw-bold">Apellido</Form.Label>
                     <Form.Control
@@ -225,6 +275,7 @@ export default function PerfilTurista() {
                       }
                     />
                   </Form.Group>
+
                   <Form.Group className="mb-2">
                     <Form.Label className="small fw-bold">Teléfono</Form.Label>
                     <Form.Control
@@ -235,6 +286,7 @@ export default function PerfilTurista() {
                       }
                     />
                   </Form.Group>
+
                   <Form.Group className="mb-3">
                     <Form.Label className="small fw-bold">
                       Domicilio / Dirección
@@ -247,6 +299,7 @@ export default function PerfilTurista() {
                       }
                     />
                   </Form.Group>
+
                   <div className="d-grid gap-2">
                     <Button variant="success" size="sm" type="submit">
                       Guardar Cambios
@@ -288,10 +341,13 @@ export default function PerfilTurista() {
               <h5 className="mb-0 fw-bold text-success">
                 <i className="bi bi-journal-check me-2"></i>Mis Reservas
               </h5>
+
+              {/* ✅ ahora mostramos total real */}
               <Badge bg="success" pill>
-                Últimas 10
+                Total: {reservas.length}
               </Badge>
             </Card.Header>
+
             <Card.Body className="p-0">
               <Alert
                 variant="warning"
@@ -315,9 +371,10 @@ export default function PerfilTurista() {
                     <th className="text-success text-center">Acciones</th>
                   </tr>
                 </thead>
+
                 <tbody>
-                  {reservas.length > 0 ? (
-                    reservas.map((r) => (
+                  {reservasPaginadas.length > 0 ? (
+                    reservasPaginadas.map((r) => (
                       <tr key={r.id_reserva}>
                         <td className="ps-3 py-3">
                           <div className="fw-bold">{r.excursion_nombre}</div>
@@ -325,20 +382,25 @@ export default function PerfilTurista() {
                             {r.cantidad_personas} personas
                           </small>
                         </td>
+
                         <td>
                           <div className="small fw-semibold text-primary">
                             <i className="bi bi-person-badge me-1"></i>
                             {r.guia_nombre || "Por asignar"}
                           </div>
                         </td>
+
                         <td>
                           <div className="small fw-bold">
-                            {new Date(r.fecha_salida).toLocaleDateString("es-AR")}
+                            {new Date(r.fecha_salida).toLocaleDateString(
+                              "es-AR"
+                            )}
                           </div>
                           <div className="small text-muted">
                             {r.hora_salida?.slice(0, 5) || "--:--"} hs
                           </div>
                         </td>
+
                         <td className="text-center">
                           <Badge
                             bg={
@@ -356,19 +418,19 @@ export default function PerfilTurista() {
                             {(r.estado_reserva || "Pendiente").toUpperCase()}
                           </Badge>
                         </td>
+
                         <td className="text-center">
                           <div className="d-flex justify-content-center gap-2">
-                            {/* --- BOTÓN NUEVO: DESCARGAR VOUCHER (Solo si no está cancelada) --- */}
                             {r.estado_reserva !== "cancelada" && (
-                                <Button
-                                  variant="outline-primary"
-                                  size="sm"
-                                  className="rounded-pill"
-                                  onClick={() => handleDescargarVoucher(r)}
-                                  title="Descargar Voucher PDF"
-                                >
-                                  <i className="bi bi-file-earmark-pdf"></i>
-                                </Button>
+                              <Button
+                                variant="outline-primary"
+                                size="sm"
+                                className="rounded-pill"
+                                onClick={() => handleDescargarVoucher(r)}
+                                title="Descargar Voucher PDF"
+                              >
+                                <i className="bi bi-file-earmark-pdf"></i>
+                              </Button>
                             )}
 
                             {(r.estado_reserva === "pendiente" ||
@@ -385,6 +447,7 @@ export default function PerfilTurista() {
                                 <i className="bi bi-x-circle"></i>
                               </Button>
                             )}
+
                             {r.estado_reserva === "finalizada" && (
                               <Button
                                 variant="outline-success"
@@ -411,6 +474,16 @@ export default function PerfilTurista() {
                   )}
                 </tbody>
               </Table>
+
+              {/* ✅ PAGINADOR */}
+              <div className="p-3">
+                <Paginacion
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={setCurrentPage}
+                  maxVisible={5}
+                />
+              </div>
             </Card.Body>
           </Card>
         </Col>

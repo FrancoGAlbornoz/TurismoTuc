@@ -16,6 +16,7 @@ import categoriasRoutes from "./routes/categorias.routes.js";
 import authTuristasRoutes from "./routes/authturistas.routes.js";
 import carritoRoutes from "./routes/carrito.routes.js";
 import pagosRoutes from "./routes/pagos.routes.js";
+import authRoutes from "./routes/auth.routes.js";
 import contactoRoutes from "./routes/contacto.routes.js";
 
 import botRoutes from "./routes/bot.routes.js";
@@ -58,6 +59,7 @@ app.use("/api/carrito", carritoRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/auth/turistas", authTuristasRoutes);
 app.use("/api/pagos", pagosRoutes);
+app.use("/api/auth", authRoutes);
 
 app.use("/api/bot", botRoutes);
 

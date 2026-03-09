@@ -5,8 +5,10 @@ import {
   FaUserCircle,
   FaSignOutAlt,
   FaGlobe,
+  FaTools,
 } from "react-icons/fa";
 import useTuristaStore from "../../store/useTuristaStore";
+import useUserStore from "../../store/useUserStore";
 import useCarritoStore from "../../store/useCarritoStore";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -17,13 +19,16 @@ import logo from "../../public/LOGOTURISMO.png";
 
 export default function Header() {
   const navigate = useNavigate();
+
   const { turista, clearTurista } = useTuristaStore();
-  const { items, fetchCarrito } = useCarritoStore();
+  const { user, clearUser } = useUserStore();
+  const { items, fetchCarrito, clearCarrito } = useCarritoStore();
+
   const { t, i18n } = useTranslation();
 
   useEffect(() => {
     if (turista) fetchCarrito();
-  }, [turista]);
+  }, [turista, fetchCarrito]);
 
   const cantidadTotal = items.reduce(
     (acc, i) => acc + Number(i.cantidad_personas || 0),
@@ -35,7 +40,20 @@ export default function Header() {
     i18n.changeLanguage(newLang);
   };
 
-  const handleLogout = async () => {
+  const getDashboardRoute = () => {
+    const rol = user?.rol
+      ?.toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+
+    if (rol === "administrador") return "/dashboard-admin";
+    if (rol === "guia turistico" || rol === "guía turístico") return "/dashboard-guia";
+    if (rol === "personal de ventas") return "/dashboard-empleados";
+
+    return "/";
+  };
+
+  const handleLogoutTurista = async () => {
     const confirmacion = await Swal.fire({
       title: "¿Cerrar sesión?",
       text: "¿Estás seguro de que deseas cerrar sesión?",
@@ -43,21 +61,37 @@ export default function Header() {
       showCancelButton: true,
       confirmButtonText: "Confirmar",
       cancelButtonText: "Cancelar",
-      reverseButtons: true, // ✅ Esto invierte el orden de los botones
+      reverseButtons: true,
     });
-  
+
     if (confirmacion.isConfirmed) {
       clearTurista();
+      clearCarrito();
+      navigate("/");
+    }
+  };
+
+  const handleLogoutUser = async () => {
+    const confirmacion = await Swal.fire({
+      title: "¿Cerrar sesión?",
+      text: "¿Estás seguro de que deseas cerrar sesión del panel?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Confirmar",
+      cancelButtonText: "Cancelar",
+      reverseButtons: true,
+    });
+
+    if (confirmacion.isConfirmed) {
+      clearUser();
       navigate("/");
     }
   };
 
   return (
     <>
-      {/* HEADER */}
       <nav className="navbar navbar-expand-lg bg-white shadow-sm sticky-top py-3">
         <div className="container-fluid px-4">
-          {/* Marca */}
           <Link
             className="navbar-brand fw-bold text-teal d-flex align-items-center gap-2"
             to="/"
@@ -66,7 +100,6 @@ export default function Header() {
             <span className="brand-text ms-2">{t("brand")}</span>
           </Link>
 
-          {/* Botón hamburguesa móvil */}
           <button
             className="navbar-toggler"
             type="button"
@@ -79,22 +112,29 @@ export default function Header() {
             <span className="navbar-toggler-icon"></span>
           </button>
 
-          {/* Contenido colapsable */}
           <div
             className="collapse navbar-collapse justify-content-between"
             id="navbarNav"
           >
-            {/* 🔹 Izquierda: saludo */}
-            {turista && (
-              <span className="fw-semibold text-success small me-3">
-                👋{" "}
-                {t("hello", {
-                  name: turista?.nombre?.split(" ")[0] || "Turista",
-                })}
-              </span>
-            )}
+            {/* Izquierda: saludo */}
+            <div className="d-flex align-items-center">
+              {turista && (
+                <span className="fw-semibold text-success small me-3">
+                  👋{" "}
+                  {t("hello", {
+                    name: turista?.nombre?.split(" ")[0] || "Turista",
+                  })}
+                </span>
+              )}
 
-            {/* 🔹 Centro: menú de navegación */}
+              {user && (
+                <span className="fw-semibold text-success small me-3">
+                  👋 {user?.nombre || "Usuario"}
+                </span>
+              )}
+            </div>
+
+            {/* Centro: navegación */}
             <ul className="navbar-nav mx-auto gap-3">
               <li className="nav-item">
                 <NavLink className="nav-link fw-semibold" to="/">
@@ -113,23 +153,21 @@ export default function Header() {
               </li>
             </ul>
 
-            {/* 🔹 Derecha */}
+            {/* Derecha */}
             <div className="d-flex align-items-center gap-3">
+              <Button
+                variant="outline-primary"
+                size="sm"
+                className="d-flex align-items-center gap-2 px-3 py-2"
+                onClick={toggleLanguage}
+                title="Cambiar idioma"
+              >
+                <FaGlobe />
+                {i18n.language === "es" ? "ES" : "EN"}
+              </Button>
+
               {turista ? (
                 <>
-                  {/* 🌐 Botón idioma toggle */}
-                  <Button
-                    variant="outline-primary"
-                    size="sm"
-                    className="d-flex align-items-center gap-2 px-3 py-2"
-                    onClick={toggleLanguage}
-                    title="Cambiar idioma"
-                  >
-                    <FaGlobe />
-                    {i18n.language === "es" ? "ES" : "EN"}
-                  </Button>
-
-                  {/* 🛒 Carrito */}
                   <Link
                     to="/carrito"
                     className="btn btn-outline-dark d-flex align-items-center gap-2 position-relative px-3 py-2"
@@ -144,7 +182,6 @@ export default function Header() {
                     )}
                   </Link>
 
-                  {/* 👤 Dropdown usuario */}
                   <Dropdown align="end">
                     <Dropdown.Toggle
                       variant="outline-secondary"
@@ -155,15 +192,48 @@ export default function Header() {
                     </Dropdown.Toggle>
 
                     <Dropdown.Menu>
-                      <Dropdown.Item
-                        onClick={() => navigate("/perfil-turista")}
-                      >
+                      <Dropdown.Item onClick={() => navigate("/perfil-turista")}>
                         <FaUserCircle className="me-2 text-primary" />
                         {t("myprofile") || "Mi perfil"}
                       </Dropdown.Item>
                       <Dropdown.Divider />
                       <Dropdown.Item
-                        onClick={handleLogout}
+                        onClick={handleLogoutTurista}
+                        className="text-danger"
+                      >
+                        <FaSignOutAlt className="me-2" />
+                        {t("logout")}
+                      </Dropdown.Item>
+                    </Dropdown.Menu>
+                  </Dropdown>
+                </>
+              ) : user ? (
+                <>
+                  <button
+                    className="btn btn-outline-success btn-sm d-flex align-items-center gap-2"
+                    onClick={() => navigate(getDashboardRoute())}
+                  >
+                    <FaTools />
+                    ADMINISTRAR
+                  </button>
+
+                  <Dropdown align="end">
+                    <Dropdown.Toggle
+                      variant="outline-secondary"
+                      className="d-flex align-items-center gap-2 px-3 py-2"
+                      id="dropdown-admin"
+                    >
+                      <FaUserCircle size={22} />
+                    </Dropdown.Toggle>
+
+                    <Dropdown.Menu>
+                      <Dropdown.Item onClick={() => navigate(getDashboardRoute())}>
+                        <FaTools className="me-2 text-success" />
+                        Panel
+                      </Dropdown.Item>
+                      <Dropdown.Divider />
+                      <Dropdown.Item
+                        onClick={handleLogoutUser}
                         className="text-danger"
                       >
                         <FaSignOutAlt className="me-2" />
@@ -174,20 +244,9 @@ export default function Header() {
                 </>
               ) : (
                 <>
-                  {/* 🌐 Botón idioma toggle */}
-                  <Button
-                    variant="outline-primary"
-                    size="sm"
-                    className="d-flex align-items-center gap-2 px-3 py-2"
-                    onClick={toggleLanguage}
-                    title="Cambiar idioma"
-                  >
-                    <FaGlobe />
-                    {i18n.language === "es" ? "ES" : "EN"}
-                  </Button>
                   <button
                     className="btn btn-outline-success btn-sm"
-                    onClick={() => navigate("/login-turista")}
+                    onClick={() => navigate("/login")}
                   >
                     {t("login")}
                   </button>
@@ -204,7 +263,6 @@ export default function Header() {
         </div>
       </nav>
 
-      {/* 🔹 Botón flotante de WhatsApp */}
       <a
         href="https://wa.me/5493810000000"
         target="_blank"

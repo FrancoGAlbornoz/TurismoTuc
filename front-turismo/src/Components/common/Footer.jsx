@@ -50,14 +50,6 @@ export default function Footer() {
         <div className="d-flex flex-column flex-md-row justify-content-between align-items-center small text-center text-md-start">
           <p className="mb-2 mb-md-0">{t("footer.copyright")}</p>
 
-          <Link
-            to="/admin"
-            className="text-white-50 d-inline-flex align-items-center gap-2"
-            title={t("footer.admin.titulo")}
-          >
-            <FaUserCog size={16} />
-            {t("footer.admin.link")}
-          </Link>
         </div>
       </div>
     </footer>

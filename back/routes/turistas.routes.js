@@ -25,11 +25,6 @@ router.put("/:id", updateTurista);
 router.delete("/:id", deleteTurista);
 
 
-// Obtener reservas de un turista por ID
-// ⚠️ el orden importa: la más específica debe ir después
-router.get("/:id/reservas", getReservasByTurista);
-router.get("/:id", getTuristaById);
-
 
 export default router;
 

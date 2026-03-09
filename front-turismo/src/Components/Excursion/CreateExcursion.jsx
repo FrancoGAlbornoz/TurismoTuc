@@ -218,6 +218,7 @@ export default function CreateExcursion() {
                     name="duracion"
                     value={form.duracion}
                     onChange={handleChange}
+                    required
                   />
                 </Form.Group>
               </Col>
@@ -228,6 +229,7 @@ export default function CreateExcursion() {
                     name="estado"
                     value={form.estado}
                     onChange={handleChange}
+
                   >
                     <option value="activa">Activa</option>
                     <option value="inactiva">Inactiva</option>
@@ -244,6 +246,7 @@ export default function CreateExcursion() {
                 name="descripcion"
                 value={form.descripcion}
                 onChange={handleChange}
+                required
               />
             </Form.Group>
 
@@ -257,6 +260,7 @@ export default function CreateExcursion() {
                     name="incluye"
                     value={form.incluye}
                     onChange={handleChange}
+                    required
                   />
                 </Form.Group>
               </Col>
@@ -269,6 +273,7 @@ export default function CreateExcursion() {
                     name="politicas"
                     value={form.politicas}
                     onChange={handleChange}
+                    required
                   />
                 </Form.Group>
               </Col>
@@ -310,6 +315,7 @@ export default function CreateExcursion() {
                     name="id_guia"
                     value={form.id_guia}
                     onChange={handleChange}
+                    required
                   >
                     <option value="">Seleccionar guía</option>
                     {guias.map((g) => (
