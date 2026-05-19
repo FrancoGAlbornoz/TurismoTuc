@@ -209,13 +209,13 @@ export default function Header() {
                 </>
               ) : user ? (
                 <>
-                  <button
+                  {/* <button
                     className="btn btn-outline-success btn-sm d-flex align-items-center gap-2"
                     onClick={() => navigate(getDashboardRoute())}
                   >
                     <FaTools />
                     ADMINISTRAR
-                  </button>
+                  </button> */}
 
                   <Dropdown align="end">
                     <Dropdown.Toggle

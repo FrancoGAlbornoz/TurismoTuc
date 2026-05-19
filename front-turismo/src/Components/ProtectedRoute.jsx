@@ -5,7 +5,7 @@ export default function ProtectedRoute({ allowedRoles, children }) {
   const { user } = useUserStore();
 
   if (!user) {
-    return <Navigate to="/admin" />;
+    return <Navigate to="/" />;
   }
 
   // ✅ Normaliza el rol del usuario

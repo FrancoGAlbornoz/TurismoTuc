@@ -123,7 +123,7 @@ export default function LoginTurista() {
 
       setError("Respuesta inválida del servidor.");
     } catch (err) {
-      console.error(err);
+      console.log("Error del backend:", error.response?.data);;
       setError(
         err.response?.data?.message || "Email o contraseña incorrectos.",
       );

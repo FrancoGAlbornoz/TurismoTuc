@@ -25,7 +25,7 @@ export default function ResetPassword() {
         title: "Contraseña actualizada",
         text: "Ya podés iniciar sesión con tu nueva contraseña.",
       });
-      navigate("/login-turista");
+      navigate("/login");
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || "No se pudo actualizar la contraseña.");

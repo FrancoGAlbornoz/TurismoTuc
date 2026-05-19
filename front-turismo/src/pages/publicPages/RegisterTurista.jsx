@@ -67,7 +67,7 @@ export default function RegisterTurista() {
       const res = await axios.post("http://localhost:8000/api/auth/turistas/register", formData);
       if (res.status === 201) {
         setSuccess("Cuenta creada correctamente. Ya podés iniciar sesión.");
-        setTimeout(() => navigate("/login-turista"), 2000);
+        setTimeout(() => navigate("/login"), 2000);
       }
     } catch (err) {
       console.error(err);
@@ -206,7 +206,7 @@ export default function RegisterTurista() {
                     <Button
                       variant="link"
                       className="text-success fw-semibold p-0"
-                      onClick={() => navigate("/login-turista")}
+                      onClick={() => navigate("/login")}
                     >
                       {t("registerTurista.login")}
                     </Button>
