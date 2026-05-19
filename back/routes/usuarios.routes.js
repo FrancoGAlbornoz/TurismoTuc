@@ -19,7 +19,7 @@ router.get("/:id", getUsuarioById);
 router.post("/", createUsuario);
 router.put("/:id", updateUsuario);
 router.delete("/:id", deleteUsuario);
-router.patch("/usuarios/:id/restore", restoreUsuario);
+router.patch("/:id/restore", restoreUsuario);
 
 // 🔹 Endpoint de login
 

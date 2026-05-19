@@ -5,6 +5,9 @@ import jwt from "jsonwebtoken";
 export const loginUnificado = async (req, res) => {
   const { email, password } = req.body;
 
+  // ESPÍA 1: Ver qué datos llegan desde React
+  console.log("1. Intento de login. Email recibido:", email, "- Password ingresada:", password);
+
   if (!email || !password) {
     return res.status(400).json({
       success: false,
@@ -23,19 +26,26 @@ export const loginUnificado = async (req, res) => {
           u.password,
           u.estado,
           r.nombre_rol
-       FROM Usuarios u
-       JOIN Roles r ON u.id_rol = r.id_rol
-       WHERE u.email = ? 
-         AND u.eliminado = 0
-         AND u.estado = 'activo'
-       LIMIT 1`,
+        FROM Usuarios u
+        JOIN Roles r ON u.id_rol = r.id_rol
+        WHERE u.email = ? 
+          AND u.eliminado = 0
+          AND u.estado = 'activo'
+        LIMIT 1`,
       [email]
     );
+
+    // ESPÍA 2
+    console.log("2. ¿Lo encontró en la tabla Usuarios?:", usuarios.length > 0);
 
     if (usuarios.length > 0) {
       const user = usuarios[0];
 
       const validPassword = await bcrypt.compare(password, user.password);
+      
+      // ESPÍA 3
+      console.log("3. ¿Contraseña de Usuario coincide con bcrypt?:", validPassword);
+
       if (!validPassword) {
         return res.status(401).json({
           success: false,
@@ -43,9 +53,17 @@ export const loginUnificado = async (req, res) => {
         });
       }
 
+      // AGREGADO: Generamos el token para el Usuario (antes faltaba)
+      const token = jwt.sign(
+        { id: user.id_usuario, email: user.email, rol: user.nombre_rol, tipo: "usuario" },
+        process.env.JWT_SECRET || "clave_supersecreta",
+        { expiresIn: "2h" }
+      );
+
       return res.json({
         success: true,
         tipo: "usuario",
+        token, // Ahora sí enviamos el token
         user: {
           id: user.id_usuario,
           nombre: user.nombre,
@@ -68,17 +86,24 @@ export const loginUnificado = async (req, res) => {
           direccion,
           nacionalidad,
           password
-       FROM Turistas
-       WHERE email = ?
-         AND eliminado = 0
-       LIMIT 1`,
+        FROM Turistas
+        WHERE email = ?
+          AND eliminado = 0
+        LIMIT 1`,
       [email]
     );
+
+    // ESPÍA 4
+    console.log("4. ¿Lo encontró en la tabla Turistas?:", turistas.length > 0);
 
     if (turistas.length > 0) {
       const turista = turistas[0];
 
       const validPassword = await bcrypt.compare(password, turista.password);
+      
+      // ESPÍA 5
+      console.log("5. ¿Contraseña de Turista coincide con bcrypt?:", validPassword);
+
       if (!validPassword) {
         return res.status(401).json({
           success: false,
@@ -109,6 +134,8 @@ export const loginUnificado = async (req, res) => {
       });
     }
 
+    // ESPÍA 6
+    console.log("6. El correo no existe en ninguna de las dos tablas.");
     return res.status(401).json({
       success: false,
       message: "Usuario no encontrado",
