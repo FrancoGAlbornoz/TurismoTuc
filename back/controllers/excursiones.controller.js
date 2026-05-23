@@ -7,104 +7,120 @@ import nodemailer from "nodemailer";
 
 // Obtener todas las excursiones con sus categorías
 export const getExcursiones = (req, res) => {
-  const { ubicacion, precio_min, precio_max, duracion, estado, q, categoria } =
-    req.query;
+  const { 
+    ubicacion, precio_min, precio_max, duracion, estado, q, categoria, 
+    page = 1, limit = 10, mostrarArchivadas 
+  } = req.query;
 
-  let sql = `
-    SELECT e.id_excursion, e.titulo, e.descripcion, e.precio_base, e.duracion,
-           e.ubicacion, e.incluye, e.politicas, e.estado, e.fecha_creacion,
-           e.id_guia, u.nombre AS nombre_guia, u.apellido AS apellido_guia,
-           c.id_categoria_excursion, c.nombre_categoria,
-           (
-             SELECT m.url 
-             FROM Multimedia m 
-             WHERE m.id_excursion = e.id_excursion 
-               AND m.eliminado = 0 
-             ORDER BY m.id_multimedia ASC 
-             LIMIT 1
-           ) AS imagen_url
-    FROM Excursiones e
-    LEFT JOIN Usuarios u ON e.id_guia = u.id_usuario
-    LEFT JOIN ExcursionCategorias ec ON e.id_excursion = ec.id_excursion
-    LEFT JOIN CategoriasExcursion c ON ec.id_categoria_excursion = c.id_categoria_excursion
-    WHERE e.eliminado = 0
-  `;
-
+  const condiciones = [];
   const values = [];
 
-  if (q) {
-    sql += " AND (e.titulo LIKE ? OR e.ubicacion LIKE ?)";
-    values.push(`%${q}%`, `%${q}%`);
+  // 1. Filtro de Archivadas (Toggle)
+  if (mostrarArchivadas === "true") {
+    condiciones.push("e.eliminado = 1");
+  } else {
+    condiciones.push("e.eliminado = 0");
+    // Por defecto ocultamos las inactivas en la vista normal (lo "relevante")
+    if (!estado || estado === "todas") {
+      condiciones.push("e.estado = 'activa'");
+    }
   }
 
-  if (ubicacion) {
-    sql += " AND e.ubicacion LIKE ?";
-    values.push(`%${ubicacion}%`);
-  }
-
-  if (duracion) {
-    sql += " AND e.duracion LIKE ?";
-    values.push(`%${duracion}%`);
-  }
-
-  if (precio_min) {
-    sql += " AND e.precio_base >= ?";
-    values.push(precio_min);
-  }
-
-  if (precio_max) {
-    sql += " AND e.precio_base <= ?";
-    values.push(precio_max);
-  }
-
-  if (estado) {
-    sql += " AND e.estado = ?";
+  // 2. Filtro de estado explícito
+  if (estado && estado !== "todas") {
+    condiciones.push("e.estado = ?");
     values.push(estado);
   }
 
-  if (categoria) {
-    sql += " AND c.nombre_categoria = ?";
-    values.push(categoria);
+  // 3. Buscador General (q)
+  if (q) {
+    condiciones.push("(e.titulo LIKE ? OR e.ubicacion LIKE ?)");
+    values.push(`%${q}%`, `%${q}%`);
   }
 
-  sql += " ORDER BY e.fecha_creacion DESC";
+  // Otros filtros (ubicacion, precios, etc.)
+  if (ubicacion) { condiciones.push("e.ubicacion LIKE ?"); values.push(`%${ubicacion}%`); }
+  if (duracion) { condiciones.push("e.duracion LIKE ?"); values.push(`%${duracion}%`); }
+  if (precio_min) { condiciones.push("e.precio_base >= ?"); values.push(precio_min); }
+  if (precio_max) { condiciones.push("e.precio_base <= ?"); values.push(precio_max); }
+  if (categoria) { condiciones.push("c.nombre_categoria = ?"); values.push(categoria); }
 
-  pool.query(sql, values, (err, results) => {
-    if (err) {
-      console.error("Error al obtener excursiones:", err);
-      return res.status(500).json({ message: "Error al obtener excursiones" });
-    }
+  const whereClause = condiciones.length > 0 ? `WHERE ${condiciones.join(" AND ")}` : "";
 
-    const agrupadas = {};
-    results.forEach((row) => {
-      if (!agrupadas[row.id_excursion]) {
-        agrupadas[row.id_excursion] = {
-          id_excursion: row.id_excursion,
-          titulo: row.titulo,
-          descripcion: row.descripcion,
-          precio_base: row.precio_base,
-          duracion: row.duracion,
-          ubicacion: row.ubicacion,
-          incluye: row.incluye,
-          politicas: row.politicas,
-          estado: row.estado,
-          fecha_creacion: row.fecha_creacion,
-          id_guia: row.id_guia,
-          nombre_guia: row.nombre_guia,
-          apellido_guia: row.apellido_guia,
-          imagen_url: row.imagen_url,
-          categorias: [],
-        };
-      }
-      if (row.id_categoria_excursion && row.nombre_categoria) {
-        agrupadas[row.id_excursion].categorias.push({
-          id_categoria_excursion: row.id_categoria_excursion,
-          nombre_categoria: row.nombre_categoria,
-        });
-      }
+  // 4. Contar el total para el paginador (usamos DISTINCT para no duplicar por categorías)
+  const sqlCount = `
+    SELECT COUNT(DISTINCT e.id_excursion) AS total 
+    FROM Excursiones e
+    LEFT JOIN ExcursionCategorias ec ON e.id_excursion = ec.id_excursion
+    LEFT JOIN CategoriasExcursion c ON ec.id_categoria_excursion = c.id_categoria_excursion
+    ${whereClause}
+  `;
+
+  pool.query(sqlCount, values, (err, countResult) => {
+    if (err) return res.status(500).json({ message: "Error al contar excursiones" });
+
+    const total = countResult[0].total;
+    const totalPages = Math.ceil(total / parseInt(limit));
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+
+    // 5. Consulta con subquery para paginar correctamente sin romper las categorías
+    const sqlData = `
+      SELECT e.id_excursion, e.titulo, e.descripcion, e.precio_base, e.duracion,
+             e.ubicacion, e.incluye, e.politicas, e.estado, e.fecha_creacion, e.eliminado,
+             e.id_guia, u.nombre AS nombre_guia, u.apellido AS apellido_guia,
+             c.id_categoria_excursion, c.nombre_categoria
+      FROM (
+        SELECT DISTINCT e.id_excursion, e.fecha_creacion
+        FROM Excursiones e
+        LEFT JOIN ExcursionCategorias ec ON e.id_excursion = ec.id_excursion
+        LEFT JOIN CategoriasExcursion c ON ec.id_categoria_excursion = c.id_categoria_excursion
+        ${whereClause}
+        ORDER BY e.fecha_creacion DESC
+        LIMIT ? OFFSET ?
+      ) as sub
+      JOIN Excursiones e ON sub.id_excursion = e.id_excursion
+      LEFT JOIN Usuarios u ON e.id_guia = u.id_usuario
+      LEFT JOIN ExcursionCategorias ec ON e.id_excursion = ec.id_excursion
+      LEFT JOIN CategoriasExcursion c ON ec.id_categoria_excursion = c.id_categoria_excursion
+      ORDER BY e.fecha_creacion DESC
+    `;
+
+    pool.query(sqlData, [...values, parseInt(limit), offset], (err, results) => {
+      if (err) return res.status(500).json({ message: "Error al obtener excursiones" });
+
+      const agrupadas = {};
+      results.forEach((row) => {
+        if (!agrupadas[row.id_excursion]) {
+          agrupadas[row.id_excursion] = {
+            id_excursion: row.id_excursion,
+            titulo: row.titulo,
+            descripcion: row.descripcion,
+            precio_base: row.precio_base,
+            duracion: row.duracion,
+            ubicacion: row.ubicacion,
+            estado: row.estado,
+            eliminado: row.eliminado,
+            id_guia: row.id_guia,
+            nombre_guia: row.nombre_guia,
+            apellido_guia: row.apellido_guia,
+            categorias: [],
+          };
+        }
+        if (row.id_categoria_excursion && row.nombre_categoria) {
+          agrupadas[row.id_excursion].categorias.push({
+            id_categoria_excursion: row.id_categoria_excursion,
+            nombre_categoria: row.nombre_categoria,
+          });
+        }
+      });
+
+      res.json({
+        data: Object.values(agrupadas),
+        total,
+        totalPages,
+        currentPage: parseInt(page),
+      });
     });
-
-    res.json(Object.values(agrupadas));
   });
 };
 
@@ -314,6 +330,17 @@ export const deleteExcursion = (req, res) => {
     if (result.affectedRows === 0)
       return res.status(404).json({ message: "Excursión no encontrada" });
     res.json({ message: "Excursión eliminada (baja lógica) correctamente" });
+  });
+};
+
+export const restoreExcursion = (req, res) => {
+  const { id } = req.params;
+  const sql = "UPDATE Excursiones SET eliminado = 0, fecha_eliminacion = NULL WHERE id_excursion = ?";
+  
+  pool.query(sql, [id], (err, result) => {
+    if (err) return res.status(500).json({ message: "Error al restaurar excursión" });
+    if (result.affectedRows === 0) return res.status(404).json({ message: "Excursión no encontrada" });
+    res.json({ message: "Excursión restaurada correctamente" });
   });
 };
 

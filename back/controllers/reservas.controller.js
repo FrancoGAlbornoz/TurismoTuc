@@ -6,42 +6,57 @@ import { pool } from "../config/DB.js";
 // =============================
 
 // Obtener las reservas con información relacionada y filtro
+// Obtener las reservas con información relacionada y filtro
+// 1. Obtener las reservas con el nuevo esquema de filtros dinámicos
 export const getReservas = (req, res) => {
   const {
-    filtro,
-    estadoreserva,
+    mostrarArchivadas, // Recibe 'true' o 'false' desde el botón de React
+    estadoreserva,     // 'relevantes', 'pendiente', 'confirmada', 'todas'
     fechaDesde,
     fechaHasta,
     page = 1,
     limit = 10,
   } = req.query;
+  
   const condiciones = [];
   const params = [];
 
-  // Filtro por activas/eliminadas
-  if (filtro === "activas") condiciones.push("r.eliminado = 0");
-  if (filtro === "eliminadas") condiciones.push("r.eliminado = 1");
-
-  // Filtro por estado de reserva
-  if (estadoreserva && estadoreserva !== "todas") {
-    condiciones.push(`r.estado_reserva = '${estadoreserva}'`);
+  // 🔹 CONTROL DE HISTORIAL COMPLETO OVERRIDE 🔹
+  if (estadoreserva === "todas") {
+    // Historial Completo: No filtra por estado ni por eliminado, trae absolutamente todo
+  } else {
+    if (mostrarArchivadas === "true") {
+      // 📂 VISTA DE ARCHIVADAS:
+      condiciones.push("r.eliminado = 1");
+      
+      // Si el admin busca un estado específico dentro del archivo lo filtramos,
+      // pero si está en "relevantes", no agregamos filtro de estado para que aparezcan
+      // automáticamente tanto las finalizadas como las canceladas.
+      if (estadoreserva && estadoreserva !== "relevantes") {
+        condiciones.push(`r.estado_reserva = '${estadoreserva}'`);
+      }
+    } else {
+      // 💼 VISTA DE ACTIVAS (Día a día):
+      condiciones.push("r.eliminado = 0");
+      
+      if (estadoreserva === "relevantes") {
+        condiciones.push("r.estado_reserva IN ('pendiente', 'confirmada')");
+      } else if (estadoreserva) {
+        condiciones.push(`r.estado_reserva = '${estadoreserva}'`);
+      }
+    }
   }
 
-  // Filtro por fechas
+  // Filtro de Fechas (se mantiene igual)
   if (fechaDesde && fechaHasta) {
-    condiciones.push(
-      `DATE(r.fecha_reserva) BETWEEN '${fechaDesde}' AND '${fechaHasta}'`,
-    );
+    condiciones.push(`DATE(r.fecha_reserva) BETWEEN '${fechaDesde}' AND '${fechaHasta}'`);
   } else if (fechaDesde) {
     condiciones.push(`DATE(r.fecha_reserva) >= '${fechaDesde}'`);
   } else if (fechaHasta) {
     condiciones.push(`DATE(r.fecha_reserva) <= '${fechaHasta}'`);
   }
 
-  const whereClause =
-    condiciones.length > 0 ? `WHERE ${condiciones.join(" AND ")}` : "";
-
-  // Paginación
+  const whereClause = condiciones.length > 0 ? `WHERE ${condiciones.join(" AND ")}` : "";
   const offset = (parseInt(page) - 1) * parseInt(limit);
 
   const baseQuery = `
@@ -70,7 +85,6 @@ export const getReservas = (req, res) => {
     LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)};
   `;
 
-  // Ejecutamos ambas consultas
   pool.query(sqlCount, (err, countResult) => {
     if (err) {
       console.error("Error al contar reservas:", err);
@@ -95,7 +109,6 @@ export const getReservas = (req, res) => {
     });
   });
 };
-
 // Obtener reserva por ID
 export const getReservaById = (req, res) => {
   const { id } = req.params;
@@ -240,67 +253,48 @@ export const updateReserva = (req, res) => {
   const { id } = req.params;
   const {
     id_fecha,
-    id_excursion,
     cantidad_personas,
     monto_total,
     estado_reserva,
   } = req.body;
 
-  // Validaciones simples
   if (!id_fecha || !cantidad_personas || !estado_reserva) {
     return res.status(400).json({ message: "Faltan datos obligatorios" });
   }
 
-  // 🔹 Validar que el estado sea uno permitido
   const estadosValidos = ["pendiente", "confirmada", "finalizada", "cancelada"];
   if (!estadosValidos.includes(estado_reserva)) {
     return res.status(400).json({ message: "Estado de reserva inválido" });
   }
 
-  // Actualizar los datos principales de la reserva
+  // 💥 LA MAGIA AUTOMÁTICA: Si pasa a finalizada o cancelada, se auto-archiva
+  const autoEliminado = ["finalizada", "cancelada"].includes(estado_reserva) ? 1 : 0;
+  const fechaEliminacion = autoEliminado ? "NOW()" : "NULL";
+
   const sql = `
     UPDATE Reservas
-    SET id_fecha = ?, cantidad_personas = ?, monto_total = ?, estado_reserva = ?
+    SET id_fecha = ?, cantidad_personas = ?, monto_total = ?, estado_reserva = ?, 
+        eliminado = ?, fecha_eliminacion = ${fechaEliminacion}
     WHERE id_reserva = ?;
   `;
 
   pool.query(
     sql,
-    [id_fecha, cantidad_personas, monto_total, estado_reserva, id],
+    [id_fecha, cantidad_personas, monto_total, estado_reserva, autoEliminado, id],
     (err, result) => {
       if (err) {
         console.error("Error al actualizar reserva:", err);
-        return res
-          .status(500)
-          .json({ message: "Error al actualizar la reserva" });
+        return res.status(500).json({ message: "Error al actualizar la reserva" });
       }
 
       if (result.affectedRows === 0) {
         return res.status(404).json({ message: "Reserva no encontrada" });
       }
 
-      if (id_excursion) {
-        const sqlExcursion = `
-          UPDATE FechasExcursion 
-          SET id_excursion = ?
-          WHERE id_fecha = ?;
-        `;
-        pool.query(sqlExcursion, [id_excursion, id_fecha], (err2) => {
-          if (err2) {
-            console.error("Error al actualizar excursión:", err2);
-            return res.status(500).json({
-              message: "Reserva actualizada, pero error en excursión",
-            });
-          }
-          res.json({ message: "Reserva actualizada correctamente" });
-        });
-      } else {
-        res.json({ message: "Reserva actualizada correctamente" });
-      }
-    },
+      res.json({ message: "Reserva actualizada correctamente" });
+    }
   );
 };
-
 // Baja lógica de reserva
 export const deleteReserva = (req, res) => {
   const { id } = req.params;

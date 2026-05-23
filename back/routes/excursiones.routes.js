@@ -6,6 +6,7 @@ import {
   createExcursion,
   updateExcursion,
   deleteExcursion,
+  restoreExcursion,
   notificarGuia,
   getMultimediaByExcursion,
   createMultimedia,
@@ -44,6 +45,7 @@ router.get("/", getExcursiones);
 router.post("/", createExcursion);
 router.put("/:id", updateExcursion);
 router.delete("/:id", deleteExcursion);
+router.put("/restore/:id", restoreExcursion)
 router.get("/:id", getExcursionById);
 router.get("/guia/:id_guia", getExcursionesPorGuia);
 
