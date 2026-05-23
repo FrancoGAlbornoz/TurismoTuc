@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import Swal from "sweetalert2";
-import { Card, Button, Table, Dropdown, Spinner, Alert } from "react-bootstrap";
+import { Card, Button, Table, Dropdown } from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useDebounce } from "../../hooks/useDeBounce";
@@ -10,8 +10,8 @@ import PaginationComponent from "../Filtros/Paginacion.jsx";
 
 export default function ReservasMain() {
   const [reservas, setReservas] = useState([]);
-  const [filtro, setFiltro] = useState("activas"); // 'activas', 'eliminadas' o 'todas' como filtros
-  const [estadoreserva, setEstadoreserva] = useState("todas"); // 'pendiente', 'confirmada', 'cancelada' o 'todas'
+  const [mostrarArchivadas, setMostrarArchivadas] = useState(false); // 👈 NUEVO: Estado booleano para el botón toggle
+  const [estadoreserva, setEstadoreserva] = useState("relevantes");
   const [fechaDesde, setFechaDesde] = useState("");
   const [fechaHasta, setFechaHasta] = useState("");
   const [temporalDesde, setTemporalDesde] = useState(
@@ -20,12 +20,12 @@ export default function ReservasMain() {
   const [temporalHasta, setTemporalHasta] = useState(
     fechaHasta ? new Date(fechaHasta) : null
   );
-  const [openCalendar, setOpenCalendar] = useState(false); // para mostrar/ocultar el calendario
+  const [openCalendar, setOpenCalendar] = useState(false);
 
   const [dniBuscar, setDniBuscar] = useState("");
   const debouncedDni = useDebounce(dniBuscar, 500);
 
-  //Paginación
+  // Paginación
   const [paginaActual, setPaginaActual] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(1);
   const porPagina = 10;
@@ -37,7 +37,7 @@ export default function ReservasMain() {
     setLoading(true);
     setError(null);
     const params = {
-      filtro,
+      mostrarArchivadas: mostrarArchivadas ? "true" : "false", // Mandamos el string esperado por el back
       estadoreserva,
       fechaDesde,
       fechaHasta,
@@ -48,10 +48,6 @@ export default function ReservasMain() {
       const res = await axios.get("http://localhost:8000/api/reservas", {
         params,
       });
-
-      // console.log("Actual filtro:", filtro);
-      // console.log("Actual estado:", estadoreserva);
-      //console.log("reponse:", res.data);
       setReservas(res.data.data);
       setTotalPaginas(res.data.totalPages);
     } catch (err) {
@@ -66,7 +62,7 @@ export default function ReservasMain() {
     setLoading(true);
     setError(null);
     const params = {
-      filtro,
+      mostrarArchivadas: mostrarArchivadas ? "true" : "false",
       estadoreserva,
       fechaDesde: desde,
       fechaHasta: hasta,
@@ -85,42 +81,20 @@ export default function ReservasMain() {
     }
   };
 
-  // Efecto 1: reinicia la paginación cuando cambian los filtros o fechas
+  // Reinicia la paginación cuando cambian los filtros, el toggle o fechas
   useEffect(() => {
     setPaginaActual(1);
-  }, [filtro, estadoreserva, fechaDesde, fechaHasta]);
+  }, [estadoreserva, fechaDesde, fechaHasta, mostrarArchivadas]);
 
-  // Efecto 2: carga las reservas cuando cambia la página o filtros
+  // Carga las reservas
   useEffect(() => {
     getReservas();
-  }, [filtro, estadoreserva, fechaDesde, fechaHasta, paginaActual]);
-
-  const handleDelete = async (id) => {
-    const confirm = await Swal.fire({
-      title: "¿Eliminar reserva?",
-      text: "Esta acción no se puede deshacer",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "Sí, eliminar",
-      cancelButtonText: "Cancelar",
-    });
-
-    if (!confirm.isConfirmed) return;
-
-    try {
-      await axios.delete(`http://localhost:8000/api/reservas/${id}`);
-      Swal.fire("Eliminada", "La reserva ha sido eliminada", "success");
-      getReservas();
-    } catch (err) {
-      console.error("Error al eliminar reserva:", err);
-      Swal.fire("Error", "No se pudo eliminar la reserva", "error");
-    }
-  };
+  }, [estadoreserva, fechaDesde, fechaHasta, paginaActual, mostrarArchivadas]);
 
   const handleRestore = async (id) => {
     const confirm = await Swal.fire({
       title: "¿Restaurar reserva?",
-      text: "La reserva volverá a estar activa",
+      text: "La reserva volverá a estar activa y visible en el listado principal.",
       icon: "question",
       showCancelButton: true,
       confirmButtonText: "Sí, restaurar",
@@ -131,7 +105,7 @@ export default function ReservasMain() {
 
     try {
       await axios.put(`http://localhost:8000/api/reservas/restore/${id}`);
-      Swal.fire("Restaurada", "La reserva ha sido restaurada", "success");
+      Swal.fire("Restaurada", "La reserva ha sido restaurada con éxito", "success");
       getReservas();
     } catch (err) {
       console.error("Error al restaurar reserva:", err);
@@ -139,7 +113,6 @@ export default function ReservasMain() {
     }
   };
 
-  // 🔎 Buscar reservas por DNI en el backend
   const buscarPorDNI = async (dni) => {
     if (!dni) {
       setPaginaActual(1);
@@ -151,7 +124,6 @@ export default function ReservasMain() {
       const res = await axios.get(
         `http://localhost:8000/api/reservas/buscar?dni=${dni}`
       );
-
       setReservas(res.data);
       setTotalPaginas(1);
       setPaginaActual(1);
@@ -163,12 +135,11 @@ export default function ReservasMain() {
     }
   };
 
-  // 🕒 Efecto de búsqueda en tiempo real con debounce
   useEffect(() => {
     if (debouncedDni.trim() === "") {
-      getReservas(); // si el campo está vacío → mostrar todas
+      getReservas();
     } else {
-      buscarPorDNI(debouncedDni); // si hay algo → buscar por DNI
+      buscarPorDNI(debouncedDni);
     }
   }, [debouncedDni]);
 
@@ -184,10 +155,11 @@ export default function ReservasMain() {
           <div>
             <h5 className="fw-bold text-success mb-2">
               Gestión de Reservas{" "}
-              <small className="text-muted">({estadoreserva})</small>
+              <small className="text-muted" style={{ textTransform: "lowercase" }}>
+                ({estadoreserva === "todas" ? "historial completo" : mostrarArchivadas ? "archivadas" : "activas"})
+              </small>
             </h5>
 
-            {/* 🔍 Input de búsqueda en tiempo real */}
             <input
               type="text"
               className="form-control form-control-sm"
@@ -199,7 +171,6 @@ export default function ReservasMain() {
           </div>
 
           <div className="d-flex align-items-center gap-2">
-            {/* Botón Crear Reserva */}
             <Button
               as={Link}
               to="/dashboard-admin/reservas/create"
@@ -209,35 +180,21 @@ export default function ReservasMain() {
               <i className="bi bi-plus-circle me-1"></i> Crear Reserva
             </Button>
 
-            {/* Dropdown: Filtrar activas / eliminadas / todas */}
-            <Dropdown align="end">
-              <Dropdown.Toggle variant="outline-primary" size="sm">
-                <i className="bi bi-funnel"></i> Filtrar Eliminados
-              </Dropdown.Toggle>
+            {/* 👈 NUEVO: Botón Toggle para mostrar Archivadas (Opción 2) */}
+            
 
-              <Dropdown.Menu>
-                <Dropdown.Item onClick={() => setFiltro("activas")}>
-                  <i className="bi bi-check-circle text-success me-2"></i>
-                  Activas
-                </Dropdown.Item>
-                <Dropdown.Item onClick={() => setFiltro("eliminadas")}>
-                  <i className="bi bi-x-circle text-danger me-2"></i>
-                  Eliminadas
-                </Dropdown.Item>
-                <Dropdown.Item onClick={() => setFiltro("todas")}>
-                  <i className="bi bi-list-ul text-secondary me-2"></i>
-                  Todas
-                </Dropdown.Item>
-              </Dropdown.Menu>
-            </Dropdown>
-
-            {/* Dropdown: Filtro por estado_reserva */}
+            {/* Dropdown: Filtro por estado_reserva (Limpio de finalizadas/canceladas) */}
             <Dropdown align="end">
               <Dropdown.Toggle variant="outline-primary" size="sm">
                 <i className="bi bi-funnel"></i> Filtrar estado
               </Dropdown.Toggle>
 
               <Dropdown.Menu>
+                <Dropdown.Item onClick={() => setEstadoreserva("relevantes")}>
+                  <i className="bi bi-star-fill text-primary me-2"></i>
+                  Solo Relevantes
+                </Dropdown.Item>
+                <Dropdown.Divider />
                 <Dropdown.Item onClick={() => setEstadoreserva("pendiente")}>
                   <i className="bi bi-hourglass-split text-warning me-2"></i>
                   Pendientes
@@ -246,13 +203,10 @@ export default function ReservasMain() {
                   <i className="bi bi-check-circle text-success me-2"></i>
                   Confirmadas
                 </Dropdown.Item>
-                <Dropdown.Item onClick={() => setEstadoreserva("cancelada")}>
-                  <i className="bi bi-x-circle text-danger me-2"></i>
-                  Canceladas
-                </Dropdown.Item>
+                <Dropdown.Divider />
                 <Dropdown.Item onClick={() => setEstadoreserva("todas")}>
                   <i className="bi bi-list-ul text-secondary me-2"></i>
-                  Todas
+                  Historial Completo (Todas)
                 </Dropdown.Item>
               </Dropdown.Menu>
             </Dropdown>
@@ -264,45 +218,24 @@ export default function ReservasMain() {
               </Dropdown.Toggle>
 
               <Dropdown.Menu className="p-3" style={{ minWidth: "280px" }}>
-                {/* Este mes */}
                 <Dropdown.Item
                   onClick={() => {
                     const hoy = new Date();
-                    const primerDia = new Date(
-                      hoy.getFullYear(),
-                      hoy.getMonth(),
-                      1
-                    )
-                      .toISOString()
-                      .split("T")[0];
-                    const ultimoDia = new Date(
-                      hoy.getFullYear(),
-                      hoy.getMonth() + 1,
-                      0
-                    )
-                      .toISOString()
-                      .split("T")[0];
-
+                    const primerDia = new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString().split("T")[0];
+                    const ultimoDia = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).toISOString().split("T")[0];
                     setFechaDesde(primerDia);
                     setFechaHasta(ultimoDia);
                     getReservasConFechas(primerDia, ultimoDia);
                   }}
                 >
-                  <i className="bi bi-calendar-month text-primary me-2"></i>{" "}
-                  Este mes
+                  <i className="bi bi-calendar-month text-primary me-2"></i> Este mes
                 </Dropdown.Item>
 
-                {/* Este año */}
                 <Dropdown.Item
                   onClick={() => {
                     const hoy = new Date();
-                    const primerDia = new Date(hoy.getFullYear(), 0, 1)
-                      .toISOString()
-                      .split("T")[0];
-                    const ultimoDia = new Date(hoy.getFullYear(), 11, 31)
-                      .toISOString()
-                      .split("T")[0];
-
+                    const primerDia = new Date(hoy.getFullYear(), 0, 1).toISOString().split("T")[0];
+                    const ultimoDia = new Date(hoy.getFullYear(), 11, 31).toISOString().split("T")[0];
                     setFechaDesde(primerDia);
                     setFechaHasta(ultimoDia);
                     getReservasConFechas(primerDia, ultimoDia);
@@ -312,13 +245,7 @@ export default function ReservasMain() {
                 </Dropdown.Item>
 
                 <Dropdown.Divider />
-
-                <Dropdown.Item
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setOpenCalendar(!openCalendar);
-                  }}
-                >
+                <Dropdown.Item onClick={(e) => { e.stopPropagation(); setOpenCalendar(!openCalendar); }}>
                   Personalizado
                 </Dropdown.Item>
 
@@ -332,7 +259,6 @@ export default function ReservasMain() {
                       className="form-control mb-2"
                       placeholderText="Fecha inicio"
                     />
-
                     <label>Hasta:</label>
                     <DatePicker
                       selected={temporalHasta}
@@ -341,26 +267,18 @@ export default function ReservasMain() {
                       className="form-control mb-2"
                       placeholderText="Fecha fin"
                     />
-
                     <Button
                       variant="primary"
                       className="w-100 mb-2"
                       onClick={() => {
-                        if (temporalDesde)
-                          setFechaDesde(
-                            temporalDesde.toISOString().split("T")[0]
-                          );
-                        if (temporalHasta)
-                          setFechaHasta(
-                            temporalHasta.toISOString().split("T")[0]
-                          );
+                        if (temporalDesde) setFechaDesde(temporalDesde.toISOString().split("T")[0]);
+                        if (temporalHasta) setFechaHasta(temporalHasta.toISOString().split("T")[0]);
                         getReservas();
                         setOpenCalendar(false);
                       }}
                     >
                       Aplicar
                     </Button>
-
                     <Button
                       variant="outline-secondary"
                       className="w-100"
@@ -379,6 +297,24 @@ export default function ReservasMain() {
                 )}
               </Dropdown.Menu>
             </Dropdown>
+
+            <Button
+              variant={mostrarArchivadas ? "success" : "outline-danger"}
+              size="sm"
+              onClick={() => setMostrarArchivadas(!mostrarArchivadas)}
+              disabled={estadoreserva === "todas"} // Se deshabilita si se fuerza el historial completo
+              title={estadoreserva === "todas" ? "Desactivá 'Historial Completo' para usar este botón" : ""}
+            >
+              {mostrarArchivadas ? (
+                <>
+                  <i className="bi bi-arrow-left-circle me-1"></i> Volver a Activas
+                </>
+              ) : (
+                <>
+                  <i className="bi bi-archive-fill me-1"></i> Mostrar Archivadas
+                </>
+              )}
+            </Button>
           </div>
         </div>
 
@@ -386,7 +322,6 @@ export default function ReservasMain() {
         <Table hover responsive className="align-middle">
           <thead className="table-light">
             <tr>
-              {/* <th>ID</th> */}
               <th>DNI</th>
               <th>Turista</th>
               <th>Excursión</th>
@@ -402,7 +337,6 @@ export default function ReservasMain() {
             {reservas.length > 0 ? (
               reservas.map((r) => (
                 <tr key={r.id_reserva}>
-                  {/* <td>{r.id_reserva}</td> */}
                   <td>{r.dni_turista}</td>
                   <td>{r.turista}</td>
                   <td>{r.excursion}</td>
@@ -416,6 +350,8 @@ export default function ReservasMain() {
                           ? "bg-success"
                           : r.estado_reserva === "pendiente"
                           ? "bg-warning"
+                          : r.estado_reserva === "finalizada"
+                          ? "bg-info"
                           : "bg-danger"
                       }`}
                     >
@@ -425,42 +361,35 @@ export default function ReservasMain() {
                   <td>{new Date(r.fecha_reserva).toLocaleDateString()}</td>
                   <td>
                     <div className="btn-group" role="group">
-                      {/* Ver */}
                       <Button
                         as={Link}
                         to={`/dashboard-admin/reservas/view/${r.id_reserva}`}
                         variant="outline-secondary"
                         size="sm"
+                        title="Ver Voucher"
                       >
                         <i className="bi bi-eye"></i>
                       </Button>
 
-                      {/* Editar */}
                       <Button
                         as={Link}
                         to={`/dashboard-admin/reservas/edit/${r.id_reserva}`}
                         variant="outline-primary"
                         size="sm"
+                        title="Editar Reserva"
                       >
                         <i className="bi bi-pencil"></i>
                       </Button>
 
-                      {/* Eliminar o Restaurar */}
-                      {r.eliminado ? (
+                      {/* 👈 BOTÓN DE RESTAURAR: Solo si la reserva está efectivamente archivada */}
+                      {Number(r.eliminado) === 1 && (
                         <Button
                           variant="outline-success"
                           size="sm"
                           onClick={() => handleRestore(r.id_reserva)}
+                          title="Restaurar Reserva"
                         >
                           <i className="bi bi-arrow-counterclockwise"></i>
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="outline-danger"
-                          size="sm"
-                          onClick={() => handleDelete(r.id_reserva)}
-                        >
-                          <i className="bi bi-trash"></i>
                         </Button>
                       )}
                     </div>
@@ -470,13 +399,14 @@ export default function ReservasMain() {
             ) : (
               <tr>
                 <td colSpan="9" className="text-center text-muted py-3">
-                  No hay reservas registradas
+                  No hay reservas registradas para este filtro
                 </td>
               </tr>
             )}
           </tbody>
         </Table>
-        {/* Paginación con Bootstrap */}
+
+        {/* Paginación */}
         {!debouncedDni && (
           <PaginationComponent
             currentPage={paginaActual}
