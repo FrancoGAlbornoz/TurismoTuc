@@ -68,7 +68,7 @@ export default function PreguntasPersonalizacionAdmin() {
 
   const fetchExcursiones = async () => {
     const res = await axios.get("http://localhost:8000/api/excursiones");
-    setExcursiones(res.data);
+    setExcursiones(res.data.data || []);
   };
 
   const fetchAsignaciones = async () => {

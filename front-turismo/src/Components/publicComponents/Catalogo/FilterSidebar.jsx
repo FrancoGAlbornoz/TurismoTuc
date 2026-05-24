@@ -38,7 +38,7 @@ export default function FilterSidebar({ onFilterChange }) {
 
     try {
       const res = await axios.get("http://localhost:8000/api/excursiones", { params });
-      onFilterChange(res.data);
+      onFilterChange(res.data.data || []);
     } catch (err) {
       console.error("Error al aplicar filtros:", err);
     }
@@ -52,7 +52,7 @@ export default function FilterSidebar({ onFilterChange }) {
     setCategoria("");
     try {
       const res = await axios.get("http://localhost:8000/api/excursiones");
-      onFilterChange(res.data);
+      onFilterChange(res.data.data || []);
     } catch (err) {
       console.error("Error al limpiar filtros:", err);
     }

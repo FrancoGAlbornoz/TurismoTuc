@@ -30,7 +30,7 @@ export default function MainExcursiones() {
       };
 
       const res = await axios.get("http://localhost:8000/api/excursiones", { params });
-      setExcursiones(res.data.data);
+      setExcursiones(res.data.data || []);
       setTotalPaginas(res.data.totalPages);
     } catch (err) {
       console.error("Error al obtener excursiones:", err);

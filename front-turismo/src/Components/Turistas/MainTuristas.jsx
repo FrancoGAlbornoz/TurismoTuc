@@ -1,17 +1,18 @@
 import { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Card, Button, Table, Spinner, Dropdown } from "react-bootstrap";
+import { Card, Button, Table, Spinner } from "react-bootstrap";
 import Swal from "sweetalert2";
-import { useDebounce } from "../../hooks/useDeBounce";
-import PaginationComponent from "../Filtros/Paginacion";
+import PaginationComponent from "../Filtros/Paginacion.jsx";
+import BuscadorGeneral from "../Filtros/BuscadorGeneral.jsx"; // Asegurate de la ruta correcta
 
 export default function MainTuristas() {
   const [turistas, setTuristas] = useState([]);
-  const [filtro, setFiltro] = useState("activas");
   const [loading, setLoading] = useState(true);
+  
+  // Filtros
+  const [mostrarArchivadas, setMostrarArchivadas] = useState(false);
   const [dniBuscar, setDniBuscar] = useState("");
-  const debouncedDni = useDebounce(dniBuscar, 500);
 
   // Paginación
   const [paginaActual, setPaginaActual] = useState(1);
@@ -20,70 +21,51 @@ export default function MainTuristas() {
 
   const navigate = useNavigate();
 
-  // Función para obtener turistas
+  // 🔹 Función unificada para obtener datos (con o sin búsqueda)
   const fetchTuristas = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(
-        `http://localhost:8000/api/turistas?filtro=${filtro}&page=${paginaActual}&limit=${porPagina}`
-      );
+      const isArchivadaParams = mostrarArchivadas ? "true" : "false";
+      
+      let res;
+      if (dniBuscar) {
+        res = await axios.get(`http://localhost:8000/api/turistas/buscar`, {
+          params: { dni: dniBuscar, page: paginaActual, limit: porPagina, mostrarArchivadas: isArchivadaParams }
+        });
+      } else {
+        res = await axios.get(`http://localhost:8000/api/turistas`, {
+          params: { page: paginaActual, limit: porPagina, mostrarArchivadas: isArchivadaParams }
+        });
+      }
+      
       setTuristas(res.data.data || []);
       setTotalPaginas(res.data.totalPages || 1);
-      setPaginaActual(res.data.currentPage || 1);
     } catch (err) {
       console.error("Error al obtener turistas:", err);
       Swal.fire("Error", "No se pudieron cargar los turistas.", "error");
       setTuristas([]);
-      setTotalPaginas(1);
-      setPaginaActual(1);
     } finally {
       setLoading(false);
     }
   };
 
-  // Función de búsqueda por DNI
-  const buscarPorDNI = async (dni, page = 1) => {
-    if (!dni) {
-      fetchTuristas(page);
-      return;
-    }
-    setLoading(true);
-    try {
-      const res = await axios.get(
-        `http://localhost:8000/api/turistas/buscar?dni=${dni}`
-      );
-      setTuristas(res.data.data || []);
-      setTotalPaginas(res.data.totalPages || 1);
-    } catch (err) {
-      console.error("Error al buscar por DNI:", err);
-      setTuristas([]);
-      setTotalPaginas(1);
-      setPaginaActual(1);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  // Resetea a la página 1 si cambias el estado del botón o buscas algo nuevo
   useEffect(() => {
     setPaginaActual(1);
-    if (debouncedDni) {
-      buscarPorDNI(debouncedDni, 1, filtro);
-    } else {
-      fetchTuristas(1, filtro);
-    }
-  }, [debouncedDni, filtro]);
+  }, [mostrarArchivadas, dniBuscar]);
 
+  // Se ejecuta cada vez que cambia la página, la búsqueda o el botón de archivo
   useEffect(() => {
-    fetchTuristas(paginaActual);
-  }, [paginaActual, filtro]);
+    fetchTuristas();
+  }, [paginaActual, mostrarArchivadas, dniBuscar]);
 
   const handleDelete = async (id) => {
     const confirmDelete = await Swal.fire({
-      title: "¿Eliminar turista?",
-      text: "Esta acción no se puede deshacer.",
+      title: "¿Archivar turista?",
+      text: "El perfil pasará a la lista de archivados.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: "Sí, eliminar",
+      confirmButtonText: "Sí, archivar",
       cancelButtonText: "Cancelar",
     });
 
@@ -91,18 +73,45 @@ export default function MainTuristas() {
 
     try {
       await axios.delete(`http://localhost:8000/api/turistas/${id}`);
-      fetchTuristas(paginaActual);
       Swal.fire({
         icon: "success",
-        title: "Turista eliminado",
-        text: "El turista fue eliminado correctamente.",
+        title: "Archivado",
+        text: "El turista fue archivado correctamente.",
         timer: 2000,
         showConfirmButton: false,
       });
-      buscarPorDNI(debouncedDni, paginaActual);
+      fetchTuristas();
     } catch (err) {
-      console.error("Error al eliminar turista:", err);
-      Swal.fire("Error", "No se pudo eliminar el turista.", "error");
+      console.error("Error al archivar turista:", err);
+      Swal.fire("Error", "No se pudo archivar el turista.", "error");
+    }
+  };
+
+  const handleRestore = async (id) => {
+    const confirmRestore = await Swal.fire({
+      title: "¿Restaurar turista?",
+      text: "El perfil volverá a estar activo en la tabla principal.",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Sí, restaurar",
+      cancelButtonText: "Cancelar",
+    });
+
+    if (!confirmRestore.isConfirmed) return;
+
+    try {
+      await axios.put(`http://localhost:8000/api/turistas/restore/${id}`);
+      Swal.fire({
+        icon: "success",
+        title: "Restaurado",
+        text: "El turista fue restaurado correctamente.",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+      fetchTuristas();
+    } catch (err) {
+      console.error("Error al restaurar turista:", err);
+      Swal.fire("Error", "No se pudo restaurar el turista.", "error");
     }
   };
 
@@ -110,42 +119,37 @@ export default function MainTuristas() {
     <div className="container-fluid py-4">
       <Card className="shadow-sm">
         <Card.Body>
-          <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap">
-            <h5 className="fw-bold text-success mb-2 mb-md-0">
-              Gestión de Turistas
-            </h5>
+          {/* Encabezado y Filtros */}
+          <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <div>
+              <h5 className="fw-bold text-success mb-2">
+                Gestión de Turistas{" "}
+                <small className="text-muted" style={{ textTransform: "lowercase" }}>
+                  ({mostrarArchivadas ? "archivados" : "activos"})
+                </small>
+              </h5>
+
+              <div style={{ maxWidth: "250px" }}>
+                <BuscadorGeneral 
+                  placeholder="Buscar por DNI..." 
+                  onBuscar={(valor) => setDniBuscar(valor)} 
+                />
+              </div>
+            </div>
+
             <div className="d-flex align-items-center gap-2">
-              {/* Input de búsqueda por DNI */}
-              <input
-                type="text"
-                className="form-control form-control-sm"
-                placeholder="Buscar por DNI..."
-                value={dniBuscar}
-                onChange={(e) => setDniBuscar(e.target.value)}
-                style={{ maxWidth: "200px" }}
-              />
-
-              {/* Dropdown: Filtrar activas / eliminadas / todas */}
-              <Dropdown align="end">
-                <Dropdown.Toggle variant="outline-primary" size="sm">
-                  <i className="bi bi-funnel"></i> Filtrar Eliminados
-                </Dropdown.Toggle>
-
-                <Dropdown.Menu>
-                  <Dropdown.Item onClick={() => setFiltro("activas")}>
-                    <i className="bi bi-check-circle text-success me-2"></i>
-                    Activas
-                  </Dropdown.Item>
-                  <Dropdown.Item onClick={() => setFiltro("eliminadas")}>
-                    <i className="bi bi-x-circle text-danger me-2"></i>
-                    Eliminadas
-                  </Dropdown.Item>
-                  <Dropdown.Item onClick={() => setFiltro("todas")}>
-                    <i className="bi bi-list-ul text-secondary me-2"></i>
-                    Todas
-                  </Dropdown.Item>
-                </Dropdown.Menu>
-              </Dropdown>
+              {/* Botón Toggle para Mostrar Archivados */}
+              <Button
+                variant={mostrarArchivadas ? "success" : "outline-danger"}
+                size="sm"
+                onClick={() => setMostrarArchivadas(!mostrarArchivadas)}
+              >
+                {mostrarArchivadas ? (
+                  <><i className="bi bi-arrow-left-circle me-1"></i> Volver a Activos</>
+                ) : (
+                  <><i className="bi bi-archive-fill me-1"></i> Mostrar Archivados</>
+                )}
+              </Button>
             </div>
           </div>
 
@@ -160,7 +164,7 @@ export default function MainTuristas() {
                 <thead className="table-light">
                   <tr>
                     <th>ID</th>
-                    <th>Nombre</th>
+                    <th>Nombre Completo</th>
                     <th>DNI</th>
                     <th>Email</th>
                     <th>Teléfono</th>
@@ -183,32 +187,42 @@ export default function MainTuristas() {
                             <Button
                               variant="outline-secondary"
                               size="sm"
-                              onClick={() =>
-                                navigate(
-                                  `/dashboard-admin/turistas/view/${t.id_turista}`
-                                )
-                              }
+                              title="Ver detalles"
+                              onClick={() => navigate(`/dashboard-admin/turistas/view/${t.id_turista}`)}
                             >
                               <i className="bi bi-eye"></i>
                             </Button>
-                            <Button
-                              variant="outline-primary"
-                              size="sm"
-                              onClick={() =>
-                                navigate(
-                                  `/dashboard-admin/turistas/edit/${t.id_turista}`
-                                )
-                              }
-                            >
-                              <i className="bi bi-pencil"></i>
-                            </Button>
-                            <Button
-                              variant="outline-danger"
-                              size="sm"
-                              onClick={() => handleDelete(t.id_turista)}
-                            >
-                              <i className="bi bi-trash"></i>
-                            </Button>
+                            
+                            {!t.eliminado && (
+                              <Button
+                                variant="outline-primary"
+                                size="sm"
+                                title="Editar"
+                                onClick={() => navigate(`/dashboard-admin/turistas/edit/${t.id_turista}`)}
+                              >
+                                <i className="bi bi-pencil"></i>
+                              </Button>
+                            )}
+
+                            {t.eliminado ? (
+                              <Button
+                                variant="outline-success"
+                                size="sm"
+                                title="Restaurar"
+                                onClick={() => handleRestore(t.id_turista)}
+                              >
+                                <i className="bi bi-arrow-counterclockwise"></i>
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="outline-danger"
+                                size="sm"
+                                title="Archivar"
+                                onClick={() => handleDelete(t.id_turista)}
+                              >
+                                <i className="bi bi-archive"></i>
+                              </Button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -216,7 +230,7 @@ export default function MainTuristas() {
                   ) : (
                     <tr>
                       <td colSpan="6" className="text-center text-muted py-3">
-                        No hay turistas registrados
+                        No hay turistas registrados en esta sección
                       </td>
                     </tr>
                   )}

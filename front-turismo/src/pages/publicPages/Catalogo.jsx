@@ -39,7 +39,7 @@ export default function Catalogo() {
       }
 
       const res = await axios.get(url);
-      setExcursiones(res.data);
+      setExcursiones(res.data.data || []);
       setCurrentPage(1); // reset al cambiar data
     } catch (err) {
       console.error("Error al obtener excursiones:", err);

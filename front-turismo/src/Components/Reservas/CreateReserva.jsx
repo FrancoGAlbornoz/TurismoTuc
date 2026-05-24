@@ -35,7 +35,7 @@ export default function CreateReserva() {
     const fetchExcursiones = async () => {
       try {
         const res = await axios.get("http://localhost:8000/api/excursiones");
-        setExcursiones(Array.isArray(res.data) ? res.data : []);
+        setExcursiones(res.data.data || []);
       } catch (err) {
         console.error("Error cargando excursiones:", err);
         Swal.fire("Error", "No se pudieron cargar las excursiones", "error");
@@ -135,7 +135,7 @@ export default function CreateReserva() {
       <Card className="shadow-sm">
         <Card.Body>
           <h4 className="fw-bold text-success mb-4">Crear Nueva Reserva</h4>
-
+          <h5 className="mb-4">Datos del Turista - Recordar solicitar al turista que se registre o inicie sesión. </h5>
           <Form onSubmit={handleSubmit}>
             <Form.Group className="mb-3">
               <Form.Label>DNI del Turista</Form.Label>
@@ -190,7 +190,7 @@ export default function CreateReserva() {
                 <option value="">
                   {fechasExcursion.length
                     ? "Seleccionar fecha disponible"
-                    : "Seleccione una excursión primero"}
+                    : "No hay fechas disponibles / Seleccione una excursión primero "}
                 </option>
                 {fechasExcursion.map((f) => (
                   <option

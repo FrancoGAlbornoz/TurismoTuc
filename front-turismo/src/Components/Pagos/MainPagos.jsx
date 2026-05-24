@@ -1,231 +1,189 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import {
-  Card,
-  Table,
-  Button,
-  Badge,
-  Alert,
-  Spinner,
-  Dropdown,
-  Pagination,
-} from "react-bootstrap";
+import { Card, Table, Button, Badge, Spinner, Dropdown } from "react-bootstrap";
 import Swal from "sweetalert2";
+import BuscadorGeneral from "../Filtros/BuscadorGeneral"; // Ajusta la ruta
+import PaginationComponent from "../Filtros/Paginacion"; // Ajusta la ruta
 
 export default function MainPagos() {
   const [pagos, setPagos] = useState([]);
-  const [mensaje, setMensaje] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [filtro, setFiltro] = useState("todos");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [limit] = useState(10);
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
 
-  const fetchPagos = async (estado = filtro, page = currentPage) => {
+  // Estados de Filtros
+  const [filtroEstado, setFiltroEstado] = useState("todos");
+  const [busqueda, setBusqueda] = useState("");
+
+  // Paginación
+  const [paginaActual, setPaginaActual] = useState(1);
+  const [totalPaginas, setTotalPaginas] = useState(1);
+
+  const fetchPagos = async () => {
     setLoading(true);
     try {
+      const params = {
+        page: paginaActual,
+        limit: 10,
+        estado: filtroEstado !== "todos" ? filtroEstado : null,
+        q: busqueda,
+      };
+
       const res = await axios.get("http://localhost:8000/api/pagos", {
-        params:
-          estado !== "todos"
-            ? { estado, page, limit }
-            : { page, limit },
+        params,
       });
       setPagos(res.data.data || []);
-      setTotalPages(res.data.totalPages || 1);
-      setCurrentPage(res.data.currentPage || 1);
+      setTotalPaginas(res.data.totalPages || 1);
     } catch (err) {
       console.error("Error al obtener pagos:", err);
-      setError("No se pudieron cargar los pagos.");
-      setTimeout(() => setError(""), 2500);
     } finally {
       setLoading(false);
     }
   };
 
+  // Resetear a pág 1 cuando cambian los filtros
   useEffect(() => {
-    fetchPagos(filtro, currentPage);
-  }, [filtro, currentPage]);
+    setPaginaActual(1);
+  }, [filtroEstado, busqueda]);
+
+  useEffect(() => {
+    fetchPagos();
+  }, [paginaActual, filtroEstado, busqueda]);
 
   const actualizarEstado = async (id_pago, nuevo_estado) => {
-    const confirmacion = await Swal.fire({
-      title: `¿Confirmar cambio a "${nuevo_estado.toUpperCase()}"?`,
-      text: "Esta acción actualizará el estado del pago.",
+    const confirm = await Swal.fire({
+      title: `¿Confirmar ${nuevo_estado}?`,
       icon: "question",
       showCancelButton: true,
-      confirmButtonText: "Sí, confirmar",
-      cancelButtonText: "Cancelar",
+      confirmButtonText: "Sí",
     });
 
-    if (!confirmacion.isConfirmed) return;
+    if (!confirm.isConfirmed) return;
 
     try {
       await axios.put(`http://localhost:8000/api/pagos/${id_pago}`, {
         nuevo_estado,
       });
-      setPagos((prev) =>
-        prev.map((p) =>
-          p.id_pago === id_pago ? { ...p, estado_pago: nuevo_estado } : p
-        )
-      );
-      setMensaje(`Pago actualizado a "${nuevo_estado.toUpperCase()}"`);
-      setTimeout(() => setMensaje(""), 2500);
+      fetchPagos();
+      Swal.fire("Éxito", "Estado actualizado", "success");
     } catch (err) {
-      console.error("Error al actualizar pago:", err);
-      setError("No se pudo actualizar el estado del pago.");
-      setTimeout(() => setError(""), 2500);
+      Swal.fire("Error", "No se pudo actualizar", "error");
     }
-  };
-
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
-
-  const renderPagination = () => {
-    const items = [];
-    for (let i = 1; i <= totalPages; i++) {
-      items.push(
-        <Pagination.Item
-          key={i}
-          active={i === currentPage}
-          onClick={() => handlePageChange(i)}
-        >
-          {i}
-        </Pagination.Item>
-      );
-    }
-    return <Pagination>{items}</Pagination>;
   };
 
   return (
     <div className="container-fluid py-4">
       <Card className="shadow-sm">
         <Card.Body className="p-3">
-          <div className="d-flex justify-content-between align-items-center mb-3">
-            <h5 className="fw-bold text-success mb-0">Gestión de Pagos</h5>
+          {/* Cabecera con Filtros y Buscador */}
+          <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <div>
+              <h5 className="fw-bold text-success mb-2">Gestión de Pagos</h5>
+              {/* Usamos tu componente estandarizado */}
+              <div style={{ maxWidth: "250px" }}>
+                <BuscadorGeneral
+                  placeholder="Turista o método..."
+                  onBuscar={(val) => setBusqueda(val)}
+                />
+              </div>
+            </div>
+
+            {/* Estilo idéntico a Excursiones/Turistas */}
+            <div className="d-flex align-items-center gap-2">
+              <Dropdown align="end">
+                <Dropdown.Toggle variant="outline-primary" size="sm">
+                  <i className="bi bi-funnel"></i> Filtrar estado:{" "}
+                  {filtroEstado.toUpperCase()}
+                </Dropdown.Toggle>
+                <Dropdown.Menu>
+                  {["todos", "pendiente", "aprobado", "rechazado"].map(
+                    (est) => (
+                      <Dropdown.Item
+                        key={est}
+                        onClick={() => setFiltroEstado(est)}
+                      >
+                        {est.charAt(0).toUpperCase() + est.slice(1)}
+                      </Dropdown.Item>
+                    ),
+                  )}
+                </Dropdown.Menu>
+              </Dropdown>
+            </div>
           </div>
 
-          {mensaje && (
-            <Alert variant="success" className="py-2">
-              {mensaje}
-            </Alert>
-          )}
-          {error && (
-            <Alert variant="danger" className="py-2">
-              {error}
-            </Alert>
-          )}
-
-          <Table hover responsive className="mb-0 align-middle">
-            <thead className="table-light">
-              <tr>
-                <th>ID</th>
-                <th>Turista</th>
-                <th>Método</th>
-                <th>Monto</th>
-                <th>Estado</th>
-                <th>Referencia</th>
-                <th>Reserva</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
+          {loading ? (
+            <div className="text-center py-5">
+              <Spinner animation="border" variant="success" />
+            </div>
+          ) : (
+            <Table hover responsive className="align-middle">
+              <thead className="table-light">
                 <tr>
-                  <td colSpan="8" className="text-center py-4">
-                    <Spinner animation="border" variant="success" />
-                  </td>
+                  <th>ID</th>
+                  <th>Turista</th>
+                  <th>Método</th>
+                  <th>Monto</th>
+                  <th>Estado</th>
+                  <th>Reserva</th>
+                  <th>Acciones</th>
                 </tr>
-              ) : pagos.length > 0 ? (
-                pagos.map((p) => (
+              </thead>
+              <tbody>
+                {pagos.map((p) => (
                   <tr key={p.id_pago}>
                     <td>{p.id_pago}</td>
                     <td>
                       {p.turista_nombre} {p.turista_apellido}
                     </td>
                     <td>{p.metodo}</td>
-                    <td>${p.monto?.toLocaleString("es-AR")}</td>
+                    <td>${Number(p.monto).toLocaleString("es-AR")}</td>
                     <td>
                       <Badge
-                        className="text-uppercase" // <-- Cambio aquí para mayúsculas visuales
                         bg={
                           p.estado_pago === "aprobado"
                             ? "success"
                             : p.estado_pago === "pendiente"
-                            ? "warning text-dark"
-                            : "danger"
+                              ? "warning"
+                              : "danger"
                         }
                       >
-                        {p.estado_pago}
+                        {p.estado_pago.toUpperCase()}
                       </Badge>
                     </td>
-                    <td>{p.referencia || "—"}</td>
                     <td>{p.id_reserva}</td>
                     <td>
-                      <div className="btn-group" role="group">
-                        <Button
-                          variant="outline-secondary"
-                          size="sm"
-                          onClick={() =>
-                            navigate(`/dashboard-admin/pagos/view/${p.id_pago}`)
-                          }
-                        >
-                          <i className="bi bi-eye"></i>
-                        </Button>
-
-                        <Button
-                          variant="outline-primary"
-                          size="sm"
-                          onClick={() =>
-                            navigate(`/dashboard-admin/pagos/edit/${p.id_pago}`)
-                          }
-                        >
-                          <i className="bi bi-pencil"></i>
-                        </Button>
-
-                        {p.estado_pago === "pendiente" && (
-                          <>
-                            <Button
-                              variant="outline-success"
-                              size="sm"
-                              onClick={() =>
-                                actualizarEstado(p.id_pago, "aprobado")
-                              }
-                            >
-                              <i className="bi bi-check2-circle"></i>
-                            </Button>
-                            <Button
-                              variant="outline-danger"
-                              size="sm"
-                              onClick={() =>
-                                actualizarEstado(p.id_pago, "rechazado")
-                              }
-                            >
-                              <i className="bi bi-x-circle"></i>
-                            </Button>
-                          </>
-                        )}
-                      </div>
+                      {p.estado_pago === "pendiente" && (
+                        <div className="btn-group">
+                          <Button
+                            size="sm"
+                            variant="outline-success"
+                            onClick={() =>
+                              actualizarEstado(p.id_pago, "aprobado")
+                            }
+                          >
+                            <i className="bi bi-check2"></i>
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline-danger"
+                            onClick={() =>
+                              actualizarEstado(p.id_pago, "rechazado")
+                            }
+                          >
+                            <i className="bi bi-x"></i>
+                          </Button>
+                        </div>
+                      )}
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="8" className="text-center text-muted py-3">
-                    No hay pagos registrados.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </Table>
-          
-          {totalPages > 1 && (
-            <div className="d-flex justify-content-center mt-3">
-              {renderPagination()}
-            </div>
+                ))}
+              </tbody>
+            </Table>
           )}
+
+          <PaginationComponent
+            currentPage={paginaActual}
+            totalPages={totalPaginas}
+            onPageChange={setPaginaActual}
+          />
         </Card.Body>
       </Card>
     </div>

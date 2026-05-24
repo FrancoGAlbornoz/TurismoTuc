@@ -10,7 +10,8 @@ export default function CarrouselExcursiones() {
     const fetchExcursiones = async () => {
       try {
         const res = await axios.get("http://localhost:8000/api/excursiones");
-        setExcursiones(res.data);
+        setExcursiones(res.data.data || []); // Aseguramos que sea un array
+        console.log("Datos que llegan al carrusel:", res.data.data);
       } catch (err) {
         console.error("Error cargando carrusel:", err);
       }

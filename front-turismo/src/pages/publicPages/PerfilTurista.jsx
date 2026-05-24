@@ -30,9 +30,10 @@ export default function PerfilTurista() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [editMode, setEditMode] = useState(false);
+  const [mostrarFinalizadas, setMostrarFinalizadas] = useState(false); // NUEVO ESTADO
 
   // --- PAGINACIÓN ---
-  const PAGE_SIZE = 10;
+  const PAGE_SIZE = 5; // Ajustado a 5 para que la tabla no se estire de más
   const [currentPage, setCurrentPage] = useState(1);
 
   const [formData, setFormData] = useState({
@@ -106,13 +107,25 @@ export default function PerfilTurista() {
     }
   }, [turista, turistaId, token, hydrated]);
 
-  // --- PAGINACIÓN: totalPages + slice ---
-  const totalPages = Math.ceil((reservas.length || 0) / PAGE_SIZE);
+  // --- LÓGICA DE FILTRADO (Historial) ---
+  const reservasFiltradas = useMemo(() => {
+    return reservas.filter(r => 
+      mostrarFinalizadas ? true : r.estado_reserva !== 'finalizada'
+    );
+  }, [reservas, mostrarFinalizadas]);
+
+  // Si cambia el switch, volvemos a la página 1
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [mostrarFinalizadas]);
+
+  // --- PAGINACIÓN: totalPages + slice (Sobre las filtradas) ---
+  const totalPages = Math.ceil((reservasFiltradas.length || 0) / PAGE_SIZE) || 1;
 
   const reservasPaginadas = useMemo(() => {
     const start = (currentPage - 1) * PAGE_SIZE;
-    return reservas.slice(start, start + PAGE_SIZE);
-  }, [reservas, currentPage]);
+    return reservasFiltradas.slice(start, start + PAGE_SIZE);
+  }, [reservasFiltradas, currentPage]);
 
   // Si cambia la cantidad de reservas y la página queda fuera de rango, la ajustamos
   useEffect(() => {
@@ -364,9 +377,18 @@ export default function PerfilTurista() {
                 <i className="bi bi-journal-check me-2"></i>Mis Reservas
               </h5>
 
-              <Badge bg="success" pill>
-                Total: {reservas.length}
-              </Badge>
+              <div className="d-flex align-items-center gap-3">
+                <Form.Check 
+                  type="switch"
+                  id="historial-switch"
+                  label="Ver historial"
+                  checked={mostrarFinalizadas}
+                  onChange={(e) => setMostrarFinalizadas(e.target.checked)}
+                />
+                <Badge bg="success" pill>
+                  Total: {reservasFiltradas.length}
+                </Badge>
+              </div>
             </Card.Header>
 
             <Card.Body className="p-0">

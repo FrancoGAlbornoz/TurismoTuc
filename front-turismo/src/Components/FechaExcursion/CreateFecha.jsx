@@ -18,7 +18,7 @@ export default function FechasCreate() {
   const fetchExcursiones = async () => {
     try {
       const res = await axios.get("http://localhost:8000/api/excursiones");
-      setExcursiones(res.data);
+      setExcursiones(res.data.data || []);
     } catch (err) {
       console.error("Error al cargar excursiones:", err);
       Swal.fire("Error", "No se pudieron cargar las excursiones.", "error");
