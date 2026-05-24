@@ -68,7 +68,15 @@ export const getExcursiones = (req, res) => {
       SELECT e.id_excursion, e.titulo, e.descripcion, e.precio_base, e.duracion,
              e.ubicacion, e.incluye, e.politicas, e.estado, e.fecha_creacion, e.eliminado,
              e.id_guia, u.nombre AS nombre_guia, u.apellido AS apellido_guia,
-             c.id_categoria_excursion, c.nombre_categoria
+             c.id_categoria_excursion, c.nombre_categoria,
+             (
+               SELECT m.url 
+               FROM Multimedia m 
+               WHERE m.id_excursion = e.id_excursion 
+                 AND m.eliminado = 0 
+               ORDER BY m.id_multimedia ASC 
+               LIMIT 1
+             ) AS imagen_url
       FROM (
         SELECT DISTINCT e.id_excursion, e.fecha_creacion
         FROM Excursiones e
@@ -103,6 +111,7 @@ export const getExcursiones = (req, res) => {
             id_guia: row.id_guia,
             nombre_guia: row.nombre_guia,
             apellido_guia: row.apellido_guia,
+            imagen_url: row.imagen_url, // <--- ¡Asegúrate de agregar esto aquí!
             categorias: [],
           };
         }
@@ -547,6 +556,80 @@ export const getExcursionesConFechas = (req, res) => {
     });
 
     res.json(Object.values(agrupadas));
+  });
+};
+export const getTodasLasFechasPaginadas = (req, res) => {
+  const { q, mostrarArchivadas, page = 1, limit = 10 } = req.query;
+  const condiciones = [];
+  const values = [];
+
+  // 1. Filtro de Relevantes vs Archivadas/Cerradas
+  if (mostrarArchivadas === "true") {
+    // Si pide archivadas, traemos las eliminadas lógicamente o las que tienen estado 'cerrada'
+    condiciones.push("(f.eliminado = 1 OR f.estado = 'cerrada')");
+  } else {
+    // Relevantes: No eliminadas, abiertas, y que sean de HOY en adelante
+    condiciones.push("f.eliminado = 0");
+    condiciones.push("f.estado = 'abierta'");
+    condiciones.push("f.fecha >= CURDATE()"); 
+  }
+
+  // 2. Buscador por Título de Excursión
+  if (q) {
+    condiciones.push("e.titulo LIKE ?");
+    values.push(`%${q}%`);
+  }
+
+  const whereClause = condiciones.length > 0 ? `WHERE ${condiciones.join(" AND ")}` : "";
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+
+  const baseQuery = `
+    FROM FechasExcursion f
+    JOIN Excursiones e ON f.id_excursion = e.id_excursion
+    ${whereClause}
+  `;
+
+  const sqlCount = `SELECT COUNT(*) AS total ${baseQuery}`;
+  const sqlData = `
+    SELECT 
+      f.id_fecha, f.fecha, f.hora_salida, f.cupo_maximo, f.cupo_disponible, f.estado, f.eliminado,
+      e.id_excursion, e.titulo AS excursion
+    ${baseQuery}
+    ORDER BY f.fecha ASC
+    LIMIT ? OFFSET ?
+  `;
+
+  pool.query(sqlCount, values, (err, countResult) => {
+    if (err) return res.status(500).json({ message: "Error al contar fechas" });
+
+    const total = countResult[0].total;
+    const totalPages = Math.ceil(total / parseInt(limit));
+
+    pool.query(sqlData, [...values, parseInt(limit), offset], (err, dataResult) => {
+      if (err) return res.status(500).json({ message: "Error al obtener fechas" });
+
+      res.json({
+        data: dataResult,
+        total,
+        totalPages,
+        currentPage: parseInt(page),
+      });
+    });
+  });
+};
+
+// 🔹 NUEVO: Restaurar Fecha
+export const restoreFechaExcursion = (req, res) => {
+  const { id } = req.params;
+  const sql = `
+    UPDATE FechasExcursion
+    SET estado = 'abierta', eliminado = 0, fecha_eliminacion = NULL
+    WHERE id_fecha = ?
+  `;
+  pool.query(sql, [id], (err, result) => {
+    if (err) return res.status(500).json({ message: "Error al restaurar fecha" });
+    if (result.affectedRows === 0) return res.status(404).json({ message: "Fecha no encontrada" });
+    res.json({ message: "Fecha restaurada correctamente" });
   });
 };
 

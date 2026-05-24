@@ -1,100 +1,57 @@
 import express from "express";
 import { pool } from "../config/DB.js";
 import {
-  getExcursiones,
-  getExcursionById,
-  createExcursion,
-  updateExcursion,
-  deleteExcursion,
-  restoreExcursion,
-  notificarGuia,
-  getMultimediaByExcursion,
-  createMultimedia,
-  deleteMultimedia,
-  getFechasByExcursion,
-  getExcursionesConFechas,
-  createFechaExcursion,
-  updateFechaExcursion,
-  deleteFechaExcursion,
-  getGuias,
-  getExcursionesPorGuia,
-  getParticipantesByExcursion,
-  getFechaById,
+  getExcursiones, getExcursionById, createExcursion, updateExcursion, deleteExcursion, restoreExcursion,
+  notificarGuia, getMultimediaByExcursion, createMultimedia, deleteMultimedia,
+  getFechasByExcursion, getExcursionesConFechas, getTodasLasFechasPaginadas,
+  restoreFechaExcursion, createFechaExcursion, updateFechaExcursion, deleteFechaExcursion,
+  getGuias, getExcursionesPorGuia, getParticipantesByExcursion, getFechaById,
   updateCategoriasExcursionMultiple
 } from "../controllers/excursiones.controller.js";
 
 const router = express.Router();
 
 // =============================
-// Rutas de Excursiones
+// 1. RUTAS DE APOYO Y ESTADÍSTICAS
 // =============================
-
-// 🔹 Rutas específicas primero
 router.get("/guias", getGuias);
-
-// ✅ Esta ruta debe ir antes que cualquier "/:id"
-router.get("/:id/participantes", getParticipantesByExcursion);
 router.get("/con-fechas", getExcursionesConFechas);
-router.get("/fechas/:id", getFechaById);
+router.get("/:id/participantes", getParticipantesByExcursion);
 router.post("/notificar/:id_excursion", notificarGuia);
 
+// =============================
+// 2. RUTAS DE FECHAS (Aquí agrupamos todo lo de fechas para que no choque)
+// =============================
+router.get("/fechas-paginadas", getTodasLasFechasPaginadas); // Paginador de tabla plana
+router.get("/fechas/:id", getFechaById); 
+router.post("/fechas-excursion", createFechaExcursion);    // <--- ESTA ES LA QUE TE FALLABA
+router.put("/fechas/restore/:id", restoreFechaExcursion);
+router.put("/fechas/:id", updateFechaExcursion);
+router.delete("/fechas/:id", deleteFechaExcursion);
+router.get("/:id_excursion/fechas", getFechasByExcursion); // Las fechas de una excursión específica
+router.get("/fecha/:id_fecha", async (req, res) => { /* ... tu lógica inline ... */ });
 
-
-// 🔹 Rutas dinámicas
+// =============================
+// 3. RUTAS DE EXCURSIONES (CRUD PRINCIPAL)
+// =============================
 router.get("/", getExcursiones);
 router.post("/", createExcursion);
+router.put("/restore/:id", restoreExcursion); // Mover restaurar aquí
 router.put("/:id", updateExcursion);
 router.delete("/:id", deleteExcursion);
-router.put("/restore/:id", restoreExcursion)
 router.get("/:id", getExcursionById);
 router.get("/guia/:id_guia", getExcursionesPorGuia);
 
 // =============================
-// MULTIMEDIA
+// 4. MULTIMEDIA
 // =============================
 router.get("/:id_excursion/multimedia", getMultimediaByExcursion);
 router.post("/multimedia", createMultimedia);
 router.delete("/multimedia/:id", deleteMultimedia);
 
 // =============================
-// Fechas de Excursión
-// =============================
-router.get("/:id_excursion/fechas", getFechasByExcursion);
-router.post("/fechas-excursion", createFechaExcursion);
-router.put("/fechas/:id", updateFechaExcursion);
-router.delete("/fechas/:id", deleteFechaExcursion);
-
-// =============================
-// Notificar Guía
-// =============================
-router.post("/notificar/:id_excursion", notificarGuia);
-
-// =============================
-// Categorías de Excursión
+// 5. CATEGORÍAS
 // =============================
 router.put("/:id/categorias", updateCategoriasExcursionMultiple);
-
-
-router.get("/fecha/:id_fecha", async (req, res) => {
-  const { id_fecha } = req.params;
-
-  try {
-    const [rows] = await pool.promise().query(
-      `SELECT id_fecha, cupo_maximo, cupo_disponible, precio, estado
-       FROM FechasExcursion
-       WHERE id_fecha = ?`,
-      [id_fecha]
-    );
-
-    if (rows.length === 0)
-      return res.status(404).json({ message: "Fecha no encontrada" });
-
-    res.json(rows[0]);
-  } catch (err) {
-    console.error("❌ Error al obtener datos de la fecha:", err);
-    res.status(500).json({ message: "Error interno al obtener datos de la fecha" });
-  }
-});
-
 
 export default router;

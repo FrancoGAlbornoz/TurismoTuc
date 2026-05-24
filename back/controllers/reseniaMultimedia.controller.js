@@ -92,28 +92,23 @@ export const uploadImagenResena = async (req, res) => {
 // GET /api/multimedia/pendientes
 // -------------------------------------------------------------------
 export const getPendientesMultimedia = async (req, res) => {
-  try {
-    const [rows] = await pool.promise().query(`
-      SELECT 
-        m.*,
-        t.nombre    AS turista_nombre,
-        t.apellido  AS turista_apellido,
-        e.titulo    AS excursion_titulo
-      FROM Multimedia m
-      LEFT JOIN Turistas   t ON m.id_turista   = t.id_turista
-      LEFT JOIN Excursiones e ON m.id_excursion = e.id_excursion
-      WHERE m.tipo = 'foto'
-        AND m.eliminado = 0
-        AND m.estado_moderacion = 'pendiente'
-    `);
+  const { page = 1, limit = 10 } = req.query;
+  const offset = (page - 1) * limit;
 
-    return res.json(rows);
+  try {
+    const [count] = await pool.promise().query(`SELECT COUNT(*) as total FROM Multimedia WHERE tipo = 'foto' AND eliminado = 0 AND estado_moderacion = 'pendiente'`);
+    const [rows] = await pool.promise().query(`
+      SELECT m.*, t.nombre AS turista_nombre, t.apellido AS turista_apellido, e.titulo AS excursion_titulo
+      FROM Multimedia m
+      LEFT JOIN Turistas t ON m.id_turista = t.id_turista
+      LEFT JOIN Excursiones e ON m.id_excursion = e.id_excursion
+      WHERE m.tipo = 'foto' AND m.eliminado = 0 AND m.estado_moderacion = 'pendiente'
+      ORDER BY m.id_multimedia DESC LIMIT ? OFFSET ?
+    `, [parseInt(limit), parseInt(offset)]);
+
+    return res.json({ data: rows, totalPages: Math.ceil(count[0].total / limit), currentPage: parseInt(page) });
   } catch (error) {
-    console.error("Error al obtener multimedia pendiente:", error);
-    return res.status(500).json({
-      ok: false,
-      message: "Error interno al obtener multimedia pendiente",
-    });
+    return res.status(500).json({ ok: false, message: "Error interno" });
   }
 };
 

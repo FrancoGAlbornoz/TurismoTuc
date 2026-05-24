@@ -17,7 +17,7 @@ export const getRoles = (req, res) => {
 // USUARIOS
 // =========================
 export const getUsuarios = (req, res) => {
-  const { status = "active" } = req.query; // active | deleted | all
+  const { status = "active" } = req.query;
 
   let where = "u.eliminado = 0";
   if (status === "deleted") where = "u.eliminado = 1";
@@ -25,7 +25,7 @@ export const getUsuarios = (req, res) => {
 
   pool.query(
     `SELECT u.id_usuario, u.nombre, u.apellido, u.email, u.telefono,
-            r.nombre_rol, u.estado, u.eliminado, u.fecha_eliminacion
+            r.nombre_rol, u.estado, u.eliminado
      FROM Usuarios u
      JOIN Roles r ON u.id_rol = r.id_rol
      WHERE ${where}

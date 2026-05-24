@@ -6,6 +6,7 @@ import {
   createTurista,
   updateTurista,
   deleteTurista,
+  restoreTurista,
   buscarTuristaPorDNI,
   buscarTuristaExactoPorDNI
 } from "../controllers/turistas.controller.js";
@@ -23,6 +24,7 @@ router.get("/:id", getTuristaById);
 router.post("/", createTurista);
 router.put("/:id", updateTurista);
 router.delete("/:id", deleteTurista);
+router.put("/restore/:id", restoreTurista);
 
 
 

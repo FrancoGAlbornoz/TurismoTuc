@@ -8,16 +8,18 @@ import jwt from "jsonwebtoken";
 
 // Listar todos los turistas activos
 export const getTuristas = (req, res) => {
-  const { filtro, page = 1, limit = 10} = req.query;
+  const { mostrarArchivadas, page = 1, limit = 10 } = req.query;
   const condiciones = [];
   const params = [];
 
-  if (filtro === "activas") condiciones.push("eliminado = 0");
-  if (filtro === "eliminadas") condiciones.push("eliminado = 1");
-
+  // 🔹 REEMPLAZAMOS EL FILTRO VIEJO POR EL TOGGLE NUEVO
+  if (mostrarArchivadas === "true") {
+    condiciones.push("eliminado = 1");
+  } else {
+    condiciones.push("eliminado = 0");
+  }
 
   const whereClause = condiciones.length > 0 ? `WHERE ${condiciones.join(" AND ")}` : "";
-
   const offset = (parseInt(page) - 1) * parseInt(limit);
 
   const baseQuery = `
@@ -34,30 +36,21 @@ export const getTuristas = (req, res) => {
       apellido, 
       dni, 
       email, 
-      telefono
+      telefono,
+      eliminado -- 👈 Necesario para el front
     ${baseQuery}
     ORDER BY dni ASC
     LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)};
   `;
 
-  // Agregamos los parámetros de paginación
-  params.push(parseInt(limit), offset);
-
-  // Ejecutamos ambas consultas
   pool.query(sqlCount, (err, countResult) => {
-    if (err) {
-      console.error("Error al contar turistas:", err);
-      return res.status(500).json({ message: "Error al contar turistas" });
-    }
+    if (err) return res.status(500).json({ message: "Error al contar turistas" });
 
     const total = countResult[0].total;
     const totalPages = Math.ceil(total / parseInt(limit));
 
     pool.query(sqlData, (err, dataResult) => {
-      if (err) {
-        console.error("Error al obtener turistas:", err);
-        return res.status(500).json({ message: "Error al obtener turistas" });
-      }
+      if (err) return res.status(500).json({ message: "Error al obtener turistas" });
 
       res.json({
         data: dataResult,
@@ -93,7 +86,7 @@ export const getTuristaById = (req, res) => {
    🔍 BUSCAR TURISTA POR DNI
    ============================================================ */
 export const buscarTuristaPorDNI = (req, res) => {
-  const { dni, page = 1, limit = 10 } = req.query;
+  const { dni, page = 1, limit = 10, mostrarArchivadas } = req.query;
 
   if (!dni) {
     return res.status(400).json({ message: "Se requiere el parámetro 'dni'" });
@@ -101,25 +94,28 @@ export const buscarTuristaPorDNI = (req, res) => {
 
   const offset = (parseInt(page) - 1) * parseInt(limit);
   const searchDNI = `${dni}%`;
+  
+  // 🔹 Si buscamos, que busque en la tabla correcta (activos o archivados)
+  const isArchivada = mostrarArchivadas === "true" ? 1 : 0;
 
-  const sqlCount = `SELECT COUNT(*) AS total FROM Turistas WHERE dni LIKE ? AND eliminado = 0`;
+  const sqlCount = `SELECT COUNT(*) AS total FROM Turistas WHERE dni LIKE ? AND eliminado = ?`;
   const sqlData = `
     SELECT id_turista, nombre, apellido, CONCAT(nombre, ' ', apellido) AS nombre_completo,
-           dni, email, telefono, direccion, nacionalidad
+           dni, email, telefono, direccion, nacionalidad, eliminado
     FROM Turistas
-    WHERE dni LIKE ? AND eliminado = 0
+    WHERE dni LIKE ? AND eliminado = ?
     ORDER BY nombre ASC
     LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)}
   `;
 
-  pool.query(sqlCount, [searchDNI], (err, countResult) => {
-    if (err) return res.status(500).json({ message: "Error al contar turistas", error: err.message });
+  pool.query(sqlCount, [searchDNI, isArchivada], (err, countResult) => {
+    if (err) return res.status(500).json({ message: "Error al contar turistas" });
 
     const total = countResult[0].total;
     const totalPages = Math.ceil(total / limit);
 
-    pool.query(sqlData, [searchDNI], (err, dataResult) => {
-      if (err) return res.status(500).json({ message: "Error al buscar turistas", error: err.message });
+    pool.query(sqlData, [searchDNI, isArchivada], (err, dataResult) => {
+      if (err) return res.status(500).json({ message: "Error al buscar turistas" });
 
       res.json({
         data: dataResult,
@@ -267,37 +263,27 @@ export const deleteTurista = (req, res) => {
    ============================================================ */
 export const getReservasByTurista = (req, res) => {
   const { id } = req.params;
-
+  // Agregamos un filtro opcional por estado si lo necesitaras después
   const sql = `
     SELECT 
-      r.id_reserva,
-      e.titulo AS excursion_nombre, -- Cambiado de 'excursion' a 'excursion_nombre' para tu React
-      CONCAT(u.nombre, ' ', u.apellido) AS guia_nombre, -- Traemos al guía
-      e.ubicacion,
-      r.cantidad_personas,
-      r.monto_total,
-      r.estado_reserva,
-      r.fecha_reserva,
-      DATE_FORMAT(f.fecha, '%Y-%m-%d') AS fecha_salida,
-      f.hora_salida
+      r.id_reserva, e.titulo AS excursion_nombre, 
+      CONCAT(u.nombre, ' ', u.apellido) AS guia_nombre, 
+      e.ubicacion, r.cantidad_personas, r.monto_total, 
+      r.estado_reserva, r.fecha_reserva,
+      DATE_FORMAT(f.fecha, '%Y-%m-%d') AS fecha_salida, f.hora_salida
     FROM Reservas r
     JOIN FechasExcursion f ON r.id_fecha = f.id_fecha
     JOIN Excursiones e ON f.id_excursion = e.id_excursion
-    LEFT JOIN Usuarios u ON e.id_guia = u.id_usuario -- Unión para obtener el guía asignado
-    WHERE r.id_turista = ? 
-      AND r.eliminado = 0
+    LEFT JOIN Usuarios u ON e.id_guia = u.id_usuario
+    WHERE r.id_turista = ? AND r.eliminado = 0
     ORDER BY r.fecha_reserva DESC;
   `;
 
   pool.query(sql, [id], (err, results) => {
-    if (err) {
-      console.error("Error al obtener reservas del turista:", err.message);
-      return res.status(500).json({ message: "Error al obtener reservas", error: err.message });
-    }
+    if (err) return res.status(500).json({ message: "Error al obtener reservas" });
     res.json(results);
   });
 };
-
 /* ============================================================
    🔐 AUTENTICACIÓN (REGISTER / LOGIN)
    ============================================================ */
@@ -385,4 +371,15 @@ export const loginTurista = async (req, res) => {
     console.error("Error al iniciar sesión:", err);
     res.status(500).json({ message: "Error interno del servidor" });
   }
+};
+
+export const restoreTurista = (req, res) => {
+  const { id } = req.params;
+  const sql = `UPDATE Turistas SET eliminado=0, fecha_eliminacion=NULL WHERE id_turista=?`;
+
+  pool.query(sql, [id], (err, result) => {
+    if (err) return res.status(500).json({ message: "Error al restaurar turista" });
+    if (result.affectedRows === 0) return res.status(404).json({ message: "Turista no encontrado" });
+    res.json({ message: "Turista restaurado correctamente" });
+  });
 };
