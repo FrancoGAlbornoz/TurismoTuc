@@ -261,28 +261,64 @@ export const deleteTurista = (req, res) => {
 /* ============================================================
    📅 RESERVAS DE UN TURISTA
    ============================================================ */
-export const getReservasByTurista = (req, res) => {
-  const { id } = req.params;
-  // Agregamos un filtro opcional por estado si lo necesitaras después
-  const sql = `
-    SELECT 
-      r.id_reserva, e.titulo AS excursion_nombre, 
-      CONCAT(u.nombre, ' ', u.apellido) AS guia_nombre, 
-      e.ubicacion, r.cantidad_personas, r.monto_total, 
-      r.estado_reserva, r.fecha_reserva,
-      DATE_FORMAT(f.fecha, '%Y-%m-%d') AS fecha_salida, f.hora_salida
-    FROM Reservas r
-    JOIN FechasExcursion f ON r.id_fecha = f.id_fecha
-    JOIN Excursiones e ON f.id_excursion = e.id_excursion
-    LEFT JOIN Usuarios u ON e.id_guia = u.id_usuario
-    WHERE r.id_turista = ? AND r.eliminado = 0
-    ORDER BY r.fecha_reserva DESC;
-  `;
+export const getReservasByTurista = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Recibimos los parámetros que enviará React por la URL
+    const { historial = 'false', page = 1 } = req.query;
 
-  pool.query(sql, [id], (err, results) => {
-    if (err) return res.status(500).json({ message: "Error al obtener reservas" });
-    res.json(results);
-  });
+    const isHistorial = historial === 'true';
+    const limit = isHistorial ? 10 : 5;
+    const offset = (Number(page) - 1) * limit;
+
+    // 1. Armamos la condición base según la vista
+    let baseWhere = "WHERE r.id_turista = ? AND r.eliminado = 0";
+    if (!isHistorial) {
+      baseWhere += " AND r.estado_reserva IN ('confirmada', 'pendiente')";
+    }
+
+    // 2. Consulta de conteo (Necesaria para que React sepa cuántas páginas hay en total)
+    const countSql = `SELECT COUNT(*) as total FROM Reservas r ${baseWhere}`;
+    const [countResult] = await pool.promise().query(countSql, [id]);
+    const totalRegistros = countResult[0].total;
+    const totalPages = Math.ceil(totalRegistros / limit) || 1;
+
+    // 3. Consulta principal con Ordenamiento de Prioridad usando FIELD()
+    let orderClause = isHistorial
+      ? "ORDER BY FIELD(r.estado_reserva, 'confirmada', 'pendiente', 'finalizada', 'cancelada'), f.fecha ASC"
+      : "ORDER BY FIELD(r.estado_reserva, 'confirmada', 'pendiente'), f.fecha ASC";
+
+    const sql = `
+      SELECT 
+        r.id_reserva, e.titulo AS excursion_nombre, 
+        CONCAT(u.nombre, ' ', u.apellido) AS guia_nombre, 
+        e.ubicacion, r.cantidad_personas, r.monto_total, 
+        r.estado_reserva, r.fecha_reserva,
+        DATE_FORMAT(f.fecha, '%Y-%m-%d') AS fecha_salida, f.hora_salida
+      FROM Reservas r
+      JOIN FechasExcursion f ON r.id_fecha = f.id_fecha
+      JOIN Excursiones e ON f.id_excursion = e.id_excursion
+      LEFT JOIN Usuarios u ON e.id_guia = u.id_usuario
+      ${baseWhere}
+      ${orderClause}
+      LIMIT ? OFFSET ?
+    `;
+
+    const [reservas] = await pool.promise().query(sql, [id, limit, offset]);
+
+    // 4. Devolvemos un objeto con los datos y la metadata de paginación
+    res.json({
+      reservas,
+      totalPages,
+      currentPage: Number(page),
+      totalRegistros
+    });
+
+  } catch (error) {
+    console.error("Error al obtener reservas del turista:", error);
+    res.status(500).json({ message: "Error interno del servidor al obtener reservas" });
+  }
 };
 /* ============================================================
    🔐 AUTENTICACIÓN (REGISTER / LOGIN)

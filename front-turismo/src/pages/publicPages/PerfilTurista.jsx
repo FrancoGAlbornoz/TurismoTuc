@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import {
   Container,
   Row,
@@ -26,15 +26,16 @@ import autoTable from "jspdf-autotable";
 export default function PerfilTurista() {
   const { turista, token, setTurista, initSession, hydrated } = useTuristaStore();
 
-  const [reservas, setReservas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [editMode, setEditMode] = useState(false);
-  const [mostrarFinalizadas, setMostrarFinalizadas] = useState(false); // NUEVO ESTADO
-
-  // --- PAGINACIÓN ---
-  const PAGE_SIZE = 5; // Ajustado a 5 para que la tabla no se estire de más
+  
+  // --- ESTADOS PARA PAGINACIÓN Y DATOS ---
+  const [reservas, setReservas] = useState([]);
+  const [mostrarFinalizadas, setMostrarFinalizadas] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRegistros, setTotalRegistros] = useState(0);
 
   const [formData, setFormData] = useState({
     nombre: "",
@@ -49,48 +50,21 @@ export default function PerfilTurista() {
   const navigate = useNavigate();
   const turistaId = turista?.id_turista || turista?.id;
 
-  // Inicializar sesión desde localStorage
+  // 1. Inicializar sesión desde localStorage
   useEffect(() => {
     initSession();
   }, [initSession]);
 
-  // Si ya terminó de hidratar y no hay turista, redirigir al login
+  // 2. Si ya terminó de hidratar y no hay turista, redirigir al login
   useEffect(() => {
     if (!hydrated) return;
-
     if (!turista) {
       navigate("/login", { replace: true });
     }
   }, [hydrated, turista, navigate]);
 
+  // 3. Inicializar datos del formulario
   useEffect(() => {
-    const fetchReservas = async () => {
-      if (!turistaId) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const res = await axios.get(
-          `http://localhost:8000/api/turistas/${turistaId}/reservas`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-
-        const data = res.data || [];
-        const procesadas = data.sort((a, b) => b.id_reserva - a.id_reserva);
-
-        setReservas(procesadas);
-        setCurrentPage(1);
-      } catch (err) {
-        console.error("Error al cargar reservas:", err);
-        setError("No se pudieron cargar tus reservas.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (!hydrated) return;
-
     if (turista) {
       setFormData({
         nombre: turista.nombre || "",
@@ -101,40 +75,48 @@ export default function PerfilTurista() {
         direccion: turista.direccion || "",
         nacionalidad: turista.nacionalidad || "",
       });
+    }
+  }, [turista]);
+
+  // 4. Fetch Reservas conectado a la API con paginación real
+  useEffect(() => {
+    const fetchReservas = async () => {
+      if (!turistaId) {
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const res = await axios.get(
+          `http://localhost:8000/api/turistas/${turistaId}/reservas?historial=${mostrarFinalizadas}&page=${currentPage}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
+        // Leemos la estructura enviada por el nuevo Back-end
+        const data = res.data;
+        
+        setReservas(data.reservas || []);
+        setTotalPages(data.totalPages || 1);
+        setTotalRegistros(data.totalRegistros || 0);
+      } catch (err) {
+        console.error("Error al cargar reservas:", err);
+        setError("No se pudieron cargar tus reservas.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (hydrated) {
       fetchReservas();
-    } else {
-      setLoading(false);
     }
-  }, [turista, turistaId, token, hydrated]);
+  }, [turistaId, token, hydrated, mostrarFinalizadas, currentPage]);
 
-  // --- LÓGICA DE FILTRADO (Historial) ---
-  const reservasFiltradas = useMemo(() => {
-    return reservas.filter(r => 
-      mostrarFinalizadas ? true : r.estado_reserva !== 'finalizada'
-    );
-  }, [reservas, mostrarFinalizadas]);
-
-  // Si cambia el switch, volvemos a la página 1
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [mostrarFinalizadas]);
-
-  // --- PAGINACIÓN: totalPages + slice (Sobre las filtradas) ---
-  const totalPages = Math.ceil((reservasFiltradas.length || 0) / PAGE_SIZE) || 1;
-
-  const reservasPaginadas = useMemo(() => {
-    const start = (currentPage - 1) * PAGE_SIZE;
-    return reservasFiltradas.slice(start, start + PAGE_SIZE);
-  }, [reservasFiltradas, currentPage]);
-
-  // Si cambia la cantidad de reservas y la página queda fuera de rango, la ajustamos
-  useEffect(() => {
-    if (totalPages <= 0) {
-      setCurrentPage(1);
-    } else if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [totalPages, currentPage]);
+  // --- HANDLERS ---
+  const handleSwitchChange = (e) => {
+    setMostrarFinalizadas(e.target.checked);
+    setCurrentPage(1); // Reiniciar paginación al cambiar de vista
+  };
 
   const handleCancelarReserva = async (idReserva) => {
     const result = await Swal.fire({
@@ -156,6 +138,7 @@ export default function PerfilTurista() {
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
+        // Actualizamos estado localmente
         setReservas((prev) =>
           prev.map((r) =>
             r.id_reserva === idReserva
@@ -383,10 +366,10 @@ export default function PerfilTurista() {
                   id="historial-switch"
                   label="Ver historial"
                   checked={mostrarFinalizadas}
-                  onChange={(e) => setMostrarFinalizadas(e.target.checked)}
+                  onChange={handleSwitchChange}
                 />
                 <Badge bg="success" pill>
-                  Total: {reservasFiltradas.length}
+                  Total: {totalRegistros}
                 </Badge>
               </div>
             </Card.Header>
@@ -416,8 +399,8 @@ export default function PerfilTurista() {
                 </thead>
 
                 <tbody>
-                  {reservasPaginadas.length > 0 ? (
-                    reservasPaginadas.map((r) => (
+                  {reservas.length > 0 ? (
+                    reservas.map((r) => (
                       <tr key={r.id_reserva}>
                         <td className="ps-3 py-3">
                           <div className="fw-bold">{r.excursion_nombre}</div>

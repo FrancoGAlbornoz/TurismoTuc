@@ -464,7 +464,7 @@ export const crearPago = async (req, res) => {
           "https://epizootically-semitropical-jannie.ngrok-free.dev/pago-pendiente",
       },
 
-      auto_return: "approved",
+      auto_return: "all",
 
       notification_url:
         "https://epizootically-semitropical-jannie.ngrok-free.dev/api/pagos/webhook/mercadopago",
@@ -572,8 +572,8 @@ export const webhookMercadoPago = async (req, res) => {
 
         // 📉 Actualizar Inventario (Reemplaza 'Fechas' y 'cupos_disponibles' por los nombres reales de tu tabla/columna)
         await connection.query(
-          `UPDATE Fechas 
-           SET cupos_disponible = cupos_disponible - ? 
+          `UPDATE FechasExcursion 
+           SET cupo_disponible = cupo_disponible - ? 
            WHERE id_fecha = ?`,
           [item.cantidad_personas, item.id_fecha]
         );
