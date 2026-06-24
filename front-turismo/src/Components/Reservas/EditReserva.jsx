@@ -40,12 +40,16 @@ export default function EditReserva() {
       try {
         const [reservaRes, excursionesRes] = await Promise.all([
           axios.get(`http://localhost:8000/api/reservas/${id}`),
-          axios.get("http://localhost:8000/api/excursiones"),
+          // 👈 SOLUCIÓN 1: Le pedimos 100 excursiones para que el select esté completo
+          axios.get("http://localhost:8000/api/excursiones?limit=100"), 
         ]);
 
         const reservaData = reservaRes.data;
         setReserva(reservaData);
-        setExcursiones(excursionesRes.data);
+        
+        // 👈 SOLUCIÓN 2: Extraemos el array sin importar si viene paginado o no
+        const excurData = excursionesRes.data.data ? excursionesRes.data.data : excursionesRes.data;
+        setExcursiones(Array.isArray(excurData) ? excurData : []);
 
         if (reservaData.id_excursion) {
           const fechasRes = await axios.get(

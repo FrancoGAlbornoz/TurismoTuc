@@ -17,25 +17,48 @@ export const getRoles = (req, res) => {
 // USUARIOS
 // =========================
 export const getUsuarios = (req, res) => {
-  const { status = "active" } = req.query;
+  // Recibimos page y limit desde el front
+  const { status = "active", page = 1, limit = 10 } = req.query; 
 
   let where = "u.eliminado = 0";
   if (status === "deleted") where = "u.eliminado = 1";
   if (status === "all") where = "1=1";
 
-  pool.query(
-    `SELECT u.id_usuario, u.nombre, u.apellido, u.email, u.telefono,
-            r.nombre_rol, u.estado, u.eliminado
-     FROM Usuarios u
-     JOIN Roles r ON u.id_rol = r.id_rol
-     WHERE ${where}
-     ORDER BY u.id_usuario DESC`,
-    (err, results) => {
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+
+  // 1. Contamos el total para saber cuántas páginas hay
+  const sqlCount = `SELECT COUNT(*) AS total FROM Usuarios u WHERE ${where}`;
+  
+  // 2. Traemos la info paginada
+  const sqlData = `
+    SELECT u.id_usuario, u.nombre, u.apellido, u.email, u.telefono,
+           r.nombre_rol, u.estado, u.eliminado
+    FROM Usuarios u
+    JOIN Roles r ON u.id_rol = r.id_rol
+    WHERE ${where}
+    ORDER BY u.id_usuario DESC
+    LIMIT ? OFFSET ?
+  `;
+
+  pool.query(sqlCount, (err, countResult) => {
+    if (err) return res.status(500).json({ message: "Error al contar usuarios" });
+    
+    const total = countResult[0].total;
+    const totalPages = Math.ceil(total / parseInt(limit));
+
+    pool.query(sqlData, [parseInt(limit), parseInt(offset)], (err, dataResult) => {
       if (err) return res.status(500).json({ message: "Error al obtener usuarios" });
-      res.json(results);
-    }
-  );
+      
+      // Devolvemos el formato estandarizado
+      res.json({
+        data: dataResult,
+        totalPages,
+        currentPage: parseInt(page)
+      });
+    });
+  });
 };
+
 export const getUsuarioById = (req, res) => {
   const { id } = req.params;
   pool.query(

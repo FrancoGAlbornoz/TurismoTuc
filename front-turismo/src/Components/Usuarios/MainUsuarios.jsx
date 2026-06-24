@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Card, Button, Table, Badge, Form, Spinner } from "react-bootstrap";
 import Swal from "sweetalert2";
+import PaginationComponent from "../Filtros/Paginacion"; // <-- Import agregado
 
 const API = "http://localhost:8000/api";
 
@@ -10,15 +11,23 @@ export default function MainUsuarios() {
   const [usuarios, setUsuarios] = useState([]);
   const [status, setStatus] = useState("active");
   const [loading, setLoading] = useState(false);
+  
+  // --- ESTADOS DE PAGINACIÓN ---
+  const [paginaActual, setPaginaActual] = useState(1);
+  const [totalPaginas, setTotalPaginas] = useState(1);
+  const porPagina = 10;
+
   const navigate = useNavigate();
 
-  const fetchUsuarios = async (statusParam = status) => {
+  const fetchUsuarios = async () => {
     setLoading(true);
     try {
       const res = await axios.get(`${API}/usuarios`, {
-        params: { status: statusParam },
+        params: { status: status, page: paginaActual, limit: porPagina },
       });
-      setUsuarios(res.data || []);
+      // Ahora leemos .data.data porque el backend devolverá paginación
+      setUsuarios(res.data.data || []);
+      setTotalPaginas(res.data.totalPages || 1);
     } catch (err) {
       console.error("Error al obtener usuarios:", err);
       Swal.fire("Error", "No se pudieron cargar los usuarios.", "error");
@@ -27,9 +36,15 @@ export default function MainUsuarios() {
     }
   };
 
+  // Resetear a página 1 cuando cambia el status
   useEffect(() => {
-    fetchUsuarios(status);
+    setPaginaActual(1);
   }, [status]);
+
+  // Ejecutar fetch cuando cambia status o página
+  useEffect(() => {
+    fetchUsuarios();
+  }, [status, paginaActual]);
 
   const handleBaja = async (id) => {
     const confirmacion = await Swal.fire({
@@ -45,7 +60,7 @@ export default function MainUsuarios() {
 
     try {
       await axios.delete(`${API}/usuarios/${id}`);
-      await fetchUsuarios(status);
+      await fetchUsuarios();
       Swal.fire("Usuario dado de baja", "", "success");
     } catch (err) {
       Swal.fire("Error", "No se pudo dar de baja.", "error");
@@ -65,7 +80,7 @@ export default function MainUsuarios() {
 
     try {
       await axios.patch(`${API}/usuarios/${id}/restore`);
-      await fetchUsuarios(status);
+      await fetchUsuarios();
       Swal.fire("Usuario restaurado", "", "success");
     } catch (err) {
       Swal.fire("Error", "No se pudo restaurar.", "error");
@@ -93,65 +108,76 @@ export default function MainUsuarios() {
           {loading ? (
             <div className="text-center py-4"><Spinner animation="border" variant="success" /></div>
           ) : (
-            <Table hover responsive className="mb-0 align-middle">
-              <thead className="table-light">
-                <tr>
-                  <th>ID</th>
-                  <th>Nombre</th>
-                  <th>Email</th>
-                  <th>Teléfono</th>
-                  <th>Rol</th>
-                  <th>Estado</th>
-                  <th className="text-center">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {usuarios.length > 0 ? (
-                  usuarios.map((u) => {
-                    const eliminado = Number(u.eliminado) === 1;
-                    return (
-                      <tr key={u.id_usuario}>
-                        <td>{u.id_usuario}</td>
-                        <td>{u.nombre} {u.apellido}</td>
-                        <td>{u.email}</td>
-                        <td>{u.telefono || "—"}</td>
-                        <td className="text-uppercase">{u.nombre_rol}</td>
-                        <td>
-                          <Badge bg={eliminado ? "danger" : "success"}>
-                            {eliminado ? "BAJA" : "ACTIVO"}
-                          </Badge>
-                        </td>
-                        <td className="text-center">
-                          <div className="btn-group">
-                            <Button variant="outline-secondary" size="sm" onClick={() => navigate(`view/${u.id_usuario}`)}>
-                              <i className="bi bi-eye"></i>
-                            </Button>
-                            {!eliminado ? (
-                              <>
-                                <Button variant="outline-primary" size="sm" onClick={() => navigate(`edit/${u.id_usuario}`)}>
-                                  <i className="bi bi-pencil"></i>
-                                </Button>
-                                <Button variant="outline-danger" size="sm" onClick={() => handleBaja(u.id_usuario)}>
-                                  <i className="bi bi-trash"></i>
-                                </Button>
-                              </>
-                            ) : (
-                              <Button variant="outline-success" size="sm" onClick={() => handleRestore(u.id_usuario)}>
-                                <i className="bi bi-arrow-counterclockwise"></i>
-                              </Button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                ) : (
+            <>
+              <Table hover responsive className="mb-0 align-middle">
+                <thead className="table-light">
                   <tr>
-                    <td colSpan="7" className="text-center py-3 text-muted">No hay usuarios registrados</td>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Teléfono</th>
+                    <th>Rol</th>
+                    <th>Estado</th>
+                    <th className="text-center">Acciones</th>
                   </tr>
-                )}
-              </tbody>
-            </Table>
+                </thead>
+                <tbody>
+                  {usuarios.length > 0 ? (
+                    usuarios.map((u) => {
+                      const eliminado = Number(u.eliminado) === 1;
+                      return (
+                        <tr key={u.id_usuario}>
+                          <td>{u.id_usuario}</td>
+                          <td>{u.nombre} {u.apellido}</td>
+                          <td>{u.email}</td>
+                          <td>{u.telefono || "—"}</td>
+                          <td className="text-uppercase">{u.nombre_rol}</td>
+                          <td>
+                            <Badge bg={eliminado ? "danger" : "success"}>
+                              {eliminado ? "BAJA" : "ACTIVO"}
+                            </Badge>
+                          </td>
+                          <td className="text-center">
+                            <div className="btn-group">
+                              <Button variant="outline-secondary" size="sm" onClick={() => navigate(`view/${u.id_usuario}`)}>
+                                <i className="bi bi-eye"></i>
+                              </Button>
+                              {!eliminado ? (
+                                <>
+                                  <Button variant="outline-primary" size="sm" onClick={() => navigate(`edit/${u.id_usuario}`)}>
+                                    <i className="bi bi-pencil"></i>
+                                  </Button>
+                                  <Button variant="outline-danger" size="sm" onClick={() => handleBaja(u.id_usuario)}>
+                                    <i className="bi bi-trash"></i>
+                                  </Button>
+                                </>
+                              ) : (
+                                <Button variant="outline-success" size="sm" onClick={() => handleRestore(u.id_usuario)}>
+                                  <i className="bi bi-arrow-counterclockwise"></i>
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan="7" className="text-center py-3 text-muted">No hay usuarios registrados</td>
+                    </tr>
+                  )}
+                </tbody>
+              </Table>
+
+              {/* Componente de Paginación */}
+              <div className="mt-3">
+                <PaginationComponent
+                  currentPage={paginaActual}
+                  totalPages={totalPaginas}
+                  onPageChange={(page) => setPaginaActual(page)}
+                />
+              </div>
+            </>
           )}
         </Card.Body>
       </Card>

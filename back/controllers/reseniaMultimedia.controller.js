@@ -92,22 +92,42 @@ export const uploadImagenResena = async (req, res) => {
 // GET /api/multimedia/pendientes
 // -------------------------------------------------------------------
 export const getPendientesMultimedia = async (req, res) => {
-  const { page = 1, limit = 10 } = req.query;
-  const offset = (page - 1) * limit;
+  // Ahora recibimos el "estado" desde el frontend (por defecto "pendiente")
+  const { page = 1, limit = 10, estado = 'pendiente' } = req.query;
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+
+  let whereClause = "m.tipo = 'foto' AND m.eliminado = 0";
+  let queryParams = [];
+
+  if (estado !== 'todas') {
+    whereClause += " AND m.estado_moderacion = ?";
+    queryParams.push(estado);
+  }
 
   try {
-    const [count] = await pool.promise().query(`SELECT COUNT(*) as total FROM Multimedia WHERE tipo = 'foto' AND eliminado = 0 AND estado_moderacion = 'pendiente'`);
+    const [countResult] = await pool.promise().query(
+      `SELECT COUNT(*) as total FROM Multimedia m WHERE ${whereClause}`,
+      queryParams
+    );
+    const total = countResult[0].total;
+
     const [rows] = await pool.promise().query(`
       SELECT m.*, t.nombre AS turista_nombre, t.apellido AS turista_apellido, e.titulo AS excursion_titulo
       FROM Multimedia m
       LEFT JOIN Turistas t ON m.id_turista = t.id_turista
       LEFT JOIN Excursiones e ON m.id_excursion = e.id_excursion
-      WHERE m.tipo = 'foto' AND m.eliminado = 0 AND m.estado_moderacion = 'pendiente'
-      ORDER BY m.id_multimedia DESC LIMIT ? OFFSET ?
-    `, [parseInt(limit), parseInt(offset)]);
+      WHERE ${whereClause}
+      ORDER BY m.id_multimedia DESC 
+      LIMIT ? OFFSET ?
+    `, [...queryParams, parseInt(limit), parseInt(offset)]);
 
-    return res.json({ data: rows, totalPages: Math.ceil(count[0].total / limit), currentPage: parseInt(page) });
+    return res.json({ 
+      data: rows, 
+      totalPages: Math.ceil(total / limit) || 1, 
+      currentPage: parseInt(page) 
+    });
   } catch (error) {
+    console.error("Error al listar multimedia:", error);
     return res.status(500).json({ ok: false, message: "Error interno" });
   }
 };

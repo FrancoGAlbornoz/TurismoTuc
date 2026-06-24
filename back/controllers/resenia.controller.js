@@ -66,28 +66,48 @@ export const validarToken = (req, res) => {
 
 // Obtener todas las reseñas publicadas
 export const getResenas = (req, res) => {
-  const { page = 1, limit = 10 } = req.query;
+  const { page = 1, limit = 10, q = "", ordenCalificacion } = req.query;
   const offset = (parseInt(page) - 1) * parseInt(limit);
+
+  let whereClause = "r.eliminado = 0";
+  let queryParams = [];
+
+  // 1. Lógica del Buscador General
+  if (q) {
+    whereClause += " AND (e.titulo LIKE ? OR t.nombre LIKE ? OR t.apellido LIKE ?)";
+    const search = `%${q}%`;
+    queryParams.push(search, search, search);
+  }
+
+  // 2. Lógica del Ordenamiento (CON DESEMPATE PARA LA PAGINACIÓN)
+  let orderClause = "r.fecha_resena DESC"; // Por defecto
+  if (ordenCalificacion === "asc") {
+    // Si hay empate de calificación, ordenamos por ID para que no salten en la paginación
+    orderClause = "r.calificacion ASC, r.id_resena DESC"; 
+  } else if (ordenCalificacion === "desc") {
+    orderClause = "r.calificacion DESC, r.id_resena DESC";
+  }
 
   const baseQuery = `
     FROM Reseñas r
     JOIN Excursiones e ON r.id_excursion = e.id_excursion
     LEFT JOIN Reservas resv ON r.id_reserva = resv.id_reserva
     LEFT JOIN Turistas t ON resv.id_turista = t.id_turista
-    WHERE r.eliminado = 0
+    WHERE ${whereClause}
   `;
 
   const sqlCount = `SELECT COUNT(*) AS total ${baseQuery}`;
   const sqlData = `
     SELECT 
-      r.id_resena, e.titulo AS excursion, t.nombre AS turista,
+      r.id_resena, e.titulo AS excursion, CONCAT(t.nombre, ' ', COALESCE(t.apellido, '')) AS turista,
       r.calificacion, r.comentario, r.fecha_resena, r.estado
     ${baseQuery}
-    ORDER BY r.fecha_resena DESC
-    LIMIT ${parseInt(limit)} OFFSET ${parseInt(offset)};
+    ORDER BY ${orderClause}
+    LIMIT ? OFFSET ?
   `;
 
-  pool.query(sqlCount, (err, countResult) => {
+  // Ejecutamos el Count
+  pool.query(sqlCount, queryParams, (err, countResult) => {
     if (err) {
       console.error("Error al contar reseñas:", err);
       return res.status(500).json({ message: "Error al contar reseñas" });
@@ -96,7 +116,8 @@ export const getResenas = (req, res) => {
     const total = countResult[0].total;
     const totalPages = Math.ceil(total / parseInt(limit));
 
-    pool.query(sqlData, (err, dataResult) => {
+    // Ejecutamos la data con Limit y Offset
+    pool.query(sqlData, [...queryParams, parseInt(limit), parseInt(offset)], (err, dataResult) => {
       if (err) {
         console.error("Error al obtener reseñas:", err);
         return res.status(500).json({ message: "Error al obtener reseñas" });
@@ -105,7 +126,7 @@ export const getResenas = (req, res) => {
       res.json({
         data: dataResult,
         total,
-        totalPages,
+        totalPages: totalPages || 1,
         currentPage: parseInt(page),
       });
     });

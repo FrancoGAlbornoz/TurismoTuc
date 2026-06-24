@@ -44,38 +44,49 @@ export const subirComprobante = async (req, res) => {
 // GET /api/comprobantes/pendientes
 // -------------------------------------------------------------------
 export const getPendientesComprobantes = async (req, res) => {
+  const { page = 1, limit = 10, estado = 'pendiente' } = req.query;
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+
+  let whereClause = "m.tipo = 'comprobante' AND m.eliminado = 0";
+  let queryParams = [];
+
+  if (estado !== 'todas') {
+    whereClause += " AND m.estado_moderacion = ?";
+    queryParams.push(estado);
+  }
+
   try {
+    const [countResult] = await pool.promise().query(
+      `SELECT COUNT(*) as total FROM Multimedia m WHERE ${whereClause}`,
+      queryParams
+    );
+    const total = countResult[0].total;
+
     const [rows] = await pool.promise().query(`
       SELECT
-        m.id_multimedia,
-        m.tipo,
-        m.url,
-        m.descripcion,
-        m.id_turista,
-        m.id_reserva,
-        m.estado_moderacion,
-        t.nombre   AS turista_nombre,
-        t.apellido AS turista_apellido,
-        t.email    AS email,
-        e.titulo   AS excursion_titulo,
-        fe.fecha   AS fecha
+        m.id_multimedia, m.tipo, m.url, m.descripcion, m.id_turista, m.id_reserva, m.estado_moderacion,
+        t.nombre AS turista_nombre, t.apellido AS turista_apellido, t.email AS email,
+        e.titulo AS excursion_titulo, fe.fecha AS fecha
       FROM Multimedia m
       LEFT JOIN Turistas t ON m.id_turista = t.id_turista
       LEFT JOIN Reservas r ON m.id_reserva = r.id_reserva
       LEFT JOIN FechasExcursion fe ON r.id_fecha = fe.id_fecha
       LEFT JOIN Excursiones e ON fe.id_excursion = e.id_excursion
-      WHERE m.tipo = 'comprobante'
-        AND m.eliminado = 0
-        AND m.estado_moderacion = 'pendiente'
-      ORDER BY m.id_multimedia DESC
-    `);
+      WHERE ${whereClause}
+      ORDER BY m.id_multimedia DESC 
+      LIMIT ? OFFSET ?
+    `, [...queryParams, parseInt(limit), parseInt(offset)]);
 
-    return res.json(rows);
+    return res.json({ 
+      data: rows, 
+      totalPages: Math.ceil(total / limit) || 1, 
+      currentPage: parseInt(page) 
+    });
   } catch (error) {
-    console.error("Error al obtener comprobantes pendientes:", error);
+    console.error("Error al obtener comprobantes:", error);
     return res.status(500).json({
       ok: false,
-      message: "Error interno al obtener comprobantes pendientes",
+      message: "Error interno al obtener comprobantes",
     });
   }
 };
