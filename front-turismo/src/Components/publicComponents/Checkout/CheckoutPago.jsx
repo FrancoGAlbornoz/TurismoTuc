@@ -222,34 +222,31 @@ export default function CheckoutPago({ turista }) {
     }
   };
 
-  const crearReservasPendientes = async () => {
-    const id_turista = turista.id_turista || turista.id;
-    const ids = [];
+  // const crearReservasPendientes = async () => {
+  //   const id_turista = turista.id_turista || turista.id;
+  //   const ids = [];
 
-    for (const item of items) {
-      const res = await axios.post("http://localhost:8000/api/reservas", {
-        id_turista,
-        id_fecha: item.id_fecha,
-        cantidad_personas: item.cantidad_personas,
-        monto_total: item.subtotal,
-      });
+  //   for (const item of items) {
+  //     const res = await axios.post("http://localhost:8000/api/reservas", {
+  //       id_turista,
+  //       id_fecha: item.id_fecha,
+  //       cantidad_personas: item.cantidad_personas,
+  //       monto_total: item.subtotal,
+  //     });
 
-      ids.push(res.data.id_reserva);
-    }
+  //     ids.push(res.data.id_reserva);
+  //   }
 
-    setReservasPendientes(ids);
-    return ids;
-  };
+  //   setReservasPendientes(ids);
+  //   return ids;
+  // };
 
   const handlePagarMercadoPago = async () => {
     try {
       setProcesandoPago(true);
       setMsgError("");
-      setMsgInfo("Preparando reservas...");
-
-      // 1️⃣ Crear reservas
-      const reservasIds = await crearReservasPendientes();
-
+      
+      // ❌ ELIMINADO: const reservasIds = await crearReservasPendientes();
       setMsgInfo("Redirigiendo a Mercado Pago...");
 
       const mpItems = items.map((it) => {
@@ -268,7 +265,7 @@ export default function CheckoutPago({ turista }) {
         {
           items: mpItems,
           id_turista: turista.id_turista || turista.id,
-          reservas: reservasIds,
+          // ❌ ELIMINADO: reservas: reservasIds
         },
       );
 

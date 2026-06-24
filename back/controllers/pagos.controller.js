@@ -464,7 +464,7 @@ export const crearPago = async (req, res) => {
           "https://epizootically-semitropical-jannie.ngrok-free.dev/pago-pendiente",
       },
 
-      auto_return: "approved",
+      auto_return: "all",
 
       notification_url:
         "https://epizootically-semitropical-jannie.ngrok-free.dev/api/pagos/webhook/mercadopago",
@@ -510,7 +510,6 @@ export const webhookMercadoPago = async (req, res) => {
     if (!paymentId) return res.sendStatus(200);
 
     const payment = await paymentClient.get({ id: paymentId });
-
     console.log("💳 Estado del pago:", payment.status);
 
     if (payment.status !== "approved") {
@@ -518,81 +517,94 @@ export const webhookMercadoPago = async (req, res) => {
     }
 
     const { id_carrito } = payment.metadata || {};
-
     if (!id_carrito) {
       console.error("❌ No llegó id_carrito en metadata");
       return res.sendStatus(200);
     }
 
-    // 🔒 Verificar si ya fue procesado
-    const [carritoEstado] = await pool.promise().query(
-      `SELECT estado, id_turista FROM Carrito WHERE id_carrito = ?`,
-      [id_carrito]
-    );
+    // 🛡️ 1. INICIAR TRANSACCIÓN SQL
+    const connection = await pool.promise().getConnection();
+    await connection.beginTransaction();
 
-    if (carritoEstado.length === 0) {
-      console.error("❌ Carrito no encontrado");
-      return res.sendStatus(200);
-    }
-
-    if (carritoEstado[0].estado === "cerrado") {
-      console.log("⚠️ Carrito ya procesado");
-      return res.sendStatus(200);
-    }
-
-    const id_turista = carritoEstado[0].id_turista;
-
-    // 🛒 Obtener items reales del carrito
-    const [items] = await pool.promise().query(
-      `SELECT *
-       FROM CarritoItems
-       WHERE id_carrito = ?
-       AND eliminado = 0`,
-      [id_carrito]
-    );
-
-    if (items.length === 0) {
-      console.error("❌ Carrito sin items");
-      return res.sendStatus(200);
-    }
-
-    console.log("🛒 Items encontrados:", items.length);
-
-    // ✅ Crear UNA reserva por cada item
-    for (const item of items) {
-      await pool.promise().query(
-        `INSERT INTO Reservas
-         (id_fecha, id_turista, cantidad_personas, monto_total, estado_reserva)
-         VALUES (?, ?, ?, ?, 'pendiente')`,
-        [
-          item.id_fecha,
-          id_turista,
-          item.cantidad_personas,
-          item.subtotal
-        ]
+    try {
+      // 🔒 2. BLOQUEO DE FILA (FOR UPDATE) - Evita la condición de carrera
+      const [carritoEstado] = await connection.query(
+        `SELECT estado, id_turista FROM Carrito WHERE id_carrito = ? FOR UPDATE`,
+        [id_carrito]
       );
+
+      if (carritoEstado.length === 0) {
+        console.error("❌ Carrito no encontrado");
+        await connection.commit();
+        connection.release();
+        return res.sendStatus(200);
+      }
+
+      if (carritoEstado[0].estado === "cerrado") {
+        console.log("⚠️ Carrito ya procesado previamente. Ignorando webhook duplicado.");
+        await connection.commit();
+        connection.release();
+        return res.sendStatus(200);
+      }
+
+      const id_turista = carritoEstado[0].id_turista;
+
+      // 🛒 3. Obtener items reales del carrito
+      const [items] = await connection.query(
+        `SELECT * FROM CarritoItems WHERE id_carrito = ? AND eliminado = 0`,
+        [id_carrito]
+      );
+
+      if (items.length === 0) {
+        await connection.commit();
+        connection.release();
+        return res.sendStatus(200);
+      }
+
+      // ✅ 4. Crear reservas y DESCONTAR CUPOS
+      for (const item of items) {
+        // Insertar Reserva
+        await connection.query(
+          `INSERT INTO Reservas (id_fecha, id_turista, cantidad_personas, monto_total, estado_reserva)
+           VALUES (?, ?, ?, ?, 'pendiente')`,
+          [item.id_fecha, id_turista, item.cantidad_personas, item.subtotal]
+        );
+
+        // 📉 Actualizar Inventario (Reemplaza 'Fechas' y 'cupos_disponibles' por los nombres reales de tu tabla/columna)
+        await connection.query(
+          `UPDATE FechasExcursion 
+           SET cupo_disponible = cupo_disponible - ? 
+           WHERE id_fecha = ?`,
+          [item.cantidad_personas, item.id_fecha]
+        );
+      }
+
+      // 🔐 5. Cerrar carrito
+      await connection.query(
+        `UPDATE Carrito SET estado = 'cerrado' WHERE id_carrito = ?`,
+        [id_carrito]
+      );
+
+      // 🧹 6. Eliminar items
+      await connection.query(
+        `UPDATE CarritoItems SET eliminado = 1, fecha_eliminacion = NOW() WHERE id_carrito = ?`,
+        [id_carrito]
+      );
+
+      // 💾 7. CONFIRMAR TRANSACCIÓN
+      await connection.commit();
+      connection.release();
+      
+      console.log("✅ Reservas creadas y cupos descontados correctamente para carrito:", id_carrito);
+      return res.sendStatus(200);
+
+    } catch (dbError) {
+      // 💥 SI ALGO FALLA, DESHACER TODO (Rollback)
+      await connection.rollback();
+      connection.release();
+      console.error("🔥 Error en base de datos durante el webhook, se revirtieron los cambios:", dbError);
+      return res.sendStatus(200); 
     }
-
-    // 🔐 Cerrar carrito
-    await pool.promise().query(
-      `UPDATE Carrito
-       SET estado = 'cerrado'
-       WHERE id_carrito = ?`,
-      [id_carrito]
-    );
-
-    // 🧹 Eliminar items (baja lógica)
-    await pool.promise().query(
-      `UPDATE CarritoItems
-       SET eliminado = 1,
-           fecha_eliminacion = NOW()
-       WHERE id_carrito = ?`,
-      [id_carrito]
-    );
-
-    console.log("✅ Reservas creadas correctamente para carrito:", id_carrito);
-
-    return res.sendStatus(200);
 
   } catch (error) {
     console.error("🔥 ERROR REAL webhook MercadoPago:", error);
