@@ -20,7 +20,7 @@ export default function ViewPago() {
   useEffect(() => {
     const fetchPago = async () => {
   try {
-    const res = await axios.get("http://localhost:8000/api/pagos");
+    const res = await axios.get(`${import.meta.env.VITE_API_URL}/pagos`);
     
     // CORRECCIÓN: Acceder a .data.data porque la API devuelve un objeto paginado
     const listaPagos = res.data.data || []; 

@@ -34,8 +34,8 @@ export default function EditUsuario() {
     const fetchData = async () => {
       try {
         const [userRes, rolesRes] = await Promise.all([
-          axios.get(`http://localhost:8000/api/usuarios/${id}`),
-          axios.get("http://localhost:8000/api/usuarios/roles"),
+          axios.get(`${import.meta.env.VITE_API_URL}/usuarios/${id}`),
+          axios.get(`${import.meta.env.VITE_API_URL}/usuarios/roles`),
         ]);
 
         setForm({
@@ -71,7 +71,7 @@ export default function EditUsuario() {
     setMessage("");
 
     try {
-      await axios.put(`http://localhost:8000/api/usuarios/${id}`, form);
+      await axios.put(`${import.meta.env.VITE_API_URL}/usuarios/${id}`, form);
       setMessage("✅ Usuario actualizado correctamente.");
       setTimeout(() => navigate("/dashboard-admin/usuarios"), 1500);
     } catch (err) {

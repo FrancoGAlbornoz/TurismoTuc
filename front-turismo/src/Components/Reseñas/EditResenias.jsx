@@ -24,7 +24,7 @@ export default function EditReseña() {
   useEffect(() => {
     const fetchReseña = async () => {
       try {
-        const res = await axios.get(`http://localhost:8000/api/resenias/${id}`);
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/resenias/${id}`);
         setReseña(res.data);
       } catch (err) {
         console.error("Error al obtener la reseña:", err);
@@ -43,7 +43,7 @@ export default function EditReseña() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`http://localhost:8000/api/resenias/${id}`, {
+      await axios.put(`${import.meta.env.VITE_API_URL}/resenias/${id}`, {
         comentario: reseña.comentario,
         estado: reseña.estado,
       });

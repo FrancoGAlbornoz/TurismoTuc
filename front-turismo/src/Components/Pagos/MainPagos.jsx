@@ -32,7 +32,7 @@ export default function MainPagos() {
         fechaHasta,
       };
 
-      const res = await axios.get("http://localhost:8000/api/pagos", {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/pagos`, {
         params,
       });
       setPagos(res.data.data || []);
@@ -82,7 +82,7 @@ export default function MainPagos() {
     if (!confirm.isConfirmed) return;
 
     try {
-      await axios.put(`http://localhost:8000/api/pagos/${id_pago}`, {
+      await axios.put(`${import.meta.env.VITE_API_URL}/pagos/${id_pago}`, {
         nuevo_estado,
       });
       fetchPagos();

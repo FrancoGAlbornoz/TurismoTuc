@@ -30,11 +30,11 @@ export default function MainTuristas() {
       
       let res;
       if (dniBuscar) {
-        res = await axios.get(`http://localhost:8000/api/turistas/buscar`, {
+        res = await axios.get(`${import.meta.env.VITE_API_URL}/turistas/buscar`, {
           params: { dni: dniBuscar, page: paginaActual, limit: porPagina, mostrarArchivadas: isArchivadaParams }
         });
       } else {
-        res = await axios.get(`http://localhost:8000/api/turistas`, {
+        res = await axios.get(`${import.meta.env.VITE_API_URL}/turistas`, {
           params: { page: paginaActual, limit: porPagina, mostrarArchivadas: isArchivadaParams }
         });
       }
@@ -73,7 +73,7 @@ export default function MainTuristas() {
     if (!confirmDelete.isConfirmed) return;
 
     try {
-      await axios.delete(`http://localhost:8000/api/turistas/${id}`);
+      await axios.delete(`${import.meta.env.VITE_API_URL}/turistas/${id}`);
       Swal.fire({
         icon: "success",
         title: "Archivado",
@@ -101,7 +101,7 @@ export default function MainTuristas() {
     if (!confirmRestore.isConfirmed) return;
 
     try {
-      await axios.put(`http://localhost:8000/api/turistas/restore/${id}`);
+      await axios.put(`${import.meta.env.VITE_API_URL}/turistas/restore/${id}`);
       Swal.fire({
         icon: "success",
         title: "Restaurado",
@@ -175,18 +175,21 @@ export default function MainTuristas() {
           </div>
 
           {loading ? (
-            <div className="text-center py-5">
-              <Spinner animation="border" variant="success" />
-              <p className="mt-3 text-muted">Cargando turistas...</p>
+            <div className="p-4">
+              {[...Array(5)].map((_, i) => (
+                <p key={i} className="placeholder-glow mb-3">
+                  <span className="placeholder col-12 placeholder-lg bg-secondary opacity-25 rounded" style={{ height: "40px" }}></span>
+                </p>
+              ))}
             </div>
           ) : (
             <>
               <Table hover responsive className="align-middle">
                 <thead className="table-light">
                   <tr>
-                    <th>ID</th>
+                    <th className="d-none d-md-table-cell">ID</th>
                     <th>Nombre Completo</th>
-                    <th>DNI</th>
+                    <th className="d-none d-md-table-cell">DNI</th>
                     <th>Email</th>
                     <th>Teléfono</th>
                     <th>Acciones</th>
@@ -196,11 +199,11 @@ export default function MainTuristas() {
                   {turistas.length > 0 ? (
                     turistas.map((t) => (
                       <tr key={t.id_turista}>
-                        <td>{t.id_turista}</td>
+                        <td className="d-none d-md-table-cell">{t.id_turista}</td>
                         <td>
                           {t.nombre} {t.apellido}
                         </td>
-                        <td>{t.dni}</td>
+                        <td className="d-none d-md-table-cell">{t.dni}</td>
                         <td>{t.email}</td>
                         <td>{t.telefono}</td>
                         <td>

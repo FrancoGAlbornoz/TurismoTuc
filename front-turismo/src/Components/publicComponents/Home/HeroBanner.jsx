@@ -16,7 +16,7 @@ export default function HeroBanner({ setResultados, setBusquedaRealizada }) {
 
     try {
       setBusquedaRealizada(true);
-      const res = await axios.get(`http://localhost:8000/api/excursiones?q=${query}`);
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/excursiones?q=${query}`);
       console.log("RESULTADOS BUSQUEDA:", res.data);
       setResultados(res.data);
     } catch (err) {

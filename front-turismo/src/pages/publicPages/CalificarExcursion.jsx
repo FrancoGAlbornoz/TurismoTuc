@@ -34,7 +34,7 @@ export default function CalificarExcursion() {
 
       // 1) Crear reseña
       const res = await axios.post(
-        "http://localhost:8000/api/resenias",
+        `${import.meta.env.VITE_API_URL}/resenias`,
         {
           id_reserva,
           id_turista: turista.id,
@@ -56,7 +56,7 @@ export default function CalificarExcursion() {
         formData.append("id_turista", turista.id);
 
         await axios.post(
-          `http://localhost:8000/api/resenas/${id_resenia}/imagen`,
+          `${import.meta.env.VITE_API_URL}/resenas/${id_resenia}/imagen`,
           formData,
           {
             headers: {

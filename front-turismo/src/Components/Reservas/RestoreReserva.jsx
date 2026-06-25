@@ -10,7 +10,7 @@ const RestoreReserva = () => {
   
   const fetchEliminadas = async () => {
     try {
-      const res = await axios.get("http://localhost:8000/api/reservas/eliminadas");
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/reservas/eliminadas`);
       setReservasEliminadas(res.data);
       setError(null);
     } catch (err) {
@@ -38,7 +38,7 @@ const RestoreReserva = () => {
     if (!confirm.isConfirmed) return;
 
     try {
-      await axios.put(`http://localhost:8000/api/reservas/restaurar/${id}`);
+      await axios.put(`${import.meta.env.VITE_API_URL}/reservas/restaurar/${id}`);
       Swal.fire("Restaurada", "La reserva fue restaurada correctamente", "success");
       fetchEliminadas(); // recargar lista
     } catch (err) {

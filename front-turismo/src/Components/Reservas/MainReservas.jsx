@@ -46,7 +46,7 @@ export default function ReservasMain() {
       limit: porPagina,
     };
     try {
-      const res = await axios.get("http://localhost:8000/api/reservas", {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/reservas`, {
         params,
       });
       setReservas(res.data.data);
@@ -70,7 +70,7 @@ export default function ReservasMain() {
     };
 
     try {
-      const res = await axios.get("http://localhost:8000/api/reservas", {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/reservas`, {
         params,
       });
       setReservas(res.data);
@@ -105,7 +105,7 @@ export default function ReservasMain() {
     if (!confirm.isConfirmed) return;
 
     try {
-      await axios.put(`http://localhost:8000/api/reservas/restore/${id}`);
+      await axios.put(`${import.meta.env.VITE_API_URL}/reservas/restore/${id}`);
       Swal.fire("Restaurada", "La reserva ha sido restaurada con éxito", "success");
       getReservas();
     } catch (err) {
@@ -142,7 +142,7 @@ export default function ReservasMain() {
 
     try {
       const res = await axios.get(
-        `http://localhost:8000/api/reservas/buscar?dni=${dni}`
+        `${import.meta.env.VITE_API_URL}/reservas/buscar?dni=${dni}`
       );
       setReservas(res.data);
       setTotalPaginas(1);
@@ -337,18 +337,28 @@ export default function ReservasMain() {
           </div>
         </div>
 
-        {/* Tabla de reservas */}
+        {loading ? (
+          <div className="p-4">
+            {[...Array(5)].map((_, i) => (
+              <p key={i} className="placeholder-glow mb-3">
+                <span className="placeholder col-12 placeholder-lg bg-secondary opacity-25 rounded" style={{ height: "40px" }}></span>
+              </p>
+            ))}
+          </div>
+        ) : (
+          <>
+            {/* Tabla de reservas */}
         <Table hover responsive className="align-middle">
           <thead className="table-light">
             <tr>
-              <th>DNI</th>
+              <th className="d-none d-md-table-cell">DNI</th>
               <th>Turista</th>
               <th>Excursión</th>
               <th>Fecha Excursión</th>
               <th>Cantidad</th>
               <th>Monto Total</th>
               <th>Estado</th>
-              <th>Fecha Reserva</th>
+              <th className="d-none d-md-table-cell">Fecha Reserva</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -356,7 +366,7 @@ export default function ReservasMain() {
             {reservas.length > 0 ? (
               reservas.map((r) => (
                 <tr key={r.id_reserva}>
-                  <td>{r.dni_turista}</td>
+                  <td className="d-none d-md-table-cell">{r.dni_turista}</td>
                   <td>{r.turista}</td>
                   <td>{r.excursion}</td>
                   <td>{new Date(r.fecha_excursion).toLocaleDateString()}</td>
@@ -377,7 +387,7 @@ export default function ReservasMain() {
                       {r.estado_reserva}
                     </span>
                   </td>
-                  <td>{new Date(r.fecha_reserva).toLocaleDateString()}</td>
+                  <td className="d-none d-md-table-cell">{new Date(r.fecha_reserva).toLocaleDateString()}</td>
                   <td>
                     <div className="btn-group" role="group">
                       <Button
@@ -424,7 +434,8 @@ export default function ReservasMain() {
             )}
           </tbody>
         </Table>
-
+        </>
+        )}
         {/* Paginación */}
         {!debouncedDni && (
           <PaginationComponent

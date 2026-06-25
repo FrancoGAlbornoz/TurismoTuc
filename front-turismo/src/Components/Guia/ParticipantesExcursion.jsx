@@ -15,8 +15,8 @@ export default function ParticipantesExcursion() {
     const fetchData = async () => {
       try {
         const [resPart, resExc] = await Promise.all([
-          axios.get(`http://localhost:8000/api/excursiones/${id}/participantes`),
-          axios.get(`http://localhost:8000/api/excursiones/${id}`)
+          axios.get(`${import.meta.env.VITE_API_URL}/excursiones/${id}/participantes`),
+          axios.get(`${import.meta.env.VITE_API_URL}/excursiones/${id}`)
         ]);
         setParticipantes(resPart.data);
         setExcursion(resExc.data);

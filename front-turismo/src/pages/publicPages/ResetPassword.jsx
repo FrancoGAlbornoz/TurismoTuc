@@ -17,7 +17,7 @@ export default function ResetPassword() {
     setIsLoading(true);
 
     try {
-      await axios.post(`http://localhost:8000/api/usuarios/reset-password/${token}`, {
+      await axios.post(`${import.meta.env.VITE_API_URL}/usuarios/reset-password/${token}`, {
         nuevaPassword,
       });
       Swal.fire({

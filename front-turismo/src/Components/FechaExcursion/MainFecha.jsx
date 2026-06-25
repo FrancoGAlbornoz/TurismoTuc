@@ -31,7 +31,7 @@ export default function MainFechasExcursion() {
       };
 
       // 👈 Usamos el nuevo endpoint para tabla plana
-      const res = await axios.get("http://localhost:8000/api/excursiones/fechas-paginadas", { params });
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/excursiones/fechas-paginadas`, { params });
       setFechas(res.data.data || []);
       setTotalPaginas(res.data.totalPages || 1);
     } catch (err) {
@@ -66,7 +66,7 @@ export default function MainFechasExcursion() {
     if (!confirmar.isConfirmed) return;
 
     try {
-      await axios.delete(`http://localhost:8000/api/excursiones/fechas/${id_fecha}`);
+      await axios.delete(`${import.meta.env.VITE_API_URL}/excursiones/fechas/${id_fecha}`);
       Swal.fire({
         icon: "success",
         title: "Archivada",
@@ -93,7 +93,7 @@ export default function MainFechasExcursion() {
     if (!confirmar.isConfirmed) return;
 
     try {
-      await axios.put(`http://localhost:8000/api/excursiones/fechas/restore/${id_fecha}`);
+      await axios.put(`${import.meta.env.VITE_API_URL}/excursiones/fechas/restore/${id_fecha}`);
       Swal.fire({
         icon: "success",
         title: "Restaurada",

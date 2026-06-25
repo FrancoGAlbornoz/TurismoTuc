@@ -17,7 +17,7 @@ export default function FechasCreate() {
 
   const fetchExcursiones = async () => {
     try {
-      const res = await axios.get("http://localhost:8000/api/excursiones");
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/excursiones`);
       setExcursiones(res.data.data || []);
     } catch (err) {
       console.error("Error al cargar excursiones:", err);
@@ -39,7 +39,7 @@ export default function FechasCreate() {
     setLoading(true);
 
     try {
-      const res = await axios.post("http://localhost:8000/api/excursiones/fechas-excursion", form);
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/excursiones/fechas-excursion`, form);
 
       await Swal.fire({
         icon: "success",

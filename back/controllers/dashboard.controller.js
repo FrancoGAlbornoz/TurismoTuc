@@ -31,7 +31,10 @@ export const getMetricas = (req, res) => {
         ) * 100, 1
       ) AS ocupacion,
 
-      IFNULL(ROUND((SELECT AVG(rz.calificacion) FROM Reseñas rz WHERE rz.estado = 'publicada'), 1), 0) AS rating_promedio
+      IFNULL(ROUND((SELECT AVG(rz.calificacion) FROM Reseñas rz WHERE rz.estado = 'publicada'), 1), 0) AS rating_promedio,
+
+      /* Turistas Totales */
+      (SELECT COUNT(*) FROM Turistas WHERE eliminado = 0) AS turistas_totales
   `;
 
   pool.query(sql, (err, results) => {

@@ -34,7 +34,7 @@ export default function CreateReserva() {
   useEffect(() => {
     const fetchExcursiones = async () => {
       try {
-        const res = await axios.get("http://localhost:8000/api/excursiones");
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/excursiones`);
         setExcursiones(res.data.data || []);
       } catch (err) {
         console.error("Error cargando excursiones:", err);
@@ -50,7 +50,7 @@ export default function CreateReserva() {
     if (!dni) return;
 
     try {
-      const res = await axios.get(`http://localhost:8000/api/turistas/exacto?dni=${dni}`);
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/turistas/exacto?dni=${dni}`);
       const turista = res.data; // backend debe devolver el objeto exacto o null/undefined
 
       if (turista) {
@@ -76,7 +76,7 @@ export default function CreateReserva() {
     if (id_excursion) {
       try {
         const res = await axios.get(
-          `http://localhost:8000/api/excursiones/${id_excursion}/fechas`
+          `${import.meta.env.VITE_API_URL}/excursiones/${id_excursion}/fechas`
         );
         setFechasExcursion(Array.isArray(res.data) ? res.data : []);
       } catch (err) {
@@ -105,7 +105,7 @@ export default function CreateReserva() {
 
     setSaving(true);
     try {
-      await axios.post("http://localhost:8000/api/reservas", reserva);
+      await axios.post(`${import.meta.env.VITE_API_URL}/reservas`, reserva);
       Swal.fire({
         icon: "success",
         title: "Reserva creada",

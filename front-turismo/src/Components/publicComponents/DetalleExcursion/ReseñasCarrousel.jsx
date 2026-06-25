@@ -11,7 +11,7 @@ export default function ReseñasCarousel({ id_excursion }) {
   useEffect(() => {
     const fetchReseñas = async () => {
       try {
-        const res = await axios.get(`http://localhost:8000/api/resenias/excursion/${id_excursion}`);
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/resenias/excursion/${id_excursion}`);
         setReseñas(res.data);
       } catch (error) {
         console.error("Error al cargar reseñas:", error);

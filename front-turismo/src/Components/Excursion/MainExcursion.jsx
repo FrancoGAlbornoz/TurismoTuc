@@ -30,7 +30,7 @@ export default function MainExcursiones() {
         q: busqueda,
       };
 
-      const res = await axios.get("http://localhost:8000/api/excursiones", { params });
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/excursiones`, { params });
       setExcursiones(res.data.data || []);
       setTotalPaginas(res.data.totalPages);
     } catch (err) {
@@ -66,7 +66,7 @@ export default function MainExcursiones() {
     if (!confirmacion.isConfirmed) return;
 
     try {
-      await axios.delete(`http://localhost:8000/api/excursiones/${id}`);
+      await axios.delete(`${import.meta.env.VITE_API_URL}/excursiones/${id}`);
       Swal.fire({
         title: "Archivada",
         text: "Excursión archivada correctamente",
@@ -94,7 +94,7 @@ export default function MainExcursiones() {
     if (!confirmacion.isConfirmed) return;
 
     try {
-      await axios.put(`http://localhost:8000/api/excursiones/restore/${id}`);
+      await axios.put(`${import.meta.env.VITE_API_URL}/excursiones/restore/${id}`);
       Swal.fire({
         title: "Restaurada",
         text: "Excursión restaurada correctamente",
@@ -197,12 +197,12 @@ export default function MainExcursiones() {
           <Table hover responsive className="mb-0 align-middle">
             <thead className="table-light">
               <tr>
-                <th>ID</th>
+                <th className="d-none d-md-table-cell">ID</th>
                 <th>Título</th>
                 <th>Ubicación</th>
                 <th>Precio</th>
                 <th>Estado</th>
-                <th>Categorías</th>
+                <th className="d-none d-md-table-cell">Categorías</th>
                 <th>Guía</th>
                 <th>Acciones</th>
               </tr>
@@ -211,7 +211,7 @@ export default function MainExcursiones() {
               {excursiones.length > 0 ? (
                 excursiones.map((e) => (
                   <tr key={e.id_excursion}>
-                    <td>{e.id_excursion}</td>
+                    <td className="d-none d-md-table-cell">{e.id_excursion}</td>
                     <td>{e.titulo}</td>
                     <td>{e.ubicacion}</td>
                     <td>${e.precio_base}</td>
@@ -224,7 +224,7 @@ export default function MainExcursiones() {
                         {e.estado}
                       </span>
                     </td>
-                    <td>
+                    <td className="d-none d-md-table-cell">
                       {e.categorias?.length > 0 ? (
                         e.categorias.map((cat, idx) => (
                           <span

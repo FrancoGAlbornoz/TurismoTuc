@@ -27,15 +27,15 @@ export default function DetalleExcursion() {
     const fetchExcursion = async () => {
       try {
         // Datos principales
-        const resExc = await axios.get(`http://localhost:8000/api/excursiones/${id}`);
+        const resExc = await axios.get(`${import.meta.env.VITE_API_URL}/excursiones/${id}`);
         const excursionData = resExc.data;
 
         // Imágenes
-        const resImgs = await axios.get(`http://localhost:8000/api/excursiones/${id}/multimedia`);
+        const resImgs = await axios.get(`${import.meta.env.VITE_API_URL}/excursiones/${id}/multimedia`);
         excursionData.imagenes = resImgs.data || [];
 
         // Fechas disponibles 👇
-        const resFechas = await axios.get(`http://localhost:8000/api/excursiones/${id}/fechas`);
+        const resFechas = await axios.get(`${import.meta.env.VITE_API_URL}/excursiones/${id}/fechas`);
         setFechas(resFechas.data || []);
 
         setExcursion(excursionData);

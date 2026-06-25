@@ -6,7 +6,7 @@ import Swal from "sweetalert2";
 import PaginationComponent from "../Filtros/Paginacion"; 
 import * as XLSX from "xlsx";
 
-const API = "http://localhost:8000/api";
+const API = import.meta.env.VITE_API_URL;
 
 export default function MainUsuarios() {
   const [usuarios, setUsuarios] = useState([]);

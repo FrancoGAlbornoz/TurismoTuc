@@ -17,7 +17,7 @@ export default function FilterSidebar({ onFilterChange }) {
   useEffect(() => {
     const fetchCategorias = async () => {
       try {
-        const res = await axios.get("http://localhost:8000/api/categorias");
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/categorias`);
         setCategorias(res.data);
       } catch (err) {
         console.error("Error al obtener categorías:", err);
@@ -37,7 +37,7 @@ export default function FilterSidebar({ onFilterChange }) {
     if (categoria) params.categoria = categoria;
 
     try {
-      const res = await axios.get("http://localhost:8000/api/excursiones", { params });
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/excursiones`, { params });
       onFilterChange(res.data.data || []);
     } catch (err) {
       console.error("Error al aplicar filtros:", err);
@@ -51,7 +51,7 @@ export default function FilterSidebar({ onFilterChange }) {
     setDuracion("");
     setCategoria("");
     try {
-      const res = await axios.get("http://localhost:8000/api/excursiones");
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/excursiones`);
       onFilterChange(res.data.data || []);
     } catch (err) {
       console.error("Error al limpiar filtros:", err);

@@ -12,7 +12,7 @@ export default function PerfilGuia() {
   useEffect(() => {
     const fetchPerfil = async () => {
       try {
-        const res = await axios.get(`http://localhost:8000/api/usuarios/${user.id}`);
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/usuarios/${user.id}`);
         setPerfil(res.data);
       } catch (err) {
         console.error("Error al obtener perfil del guía:", err);

@@ -28,7 +28,7 @@ const useCarritoStore = create((set, get) => ({
 
     try {
       const resCarrito = await axios.get(
-        `http://localhost:8000/api/carrito/${idTurista}`,
+        `${import.meta.env.VITE_API_URL}/carrito/${idTurista}`,
       );
 
       const carrito = resCarrito.data;
@@ -45,7 +45,7 @@ const useCarritoStore = create((set, get) => ({
       }
 
       const resItems = await axios.get(
-        `http://localhost:8000/api/carrito/${carrito.id_carrito}/items`,
+        `${import.meta.env.VITE_API_URL}/carrito/${carrito.id_carrito}/items`,
       );
 
       const data = resItems.data || [];
@@ -79,7 +79,7 @@ const useCarritoStore = create((set, get) => ({
     const idTurista = turista.id_turista || turista.id || turista.id_usuario;
 
     try {
-      await axios.post("http://localhost:8000/api/carrito/item", {
+      await axios.post(`${import.meta.env.VITE_API_URL}/carrito/item`, {
         id_turista: idTurista,
         id_fecha,
         cantidad_personas,
@@ -110,7 +110,7 @@ const useCarritoStore = create((set, get) => ({
   // =============================
   removeItem: async (id_item) => {
     try {
-      await axios.delete(`http://localhost:8000/api/carrito/item/${id_item}`);
+      await axios.delete(`${import.meta.env.VITE_API_URL}/carrito/item/${id_item}`);
       set((state) => ({
         items: state.items.filter((i) => i.id_item !== id_item),
       }));
@@ -143,7 +143,7 @@ const useCarritoStore = create((set, get) => ({
 
     try {
       const res = await axios.put(
-        `http://localhost:8000/api/carrito/item/${id_item}`,
+        `${import.meta.env.VITE_API_URL}/carrito/item/${id_item}`,
         { cantidad_personas: nuevaCantidad },
       );
 

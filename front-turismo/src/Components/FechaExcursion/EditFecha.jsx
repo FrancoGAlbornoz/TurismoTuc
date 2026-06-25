@@ -18,7 +18,7 @@ export default function FechasEdit() {
 
   const fetchExcursiones = async () => {
     try {
-      const res = await axios.get("http://localhost:8000/api/excursiones");
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/excursiones`);
       setExcursiones(res.data.data || []);
     } catch (err) {
       console.error("Error al cargar excursiones:", err);
@@ -28,7 +28,7 @@ export default function FechasEdit() {
 
   const fetchFecha = async () => {
     try {
-      const res = await axios.get(`http://localhost:8000/api/excursiones/fechas/${id}`);
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/excursiones/fechas/${id}`);
       const { id_excursion, fecha, hora_salida, cupo_maximo } = res.data;
       setForm({
         id_excursion,
@@ -57,7 +57,7 @@ export default function FechasEdit() {
     setLoading(true);
 
     try {
-      const res = await axios.put(`http://localhost:8000/api/excursiones/fechas/${id}`, form);
+      const res = await axios.put(`${import.meta.env.VITE_API_URL}/excursiones/fechas/${id}`, form);
 
       await Swal.fire({
         icon: "success",

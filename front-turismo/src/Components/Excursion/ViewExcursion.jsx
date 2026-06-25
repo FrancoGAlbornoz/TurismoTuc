@@ -13,17 +13,17 @@ export default function ViewExcursion() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const resExc = await axios.get(`http://localhost:8000/api/excursiones/${id}`);
+        const resExc = await axios.get(`${import.meta.env.VITE_API_URL}/excursiones/${id}`);
         setExcursion(resExc.data);
 
         if (Array.isArray(resExc.data.imagenes)) {
           setImagenes(resExc.data.imagenes);
         } else {
-          const resImgs = await axios.get(`http://localhost:8000/api/excursiones/${id}/multimedia`);
+          const resImgs = await axios.get(`${import.meta.env.VITE_API_URL}/excursiones/${id}/multimedia`);
           setImagenes(resImgs.data);
         }
 
-        const resFechas = await axios.get(`http://localhost:8000/api/excursiones/${id}/fechas`);
+        const resFechas = await axios.get(`${import.meta.env.VITE_API_URL}/excursiones/${id}/fechas`);
         setFechas(resFechas.data);
       } catch (err) {
         console.error("Error al cargar datos:", err);

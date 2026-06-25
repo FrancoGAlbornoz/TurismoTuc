@@ -16,9 +16,9 @@ export default function DashboardHome() {
     const fetchDashboardData = async () => {
       try {
         const [metricasRes, hoyRes, futurasRes] = await Promise.all([
-          axios.get("http://localhost:8000/api/dashboard/metricas"),
-          axios.get("http://localhost:8000/api/dashboard/reservas/hoy"),
-          axios.get("http://localhost:8000/api/dashboard/reservas/proximas"),
+          axios.get(`${import.meta.env.VITE_API_URL}/dashboard/metricas`),
+          axios.get(`${import.meta.env.VITE_API_URL}/dashboard/reservas/hoy`),
+          axios.get(`${import.meta.env.VITE_API_URL}/dashboard/reservas/proximas`),
         ]);
 
         setMetricas(metricasRes.data);
@@ -114,7 +114,7 @@ export default function DashboardHome() {
 
       {/* --- MÉTRICAS --- */}
       <div className="row g-4 mb-4">
-        <div className="col-md-3 col-sm-6">
+        <div className="col-md-2 col-sm-6">
           <Card className="shadow border-0">
             <Card.Body className="text-center">
               <h6 className="fw-bold text-secondary">Reservas Hoy</h6>
@@ -134,7 +134,7 @@ export default function DashboardHome() {
           </Card>
         </div>
 
-        <div className="col-md-3 col-sm-6">
+        <div className="col-md-2 col-sm-6">
           <Card className="shadow border-0">
             <Card.Body className="text-center">
               <h6 className="fw-bold text-secondary">Próximas Reservas</h6>
@@ -145,7 +145,7 @@ export default function DashboardHome() {
           </Card>
         </div>
 
-        <div className="col-md-3 col-sm-6">
+        <div className="col-md-2 col-sm-6">
           <Card className="shadow border-0">
             <Card.Body className="text-center">
               <h6 className="fw-bold text-secondary">Ocupación Total</h6>
@@ -156,7 +156,7 @@ export default function DashboardHome() {
           </Card>
         </div>
 
-        <div className="col-md-3 col-sm-6">
+        <div className="col-md-2 col-sm-6">
           <Card className="shadow border-0">
             <Card.Body className="text-center">
               <h6 className="fw-bold text-secondary">Rating Promedio</h6>
@@ -166,6 +166,19 @@ export default function DashboardHome() {
             </Card.Body>
           </Card>
         </div>
+
+        <div className="col-md-2 col-sm-6">
+          <Card className="shadow border-0">
+            <Card.Body className="text-center">
+              <h6 className="fw-bold text-secondary">Turistas Totales</h6>
+              <h2 className="fw-bold text-dark">
+                {metricas?.turistas_totales || 0}
+              </h2>
+            </Card.Body>
+          </Card>
+        </div>
+
+
       </div>
 
       {/* --- RESERVAS DE HOY --- */}

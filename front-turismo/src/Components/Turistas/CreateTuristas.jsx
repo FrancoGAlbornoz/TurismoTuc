@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import Swal from "sweetalert2";
-import { Form, Row, Col, Button, Card } from "react-bootstrap";
+import { Form, Row, Col, Button, Card, Spinner } from "react-bootstrap";
 
 export default function CreateTurista() {
   const navigate = useNavigate();
@@ -15,6 +15,7 @@ export default function CreateTurista() {
     direccion: "",
     nacionalidad: "",
   });
+  const [saving, setSaving] = useState(false);
 
   const handleChange = (e) => {
     setTurista({ ...turista, [e.target.name]: e.target.value });
@@ -22,9 +23,10 @@ export default function CreateTurista() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSaving(true);
 
     try {
-      const res = await axios.post("http://localhost:8000/api/turistas", turista);
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/turistas`, turista);
 
       await Swal.fire({
         icon: "success",
@@ -39,9 +41,11 @@ export default function CreateTurista() {
       console.error("Error al crear turista:", err);
       Swal.fire({
         icon: "error",
-        title: "Error al crear turista",
-        text: "Verificá los datos ingresados.",
+        title: "Error",
+        text: err.response?.data?.message || "No se pudo crear el turista",
       });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -145,8 +149,15 @@ export default function CreateTurista() {
             </Form.Group>
 
             <div className="d-flex justify-content-end">
-              <Button type="submit" variant="success">
-                Guardar Turista
+              <Button type="submit" variant="success" disabled={saving}>
+                {saving ? (
+                  <>
+                    <Spinner size="sm" className="me-2" />
+                    Guardando...
+                  </>
+                ) : (
+                  "Guardar Turista"
+                )}
               </Button>
             </div>
           </Form>

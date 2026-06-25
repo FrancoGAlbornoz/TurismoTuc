@@ -89,7 +89,7 @@ export default function PerfilTurista() {
       setLoading(true);
       try {
         const res = await axios.get(
-          `http://localhost:8000/api/turistas/${turistaId}/reservas?historial=${mostrarFinalizadas}&page=${currentPage}`,
+          `${import.meta.env.VITE_API_URL}/turistas/${turistaId}/reservas?historial=${mostrarFinalizadas}&page=${currentPage}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
@@ -133,7 +133,7 @@ export default function PerfilTurista() {
     if (result.isConfirmed) {
       try {
         await axios.put(
-          `http://localhost:8000/api/reservas/${idReserva}/cancelar`,
+          `${import.meta.env.VITE_API_URL}/reservas/${idReserva}/cancelar`,
           {},
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -161,7 +161,7 @@ export default function PerfilTurista() {
 
     try {
       const res = await axios.put(
-        `http://localhost:8000/api/turistas/${turistaId}`,
+        `${import.meta.env.VITE_API_URL}/turistas/${turistaId}`,
         formData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
