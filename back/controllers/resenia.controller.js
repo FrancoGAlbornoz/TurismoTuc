@@ -66,7 +66,7 @@ export const validarToken = (req, res) => {
 
 // Obtener todas las reseñas publicadas
 export const getResenas = (req, res) => {
-  const { page = 1, limit = 10, q = "", ordenCalificacion } = req.query;
+  const { page = 1, limit = 10, q = "", ordenCalificacion, fechaDesde, fechaHasta } = req.query;
   const offset = (parseInt(page) - 1) * parseInt(limit);
 
   let whereClause = "r.eliminado = 0";
@@ -77,6 +77,16 @@ export const getResenas = (req, res) => {
     whereClause += " AND (e.titulo LIKE ? OR t.nombre LIKE ? OR t.apellido LIKE ?)";
     const search = `%${q}%`;
     queryParams.push(search, search, search);
+  }
+
+  // Lógica de fechas
+  if (fechaDesde) {
+    whereClause += " AND DATE(r.fecha_resena) >= ?";
+    queryParams.push(fechaDesde);
+  }
+  if (fechaHasta) {
+    whereClause += " AND DATE(r.fecha_resena) <= ?";
+    queryParams.push(fechaHasta);
   }
 
   // 2. Lógica del Ordenamiento (CON DESEMPATE PARA LA PAGINACIÓN)

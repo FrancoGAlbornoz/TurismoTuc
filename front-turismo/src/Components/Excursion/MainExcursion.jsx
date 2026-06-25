@@ -4,7 +4,8 @@ import axios from "axios";
 import { Card, Button, Table, Dropdown } from "react-bootstrap";
 import Swal from "sweetalert2";
 import PaginationComponent from "../Filtros/Paginacion.jsx";
-import BuscadorGeneral from "../Filtros/BuscadorGeneral.jsx"; // Ajustá la ruta según tu carpeta
+import BuscadorGeneral from "../Filtros/BuscadorGeneral.jsx"; 
+import * as XLSX from "xlsx";
 
 export default function MainExcursiones() {
   const [excursiones, setExcursiones] = useState([]);
@@ -12,7 +13,7 @@ export default function MainExcursiones() {
 
   // Estados de Filtros y Paginación
   const [mostrarArchivadas, setMostrarArchivadas] = useState(false);
-  const [estadoExcursion, setEstadoExcursion] = useState("todas");
+  const [estadoExcursion, setEstadoExcursion] = useState("activa");
   const [busqueda, setBusqueda] = useState("");
   
   const [paginaActual, setPaginaActual] = useState(1);
@@ -108,6 +109,23 @@ export default function MainExcursiones() {
     }
   };
 
+  const exportToExcel = () => {
+    if (excursiones.length === 0) {
+      return Swal.fire("Sin datos", "No hay excursiones para exportar", "info");
+    }
+    const ws = XLSX.utils.json_to_sheet(excursiones.map(e => ({
+      ID: e.id_excursion,
+      Titulo: e.titulo,
+      Ubicacion: e.ubicacion,
+      Precio: e.precio_base,
+      Estado: e.estado,
+      Guia: e.nombre_guia ? `${e.nombre_guia} ${e.apellido_guia}` : "Sin guía"
+    })));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Excursiones");
+    XLSX.writeFile(wb, "Excursiones_Export.xlsx");
+  };
+
   return (
     <div className="container-fluid py-4">
       <Card className="shadow-sm">
@@ -166,12 +184,12 @@ export default function MainExcursiones() {
                   <Dropdown.Item onClick={() => setEstadoExcursion("inactiva")}>
                     <i className="bi bi-dash-circle text-warning me-2"></i> Inactivas
                   </Dropdown.Item>
-                  <Dropdown.Divider />
-                  <Dropdown.Item onClick={() => setEstadoExcursion("todas")}>
-                    <i className="bi bi-list-ul text-secondary me-2"></i> Todas
-                  </Dropdown.Item>
                 </Dropdown.Menu>
               </Dropdown>
+              
+              <Button variant="outline-success" size="sm" onClick={exportToExcel} title="Exportar a Excel">
+                <i className="bi bi-file-earmark-excel"></i> Excel
+              </Button>
 
             </div>
           </div>

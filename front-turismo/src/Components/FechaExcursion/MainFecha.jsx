@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, Fragment } from "react";
 import axios from "axios";
 import { Card, Table, Button, Spinner } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import PaginationComponent from "../Filtros/Paginacion.jsx";
-import BuscadorGeneral from "../Filtros/BuscadorGeneral.jsx"; // Asegurate que la ruta sea correcta
+import BuscadorGeneral from "../Filtros/BuscadorGeneral.jsx"; 
+import * as XLSX from "xlsx";
 
 export default function MainFechasExcursion() {
   const [fechas, setFechas] = useState([]);
@@ -106,6 +107,29 @@ export default function MainFechasExcursion() {
     }
   };
 
+  const exportToExcel = () => {
+    if (fechas.length === 0) {
+      return Swal.fire("Sin datos", "No hay fechas para exportar", "info");
+    }
+    const ws = XLSX.utils.json_to_sheet(fechas.map(f => ({
+      Excursion: f.excursion,
+      Fecha: new Date(f.fecha).toLocaleDateString(),
+      Hora: f.hora_salida || "-",
+      Cupo_Maximo: f.cupo_maximo,
+      Cupo_Disponible: f.cupo_disponible,
+      Estado: f.eliminado ? "Archivada" : f.estado
+    })));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Fechas_Excursion");
+    XLSX.writeFile(wb, "FechasExcursion_Export.xlsx");
+  };
+
+  const fechasAgrupadas = fechas.reduce((acc, f) => {
+    if (!acc[f.excursion]) acc[f.excursion] = [];
+    acc[f.excursion].push(f);
+    return acc;
+  }, {});
+
   return (
     <div className="container-fluid py-4">
       <Card className="shadow-sm">
@@ -150,6 +174,9 @@ export default function MainFechasExcursion() {
                   <><i className="bi bi-archive-fill me-1"></i> Mostrar Cerradas</>
                 )}
               </Button>
+              <Button variant="outline-success" size="sm" onClick={exportToExcel} title="Exportar a Excel">
+                <i className="bi bi-file-earmark-excel"></i> Excel
+              </Button>
             </div>
           </div>
 
@@ -174,65 +201,73 @@ export default function MainFechasExcursion() {
                   </tr>
                 </thead>
                 <tbody>
-                  {fechas.length > 0 ? (
-                    fechas.map((f) => (
-                      <tr key={f.id_fecha}>
-                        <td className="fw-semibold text-success">{f.excursion}</td>
-                        <td>{new Date(f.fecha).toLocaleDateString()}</td>
-                        <td>{f.hora_salida || "—"}</td>
-                        <td>{f.cupo_maximo}</td>
-                        <td>
-                          {/* Resaltamos en rojo si quedan pocos cupos */}
-                          <span className={f.cupo_disponible <= 3 ? "text-danger fw-bold" : ""}>
-                            {f.cupo_disponible}
-                          </span>
-                        </td>
-                        <td>
-                          <span
-                            className={`badge text-uppercase ${
-                              f.estado === "abierta" && !f.eliminado
-                                ? "bg-success"
-                                : "bg-secondary"
-                            }`}
-                          >
-                            {f.eliminado ? "ARCHIVADA" : f.estado}
-                          </span>
-                        </td>
-                        <td>
-                          <div className="btn-group" role="group">
-                            {!f.eliminado && (
-                              <Button
-                                variant="outline-primary"
-                                size="sm"
-                                onClick={() => navigate(`/dashboard-admin/fechas/edit/${f.id_fecha}`)}
-                                title="Editar"
+                  {Object.keys(fechasAgrupadas).length > 0 ? (
+                    Object.entries(fechasAgrupadas).map(([excursion, fechasExc]) => (
+                      <Fragment key={excursion}>
+                        <tr className="table-secondary">
+                          <td colSpan="7" className="fw-bold text-success border-bottom-0">
+                            <i className="bi bi-geo-alt-fill me-2"></i>{excursion}
+                          </td>
+                        </tr>
+                        {fechasExc.map((f) => (
+                          <tr key={f.id_fecha}>
+                            <td></td> {/* Espacio en blanco bajo el título de la excursión */}
+                            <td>{new Date(f.fecha).toLocaleDateString()}</td>
+                            <td>{f.hora_salida || "—"}</td>
+                            <td>{f.cupo_maximo}</td>
+                            <td>
+                              <span className={f.cupo_disponible <= 3 ? "text-danger fw-bold" : ""}>
+                                {f.cupo_disponible}
+                              </span>
+                            </td>
+                            <td>
+                              <span
+                                className={`badge text-uppercase ${
+                                  f.estado === "abierta" && !f.eliminado
+                                    ? "bg-success"
+                                    : "bg-secondary"
+                                }`}
                               >
-                                <i className="bi bi-pencil"></i>
-                              </Button>
-                            )}
+                                {f.eliminado ? "ARCHIVADA" : f.estado}
+                              </span>
+                            </td>
+                            <td>
+                              <div className="btn-group" role="group">
+                                {!f.eliminado && (
+                                  <Button
+                                    variant="outline-primary"
+                                    size="sm"
+                                    onClick={() => navigate(`/dashboard-admin/fechas/edit/${f.id_fecha}`)}
+                                    title="Editar"
+                                  >
+                                    <i className="bi bi-pencil"></i>
+                                  </Button>
+                                )}
 
-                            {f.eliminado || f.estado === 'cerrada' ? (
-                              <Button
-                                variant="outline-success"
-                                size="sm"
-                                onClick={() => handleRestore(f.id_fecha)}
-                                title="Restaurar fecha"
-                              >
-                                <i className="bi bi-arrow-counterclockwise"></i>
-                              </Button>
-                            ) : (
-                              <Button
-                                variant="outline-danger"
-                                size="sm"
-                                onClick={() => handleCerrar(f.id_fecha)}
-                                title="Cerrar y Archivar"
-                              >
-                                <i className="bi bi-archive"></i>
-                              </Button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
+                                {f.eliminado || f.estado === 'cerrada' ? (
+                                  <Button
+                                    variant="outline-success"
+                                    size="sm"
+                                    onClick={() => handleRestore(f.id_fecha)}
+                                    title="Restaurar fecha"
+                                  >
+                                    <i className="bi bi-arrow-counterclockwise"></i>
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    variant="outline-danger"
+                                    size="sm"
+                                    onClick={() => handleCerrar(f.id_fecha)}
+                                    title="Cerrar y Archivar"
+                                  >
+                                    <i className="bi bi-archive"></i>
+                                  </Button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </Fragment>
                     ))
                   ) : (
                     <tr>

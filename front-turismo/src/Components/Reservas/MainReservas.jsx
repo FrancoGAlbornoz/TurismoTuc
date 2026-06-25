@@ -7,6 +7,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useDebounce } from "../../hooks/useDeBounce";
 import PaginationComponent from "../Filtros/Paginacion.jsx";
+import * as XLSX from "xlsx";
 
 export default function ReservasMain() {
   const [reservas, setReservas] = useState([]);
@@ -113,6 +114,25 @@ export default function ReservasMain() {
     }
   };
 
+  const exportToExcel = () => {
+    if (reservas.length === 0) {
+      return Swal.fire("Sin datos", "No hay reservas para exportar", "info");
+    }
+    const ws = XLSX.utils.json_to_sheet(reservas.map(r => ({
+      DNI: r.dni_turista,
+      Turista: r.turista,
+      Excursion: r.excursion,
+      Fecha_Excursion: r.fecha_excursion ? new Date(r.fecha_excursion).toLocaleDateString() : "-",
+      Cantidad_Personas: r.cantidad_personas,
+      Monto_Total: r.monto_total,
+      Estado: r.estado_reserva,
+      Fecha_Reserva: r.fecha_reserva ? new Date(r.fecha_reserva).toLocaleDateString() : "-"
+    })));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Reservas");
+    XLSX.writeFile(wb, "Reservas_Export.xlsx");
+  };
+
   const buscarPorDNI = async (dni) => {
     if (!dni) {
       setPaginaActual(1);
@@ -148,15 +168,16 @@ export default function ReservasMain() {
   if (error) return <div className="alert alert-danger mt-3">{error}</div>;
 
   return (
-    <Card className="shadow-sm mt-5">
-      <Card.Body className="p-3">
-        {/* Encabezado */}
+    <div className="container-fluid py-4">
+      <Card className="shadow-sm">
+        <Card.Body className="p-3">
+          {/* Encabezado */}
         <div className="d-flex justify-content-between align-items-center mb-3">
           <div>
             <h5 className="fw-bold text-success mb-2">
               Gestión de Reservas{" "}
               <small className="text-muted" style={{ textTransform: "lowercase" }}>
-                ({estadoreserva === "todas" ? "historial completo" : mostrarArchivadas ? "archivadas" : "activas"})
+                ({mostrarArchivadas ? "archivadas" : "activas"})
               </small>
             </h5>
 
@@ -202,11 +223,6 @@ export default function ReservasMain() {
                 <Dropdown.Item onClick={() => setEstadoreserva("confirmada")}>
                   <i className="bi bi-check-circle text-success me-2"></i>
                   Confirmadas
-                </Dropdown.Item>
-                <Dropdown.Divider />
-                <Dropdown.Item onClick={() => setEstadoreserva("todas")}>
-                  <i className="bi bi-list-ul text-secondary me-2"></i>
-                  Historial Completo (Todas)
                 </Dropdown.Item>
               </Dropdown.Menu>
             </Dropdown>
@@ -302,8 +318,7 @@ export default function ReservasMain() {
               variant={mostrarArchivadas ? "success" : "outline-danger"}
               size="sm"
               onClick={() => setMostrarArchivadas(!mostrarArchivadas)}
-              disabled={estadoreserva === "todas"} // Se deshabilita si se fuerza el historial completo
-              title={estadoreserva === "todas" ? "Desactivá 'Historial Completo' para usar este botón" : ""}
+              title="Mostrar u ocultar reservas archivadas"
             >
               {mostrarArchivadas ? (
                 <>
@@ -314,6 +329,10 @@ export default function ReservasMain() {
                   <i className="bi bi-archive-fill me-1"></i> Mostrar Archivadas
                 </>
               )}
+            </Button>
+            
+            <Button variant="outline-success" size="sm" onClick={exportToExcel} title="Exportar a Excel">
+              <i className="bi bi-file-earmark-excel"></i> Excel
             </Button>
           </div>
         </div>
@@ -414,7 +433,8 @@ export default function ReservasMain() {
             onPageChange={(page) => setPaginaActual(page)}
           />
         )}
-      </Card.Body>
-    </Card>
+        </Card.Body>
+      </Card>
+    </div>
   );
 }

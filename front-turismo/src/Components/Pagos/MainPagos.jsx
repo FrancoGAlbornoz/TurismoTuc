@@ -1,17 +1,20 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { Card, Table, Button, Badge, Spinner, Dropdown } from "react-bootstrap";
+import { Card, Table, Button, Badge, Spinner, Dropdown, Form, InputGroup } from "react-bootstrap";
 import Swal from "sweetalert2";
-import BuscadorGeneral from "../Filtros/BuscadorGeneral"; // Ajusta la ruta
-import PaginationComponent from "../Filtros/Paginacion"; // Ajusta la ruta
+import BuscadorGeneral from "../Filtros/BuscadorGeneral"; 
+import PaginationComponent from "../Filtros/Paginacion"; 
+import * as XLSX from "xlsx";
 
 export default function MainPagos() {
   const [pagos, setPagos] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Estados de Filtros
-  const [filtroEstado, setFiltroEstado] = useState("todos");
+  const [filtroEstado, setFiltroEstado] = useState("pendiente");
   const [busqueda, setBusqueda] = useState("");
+  const [fechaDesde, setFechaDesde] = useState("");
+  const [fechaHasta, setFechaHasta] = useState("");
 
   // Paginación
   const [paginaActual, setPaginaActual] = useState(1);
@@ -25,6 +28,8 @@ export default function MainPagos() {
         limit: 10,
         estado: filtroEstado !== "todos" ? filtroEstado : null,
         q: busqueda,
+        fechaDesde,
+        fechaHasta,
       };
 
       const res = await axios.get("http://localhost:8000/api/pagos", {
@@ -42,11 +47,29 @@ export default function MainPagos() {
   // Resetear a pág 1 cuando cambian los filtros
   useEffect(() => {
     setPaginaActual(1);
-  }, [filtroEstado, busqueda]);
+  }, [filtroEstado, busqueda, fechaDesde, fechaHasta]);
 
   useEffect(() => {
     fetchPagos();
-  }, [paginaActual, filtroEstado, busqueda]);
+  }, [paginaActual, filtroEstado, busqueda, fechaDesde, fechaHasta]);
+
+  const exportToExcel = () => {
+    if (pagos.length === 0) {
+      return Swal.fire("Sin datos", "No hay datos para exportar", "info");
+    }
+    const ws = XLSX.utils.json_to_sheet(pagos.map(p => ({
+      ID: p.id_pago,
+      Turista: `${p.turista_nombre} ${p.turista_apellido}`,
+      Metodo: p.metodo,
+      Monto: p.monto,
+      Estado: p.estado_pago,
+      Reserva: p.id_reserva,
+      Fecha: p.fecha_pago ? new Date(p.fecha_pago).toLocaleDateString() : "-"
+    })));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Pagos");
+    XLSX.writeFile(wb, "Pagos_Export.xlsx");
+  };
 
   const actualizarEstado = async (id_pago, nuevo_estado) => {
     const confirm = await Swal.fire({
@@ -87,14 +110,24 @@ export default function MainPagos() {
             </div>
 
             {/* Estilo idéntico a Excursiones/Turistas */}
-            <div className="d-flex align-items-center gap-2">
+            <div className="d-flex align-items-center gap-2 flex-wrap">
+              <InputGroup size="sm" style={{ width: "auto" }}>
+                <InputGroup.Text><i className="bi bi-calendar-event me-1"></i> Desde</InputGroup.Text>
+                <Form.Control type="date" value={fechaDesde} onChange={e => setFechaDesde(e.target.value)} />
+              </InputGroup>
+              
+              <InputGroup size="sm" style={{ width: "auto" }}>
+                <InputGroup.Text><i className="bi bi-calendar-event-fill me-1"></i> Hasta</InputGroup.Text>
+                <Form.Control type="date" value={fechaHasta} onChange={e => setFechaHasta(e.target.value)} />
+              </InputGroup>
+              
               <Dropdown align="end">
                 <Dropdown.Toggle variant="outline-primary" size="sm">
                   <i className="bi bi-funnel"></i> Filtrar estado:{" "}
                   {filtroEstado.toUpperCase()}
                 </Dropdown.Toggle>
                 <Dropdown.Menu>
-                  {["todos", "pendiente", "aprobado", "rechazado"].map(
+                  {["pendiente", "aprobado", "rechazado"].map(
                     (est) => (
                       <Dropdown.Item
                         key={est}
@@ -106,6 +139,10 @@ export default function MainPagos() {
                   )}
                 </Dropdown.Menu>
               </Dropdown>
+              
+              <Button variant="outline-success" size="sm" onClick={exportToExcel} title="Exportar a Excel">
+                <i className="bi bi-file-earmark-excel"></i> Excel
+              </Button>
             </div>
           </div>
 
@@ -122,6 +159,7 @@ export default function MainPagos() {
                   <th>Método</th>
                   <th>Monto</th>
                   <th>Estado</th>
+                  <th>Fecha</th>
                   <th>Reserva</th>
                   <th>Acciones</th>
                 </tr>
@@ -148,6 +186,7 @@ export default function MainPagos() {
                         {p.estado_pago.toUpperCase()}
                       </Badge>
                     </td>
+                    <td>{p.fecha_pago ? new Date(p.fecha_pago).toLocaleDateString() : "-"}</td>
                     <td>{p.id_reserva}</td>
                     <td>
                       {p.estado_pago === "pendiente" && (

@@ -4,7 +4,8 @@ import axios from "axios";
 import { Card, Button, Table, Spinner } from "react-bootstrap";
 import Swal from "sweetalert2";
 import PaginationComponent from "../Filtros/Paginacion.jsx";
-import BuscadorGeneral from "../Filtros/BuscadorGeneral.jsx"; // Asegurate de la ruta correcta
+import BuscadorGeneral from "../Filtros/BuscadorGeneral.jsx"; 
+import * as XLSX from "xlsx";
 
 export default function MainTuristas() {
   const [turistas, setTuristas] = useState([]);
@@ -115,6 +116,23 @@ export default function MainTuristas() {
     }
   };
 
+  const exportToExcel = () => {
+    if (turistas.length === 0) {
+      return Swal.fire("Sin datos", "No hay turistas para exportar", "info");
+    }
+    const ws = XLSX.utils.json_to_sheet(turistas.map(t => ({
+      ID: t.id_turista,
+      Nombre_Completo: `${t.nombre} ${t.apellido}`,
+      DNI: t.dni,
+      Email: t.email,
+      Telefono: t.telefono || "-",
+      Estado: t.eliminado ? "Archivado" : "Activo"
+    })));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Turistas");
+    XLSX.writeFile(wb, "Turistas_Export.xlsx");
+  };
+
   return (
     <div className="container-fluid py-4">
       <Card className="shadow-sm">
@@ -149,6 +167,9 @@ export default function MainTuristas() {
                 ) : (
                   <><i className="bi bi-archive-fill me-1"></i> Mostrar Archivados</>
                 )}
+              </Button>
+              <Button variant="outline-success" size="sm" onClick={exportToExcel} title="Exportar a Excel">
+                <i className="bi bi-file-earmark-excel"></i> Excel
               </Button>
             </div>
           </div>

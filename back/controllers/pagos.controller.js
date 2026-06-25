@@ -263,6 +263,16 @@ export const getPagos = async (req, res) => {
     params.push(estado);
   }
 
+  if (fechaDesde) {
+    condiciones.push(`DATE(p.fecha_pago) >= ?`);
+    params.push(fechaDesde);
+  }
+
+  if (fechaHasta) {
+    condiciones.push(`DATE(p.fecha_pago) <= ?`);
+    params.push(fechaHasta);
+  }
+
   const whereClause =
     condiciones.length > 0 ? `WHERE ${condiciones.join(" AND ")}` : "";
   const offset = (parseInt(page) - 1) * parseInt(limit);

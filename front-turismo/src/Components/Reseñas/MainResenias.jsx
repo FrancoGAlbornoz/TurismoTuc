@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Card, Table, Button, Badge, Spinner } from "react-bootstrap";
+import { Card, Table, Button, Badge, Spinner, Form, InputGroup } from "react-bootstrap";
 import Swal from "sweetalert2";
 import PaginationComponent from "../Filtros/Paginacion";
 import BuscadorGeneral from "../Filtros/BuscadorGeneral";
+import * as XLSX from "xlsx";
 
 const API = "http://localhost:8000/api";
 
@@ -15,6 +16,8 @@ export default function MainResenias() {
   
   const [orden, setOrden] = useState(null); // null | 'desc' | 'asc'
   const [busqueda, setBusqueda] = useState("");
+  const [fechaDesde, setFechaDesde] = useState("");
+  const [fechaHasta, setFechaHasta] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const navigate = useNavigate();
@@ -24,7 +27,7 @@ export default function MainResenias() {
     try {
       const res = await axios.get(`${API}/resenias`, {
         // ACÁ ESTABA EL ERROR: Agregamos "ordenCalificacion: orden" para que el backend lo reciba
-        params: { page: currentPage, limit: 10, q: busqueda, ordenCalificacion: orden },
+        params: { page: currentPage, limit: 10, q: busqueda, ordenCalificacion: orden, fechaDesde, fechaHasta },
       });
       setReseñas(res.data.data || []);
       setTotalPages(res.data.totalPages || 1);
@@ -36,15 +39,33 @@ export default function MainResenias() {
     }
   };
 
-  // Si cambia la búsqueda o el orden, reseteamos a la página 1
+  // Si cambia la búsqueda, el orden o las fechas, reseteamos a la página 1
   useEffect(() => {
     setCurrentPage(1);
-  }, [busqueda, orden]);
+  }, [busqueda, orden, fechaDesde, fechaHasta]);
 
-  // Se ejecuta cada vez que cambia la página, la búsqueda o el orden
+  // Se ejecuta cada vez que cambia la página, la búsqueda, el orden o las fechas
   useEffect(() => {
     fetchReseñas();
-  }, [currentPage, busqueda, orden]);
+  }, [currentPage, busqueda, orden, fechaDesde, fechaHasta]);
+
+  const exportToExcel = () => {
+    if (reseñas.length === 0) {
+      return Swal.fire("Sin datos", "No hay reseñas para exportar", "info");
+    }
+    const ws = XLSX.utils.json_to_sheet(reseñas.map(r => ({
+      ID: r.id_resena,
+      Excursion: r.excursion,
+      Turista: r.turista,
+      Calificacion: r.calificacion,
+      Comentario: r.comentario,
+      Fecha: new Date(r.fecha_resena).toLocaleDateString("es-AR"),
+      Estado: r.estado
+    })));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Reseñas");
+    XLSX.writeFile(wb, "Reseñas_Export.xlsx");
+  };
 
   const toggleOrden = () => {
     if (orden === null) setOrden("desc");
@@ -90,7 +111,17 @@ export default function MainResenias() {
           <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
             <h5 className="fw-bold text-success mb-0">Gestión de Reseñas</h5>
             
-            <div className="d-flex gap-2">
+            <div className="d-flex align-items-center gap-2 flex-wrap">
+              <InputGroup size="sm" style={{ width: "auto" }}>
+                <InputGroup.Text><i className="bi bi-calendar-event me-1"></i> Desde</InputGroup.Text>
+                <Form.Control type="date" value={fechaDesde} onChange={e => setFechaDesde(e.target.value)} />
+              </InputGroup>
+              
+              <InputGroup size="sm" style={{ width: "auto" }}>
+                <InputGroup.Text><i className="bi bi-calendar-event-fill me-1"></i> Hasta</InputGroup.Text>
+                <Form.Control type="date" value={fechaHasta} onChange={e => setFechaHasta(e.target.value)} />
+              </InputGroup>
+              
               <div style={{ width: "250px" }}>
                  <BuscadorGeneral placeholder="Turista o excursión..." onBuscar={setBusqueda} />
               </div>
@@ -103,6 +134,9 @@ export default function MainResenias() {
               >
                 <i className={`bi ${getIconoOrden()}`}></i> 
                 {orden === "asc" ? "Menor a Mayor" : orden === "desc" ? "Mayor a Menor" : "Calificación"}
+              </Button>
+              <Button variant="outline-success" size="sm" onClick={exportToExcel} title="Exportar a Excel">
+                <i className="bi bi-file-earmark-excel"></i> Excel
               </Button>
             </div>
           </div>

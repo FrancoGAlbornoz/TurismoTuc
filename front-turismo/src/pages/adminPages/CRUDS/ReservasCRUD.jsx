@@ -7,7 +7,7 @@ import RestoreReservas from "../../../Components/Reservas/RestoreReserva";
 
 const ReservasCRUD = () => {
   return (
-    <div className="container py-3">
+    <div className="container-fluid py-0">
       <Routes>
         <Route index element={<MainReservas />} />
 

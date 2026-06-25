@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Card, Button, Table, Badge, Form, Spinner } from "react-bootstrap";
 import Swal from "sweetalert2";
-import PaginationComponent from "../Filtros/Paginacion"; // <-- Import agregado
+import PaginationComponent from "../Filtros/Paginacion"; 
+import * as XLSX from "xlsx";
 
 const API = "http://localhost:8000/api";
 
@@ -87,6 +88,23 @@ export default function MainUsuarios() {
     }
   };
 
+  const exportToExcel = () => {
+    if (usuarios.length === 0) {
+      return Swal.fire("Sin datos", "No hay usuarios para exportar", "info");
+    }
+    const ws = XLSX.utils.json_to_sheet(usuarios.map(u => ({
+      ID: u.id_usuario,
+      Nombre: `${u.nombre} ${u.apellido}`,
+      Email: u.email,
+      Telefono: u.telefono || "-",
+      Rol: u.nombre_rol,
+      Estado: Number(u.eliminado) === 1 ? "Baja" : "Activo"
+    })));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Usuarios");
+    XLSX.writeFile(wb, "Usuarios_Export.xlsx");
+  };
+
   return (
     <div className="container-fluid py-4">
       <Card className="shadow-sm">
@@ -97,10 +115,12 @@ export default function MainUsuarios() {
               <Form.Select size="sm" value={status} onChange={(e) => setStatus(e.target.value)} style={{ width: 160 }}>
                 <option value="active">Activos</option>
                 <option value="deleted">Dados de baja</option>
-                <option value="all">Todos</option>
               </Form.Select>
               <Button variant="success" size="sm" onClick={() => navigate("create")}>
                 <i className="bi bi-plus-circle me-1"></i> Agregar
+              </Button>
+              <Button variant="outline-success" size="sm" onClick={exportToExcel} title="Exportar a Excel">
+                <i className="bi bi-file-earmark-excel"></i> Excel
               </Button>
             </div>
           </div>

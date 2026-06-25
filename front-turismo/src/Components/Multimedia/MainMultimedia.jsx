@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { Card, Table, Button, Spinner, Badge, Tabs, Tab, Form } from "react-bootstrap";
-import { FaCheck, FaTimes, FaTrash, FaExternalLinkAlt } from "react-icons/fa";
+import { Card, Table, Button, Spinner, Badge, Tabs, Tab, Form, InputGroup } from "react-bootstrap";
+import { FaCheck, FaTimes, FaTrash, FaExternalLinkAlt, FaFileExcel, FaCalendarAlt, FaCalendarCheck } from "react-icons/fa";
 import Swal from "sweetalert2";
 import PaginationComponent from "../Filtros/Paginacion";
+import * as XLSX from "xlsx";
 
 const API = "http://localhost:8000";
 
@@ -12,7 +13,9 @@ const isPdf = (url = "") => url.toLowerCase().endsWith(".pdf");
 const MainMultimedia = () => {
   const [activeTab, setActiveTab] = useState("resenas");
   const [accionLoadingId, setAccionLoadingId] = useState(null);
-  const [estadoFiltro, setEstadoFiltro] = useState("pendiente"); // 👈 NUEVO ESTADO PARA EL FILTRO
+  const [estadoFiltro, setEstadoFiltro] = useState("pendiente"); 
+  const [fechaDesde, setFechaDesde] = useState("");
+  const [fechaHasta, setFechaHasta] = useState("");
 
   const [dataResenas, setDataResenas] = useState({ items: [], totalPages: 1, currentPage: 1 });
   const [dataComprobantes, setDataComprobantes] = useState({ items: [], totalPages: 1, currentPage: 1 });
@@ -23,7 +26,7 @@ const MainMultimedia = () => {
     const endpoint = tab === "resenas" ? "/api/multimedia/pendientes" : "/api/comprobantes/pendientes";
     try {
       // Pasamos el estado al backend
-      const res = await axios.get(`${API}${endpoint}`, { params: { page, limit: 10, estado: estadoFiltro } });
+      const res = await axios.get(`${API}${endpoint}`, { params: { page, limit: 10, estado: estadoFiltro, fechaDesde, fechaHasta } });
       
       const arrayDatos = Array.isArray(res.data) ? res.data : (res.data.data || []);
       const newState = {
@@ -44,7 +47,24 @@ const MainMultimedia = () => {
   // Recarga los datos cuando cambiás de pestaña o cambiás el filtro
   useEffect(() => {
     fetchData(activeTab, 1);
-  }, [activeTab, estadoFiltro]);
+  }, [activeTab, estadoFiltro, fechaDesde, fechaHasta]);
+
+  const exportToExcel = () => {
+    const dataToExport = activeTab === "resenas" ? dataResenas.items : dataComprobantes.items;
+    if (dataToExport.length === 0) {
+      return Swal.fire("Sin datos", "No hay datos para exportar", "info");
+    }
+    const ws = XLSX.utils.json_to_sheet(dataToExport.map(item => ({
+      ID: item.id_multimedia,
+      Excursion_Reserva: item.excursion_titulo || item.id_reserva || "-",
+      Turista: `${item.turista_nombre} ${item.turista_apellido}`,
+      Estado: item.estado_moderacion,
+      Fecha: item.fecha_creacion ? new Date(item.fecha_creacion).toLocaleDateString() : "-"
+    })));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Multimedia");
+    XLSX.writeFile(wb, `Multimedia_${activeTab}.xlsx`);
+  };
 
   const ejecutarAccion = async (id, tipo, contexto) => {
     const esComprobante = contexto === "comprobantes";
@@ -83,8 +103,17 @@ const MainMultimedia = () => {
         <Card.Header className="bg-white border-0 py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
           <h5 className="mb-0 text-success fw-bold">Gestión de Multimedia</h5>
           
-          {/* 👈 NUEVO: SELECTOR DE ESTADO */}
-          <div className="d-flex align-items-center gap-2">
+          <div className="d-flex align-items-center gap-2 flex-wrap">
+            <InputGroup size="sm" style={{ width: "auto" }}>
+              <InputGroup.Text><FaCalendarAlt className="me-1"/> Desde</InputGroup.Text>
+              <Form.Control type="date" value={fechaDesde} onChange={e => setFechaDesde(e.target.value)} />
+            </InputGroup>
+            
+            <InputGroup size="sm" style={{ width: "auto" }}>
+              <InputGroup.Text><FaCalendarCheck className="me-1"/> Hasta</InputGroup.Text>
+              <Form.Control type="date" value={fechaHasta} onChange={e => setFechaHasta(e.target.value)} />
+            </InputGroup>
+            
             <span className="text-muted small fw-semibold">Mostrar:</span>
             <Form.Select 
               size="sm" 
@@ -95,8 +124,8 @@ const MainMultimedia = () => {
               <option value="pendiente">Pendientes</option>
               <option value="aprobada">Aprobadas</option>
               <option value="rechazada">Rechazadas</option>
-              <option value="todas">Todas</option>
             </Form.Select>
+            <Button variant="outline-success" size="sm" onClick={exportToExcel} title="Exportar a Excel"><FaFileExcel /></Button>
           </div>
         </Card.Header>
 
@@ -118,6 +147,7 @@ const MainMultimedia = () => {
                     <th>Turista</th>
                     <th>Archivo</th>
                     <th>Estado</th>
+                    <th>Fecha</th>
                     <th style={{ width: "200px" }} className="text-center">Acciones</th>
                   </tr>
                 </thead>
@@ -143,6 +173,7 @@ const MainMultimedia = () => {
                             {item.estado_moderacion}
                           </Badge>
                         </td>
+                        <td>{item.fecha_creacion ? new Date(item.fecha_creacion).toLocaleDateString() : "-"}</td>
                         <td className="text-center">
                           <div className="btn-group">
                             {/* Si ya está aprobada/rechazada, ocultamos estos botones */}

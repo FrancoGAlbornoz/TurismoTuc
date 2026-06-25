@@ -93,15 +93,24 @@ export const uploadImagenResena = async (req, res) => {
 // -------------------------------------------------------------------
 export const getPendientesMultimedia = async (req, res) => {
   // Ahora recibimos el "estado" desde el frontend (por defecto "pendiente")
-  const { page = 1, limit = 10, estado = 'pendiente' } = req.query;
+  const { page = 1, limit = 10, estado = 'pendiente', fechaDesde, fechaHasta } = req.query;
   const offset = (parseInt(page) - 1) * parseInt(limit);
 
   let whereClause = "m.tipo = 'foto' AND m.eliminado = 0";
   let queryParams = [];
 
-  if (estado !== 'todas') {
+  if (estado && estado !== 'todas') {
     whereClause += " AND m.estado_moderacion = ?";
     queryParams.push(estado);
+  }
+
+  if (fechaDesde) {
+    whereClause += " AND DATE(m.fecha_creacion) >= ?";
+    queryParams.push(fechaDesde);
+  }
+  if (fechaHasta) {
+    whereClause += " AND DATE(m.fecha_creacion) <= ?";
+    queryParams.push(fechaHasta);
   }
 
   try {
@@ -276,7 +285,33 @@ export const eliminarMultimedia = async (req, res) => {
 };
 
 export const getPendientesComprobantes = async (req, res) => {
+  const { page = 1, limit = 10, estado = 'pendiente', fechaDesde, fechaHasta } = req.query;
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+
+  let whereClause = "m.tipo = 'comprobante' AND m.eliminado = 0";
+  let queryParams = [];
+
+  if (estado && estado !== 'todas') {
+    whereClause += " AND m.estado_moderacion = ?";
+    queryParams.push(estado);
+  }
+
+  if (fechaDesde) {
+    whereClause += " AND DATE(m.fecha_creacion) >= ?";
+    queryParams.push(fechaDesde);
+  }
+  if (fechaHasta) {
+    whereClause += " AND DATE(m.fecha_creacion) <= ?";
+    queryParams.push(fechaHasta);
+  }
+
   try {
+    const [countResult] = await pool.promise().query(
+      `SELECT COUNT(*) as total FROM Multimedia m WHERE ${whereClause}`,
+      queryParams
+    );
+    const total = countResult[0].total;
+
     const [rows] = await pool.promise().query(`
       SELECT
         m.id_multimedia,
@@ -286,6 +321,7 @@ export const getPendientesComprobantes = async (req, res) => {
         m.id_turista,
         m.id_reserva,
         m.estado_moderacion,
+        m.fecha_creacion,
         t.nombre   AS turista_nombre,
         t.apellido AS turista_apellido,
         t.email    AS email,
@@ -296,13 +332,16 @@ export const getPendientesComprobantes = async (req, res) => {
       LEFT JOIN Reservas r ON m.id_reserva = r.id_reserva
       LEFT JOIN FechasExcursion fe ON r.id_fecha = fe.id_fecha
       LEFT JOIN Excursiones e ON fe.id_excursion = e.id_excursion
-      WHERE m.tipo = 'comprobante'
-        AND m.eliminado = 0
-        AND m.estado_moderacion = 'pendiente'
+      WHERE ${whereClause}
       ORDER BY m.id_multimedia DESC
-    `);
+      LIMIT ? OFFSET ?
+    `, [...queryParams, parseInt(limit), parseInt(offset)]);
 
-    return res.json(rows);
+    return res.json({ 
+      data: rows, 
+      totalPages: Math.ceil(total / limit) || 1, 
+      currentPage: parseInt(page) 
+    });
   } catch (error) {
     console.error("Error al obtener comprobantes pendientes:", error);
     return res.status(500).json({
