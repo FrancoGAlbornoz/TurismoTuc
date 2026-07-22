@@ -11,7 +11,7 @@ export const iniciarPagoPayway = async (req, res) => {
   const { id_reserva } = req.body;
 
   try {
-    // 1️⃣ Buscar la reserva
+
     const [rows] = await pool.promise().query(
       `
       SELECT 
@@ -29,7 +29,7 @@ export const iniciarPagoPayway = async (req, res) => {
 
     const reserva = rows[0];
 
-    // 2️⃣ Simulamos un pago exitoso (sandbox local)
+
     const fakePayment = {
       id: `sim-${Date.now()}`,
       status: "approved",
@@ -39,7 +39,7 @@ export const iniciarPagoPayway = async (req, res) => {
       message: "Pago simulado localmente (sin conexión a Payway)",
     };
 
-    // 3️⃣ Registrar el pago
+
     await pool.promise().query(
       `
       INSERT INTO Pagos (id_reserva, id_medio_pago, monto, estado_pago, moneda)
@@ -54,7 +54,7 @@ export const iniciarPagoPayway = async (req, res) => {
       [id_reserva, reserva.monto_total],
     );
 
-    // 4️⃣ Actualizar reserva a confirmada
+
     await pool.promise().query(
       `
       UPDATE Reservas
@@ -64,7 +64,7 @@ export const iniciarPagoPayway = async (req, res) => {
       [id_reserva],
     );
 
-    // 5️⃣ 🔹 Descontar cupo solo al confirmar pago
+
     await pool.promise().query(
       `
       UPDATE FechasExcursion f
@@ -77,7 +77,7 @@ export const iniciarPagoPayway = async (req, res) => {
 
     console.log(`✅ Pago simulado con éxito para la reserva ${id_reserva}`);
 
-    // 6️⃣ 🧹 Cerrar carritos del turista (IGUAL que MercadoPago)
+
     const [carritos] = await pool.promise().query(
       `
       SELECT id_carrito
@@ -92,7 +92,7 @@ export const iniciarPagoPayway = async (req, res) => {
     if (carritos.length > 0) {
       const idsCarritos = carritos.map((c) => c.id_carrito);
 
-      // eliminar items
+
       await pool.promise().query(
         `
     UPDATE CarritoItems
@@ -104,7 +104,7 @@ export const iniciarPagoPayway = async (req, res) => {
         [idsCarritos],
       );
 
-      // cerrar carritos
+
       await pool.promise().query(
         `
     UPDATE Carrito
@@ -117,7 +117,7 @@ export const iniciarPagoPayway = async (req, res) => {
       console.log("🧹 Carritos cerrados por Payway:", idsCarritos);
     }
 
-    // 7 Devolver al frontend
+
     res.status(200).json({
       message: "Pago simulado correctamente (modo local)",
       data: {
@@ -158,7 +158,7 @@ export const callbackPayway = async (req, res) => {
       [estadoPago, estadoReserva, id_reserva],
     );
 
-    // 🔹 Si se aprueba → descontar cupo
+
     if (estadoPago === "aprobado") {
       await pool.promise().query(
         `
@@ -305,7 +305,7 @@ export const getPagos = async (req, res) => {
 
   const dataParams = [...params, parseInt(limit), parseInt(offset)];
 
-  // Ejecutamos consultas
+
   pool.query(sqlCount, params, (err, countResult) => {
     if (err) {
       console.error("Error al contar pagos:", err);
@@ -362,7 +362,7 @@ export const updatePagoEstado = async (req, res) => {
 
     const pago = rows[0];
 
-    // 🔹 Actualizar pago
+
     await pool.promise().query(
       `
       UPDATE Pagos
@@ -372,7 +372,7 @@ export const updatePagoEstado = async (req, res) => {
       [nuevo_estado, referencia, id_pago],
     );
 
-    // 🔸 Si se aprueba → descontar cupo y confirmar reserva
+
     if (nuevo_estado === "aprobado" && pago.estado_actual !== "aprobado") {
       await pool.promise().query(
         `
@@ -393,7 +393,7 @@ export const updatePagoEstado = async (req, res) => {
       );
     }
 
-    // 🔻 Si se rechaza → cancelar reserva
+
     if (nuevo_estado === "rechazado") {
       await pool.promise().query(
         `
@@ -434,7 +434,7 @@ export const crearPago = async (req, res) => {
   try {
     const { items, id_turista, reservas } = req.body;
 
-    // 🔎 1️⃣ OBTENER CARRITO ABIERTO DEL TURISTA (OBLIGATORIO)
+
     const [carritoRows] = await pool.promise().query(
       `
       SELECT id_carrito
@@ -456,7 +456,7 @@ export const crearPago = async (req, res) => {
 
     const id_carrito = carritoRows[0].id_carrito;
 
-    // 2️⃣ CREAR PREFERENCE DE MERCADOPAGO
+
     const preference = {
       items: items.map((item) => ({
         title: item.nombre,
@@ -479,10 +479,10 @@ export const crearPago = async (req, res) => {
       notification_url:
         "https://epizootically-semitropical-jannie.ngrok-free.dev/api/pagos/webhook/mercadopago",
 
-      // 3️⃣ METADATA CLAVE PARA EL WEBHOOK
+
       metadata: {
-        //id_turista,
-        //reservas,
+
+
         id_carrito,
       },
     };
@@ -532,12 +532,12 @@ export const webhookMercadoPago = async (req, res) => {
       return res.sendStatus(200);
     }
 
-    // 🛡️ 1. INICIAR TRANSACCIÓN SQL
+
     const connection = await pool.promise().getConnection();
     await connection.beginTransaction();
 
     try {
-      // 🔒 2. BLOQUEO DE FILA (FOR UPDATE) - Evita la condición de carrera
+
       const [carritoEstado] = await connection.query(
         `SELECT estado, id_turista FROM Carrito WHERE id_carrito = ? FOR UPDATE`,
         [id_carrito]
@@ -559,7 +559,7 @@ export const webhookMercadoPago = async (req, res) => {
 
       const id_turista = carritoEstado[0].id_turista;
 
-      // 🛒 3. Obtener items reales del carrito
+
       const [items] = await connection.query(
         `SELECT * FROM CarritoItems WHERE id_carrito = ? AND eliminado = 0`,
         [id_carrito]
@@ -571,16 +571,16 @@ export const webhookMercadoPago = async (req, res) => {
         return res.sendStatus(200);
       }
 
-      // ✅ 4. Crear reservas y DESCONTAR CUPOS
+
       for (const item of items) {
-        // Insertar Reserva
+
         await connection.query(
           `INSERT INTO Reservas (id_fecha, id_turista, cantidad_personas, monto_total, estado_reserva)
            VALUES (?, ?, ?, ?, 'pendiente')`,
           [item.id_fecha, id_turista, item.cantidad_personas, item.subtotal]
         );
 
-        // 📉 Actualizar Inventario (Reemplaza 'Fechas' y 'cupos_disponibles' por los nombres reales de tu tabla/columna)
+
         await connection.query(
           `UPDATE FechasExcursion 
            SET cupo_disponible = cupo_disponible - ? 
@@ -589,19 +589,19 @@ export const webhookMercadoPago = async (req, res) => {
         );
       }
 
-      // 🔐 5. Cerrar carrito
+
       await connection.query(
         `UPDATE Carrito SET estado = 'cerrado' WHERE id_carrito = ?`,
         [id_carrito]
       );
 
-      // 🧹 6. Eliminar items
+
       await connection.query(
         `UPDATE CarritoItems SET eliminado = 1, fecha_eliminacion = NOW() WHERE id_carrito = ?`,
         [id_carrito]
       );
 
-      // 💾 7. CONFIRMAR TRANSACCIÓN
+
       await connection.commit();
       connection.release();
       
@@ -609,7 +609,7 @@ export const webhookMercadoPago = async (req, res) => {
       return res.sendStatus(200);
 
     } catch (dbError) {
-      // 💥 SI ALGO FALLA, DESHACER TODO (Rollback)
+
       await connection.rollback();
       connection.release();
       console.error("🔥 Error en base de datos durante el webhook, se revirtieron los cambios:", dbError);

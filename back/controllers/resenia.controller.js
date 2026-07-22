@@ -72,14 +72,14 @@ export const getResenas = (req, res) => {
   let whereClause = "r.eliminado = 0";
   let queryParams = [];
 
-  // 1. Lógica del Buscador General
+
   if (q) {
     whereClause += " AND (e.titulo LIKE ? OR t.nombre LIKE ? OR t.apellido LIKE ?)";
     const search = `%${q}%`;
     queryParams.push(search, search, search);
   }
 
-  // Lógica de fechas
+
   if (fechaDesde) {
     whereClause += " AND DATE(r.fecha_resena) >= ?";
     queryParams.push(fechaDesde);
@@ -89,10 +89,10 @@ export const getResenas = (req, res) => {
     queryParams.push(fechaHasta);
   }
 
-  // 2. Lógica del Ordenamiento (CON DESEMPATE PARA LA PAGINACIÓN)
+
   let orderClause = "r.fecha_resena DESC"; // Por defecto
   if (ordenCalificacion === "asc") {
-    // Si hay empate de calificación, ordenamos por ID para que no salten en la paginación
+
     orderClause = "r.calificacion ASC, r.id_resena DESC"; 
   } else if (ordenCalificacion === "desc") {
     orderClause = "r.calificacion DESC, r.id_resena DESC";
@@ -116,7 +116,7 @@ export const getResenas = (req, res) => {
     LIMIT ? OFFSET ?
   `;
 
-  // Ejecutamos el Count
+
   pool.query(sqlCount, queryParams, (err, countResult) => {
     if (err) {
       console.error("Error al contar reseñas:", err);
@@ -126,7 +126,7 @@ export const getResenas = (req, res) => {
     const total = countResult[0].total;
     const totalPages = Math.ceil(total / parseInt(limit));
 
-    // Ejecutamos la data con Limit y Offset
+
     pool.query(sqlData, [...queryParams, parseInt(limit), parseInt(offset)], (err, dataResult) => {
       if (err) {
         console.error("Error al obtener reseñas:", err);
@@ -152,7 +152,7 @@ export const createResena = (req, res) => {
     return res.status(400).json({ message: "Faltan datos obligatorios." });
   }
 
-  // 1️⃣ Verificar si la reserva existe y está finalizada
+
   const sqlReserva = `
     SELECT r.id_reserva, r.estado_reserva, e.id_excursion
     FROM Reservas r
@@ -178,7 +178,7 @@ export const createResena = (req, res) => {
       });
     }
 
-    // 2️⃣ Verificar si ya existe una reseña para esta reserva
+
     const sqlCheck = `
       SELECT id_resena FROM Reseñas 
       WHERE id_reserva = ? AND eliminado = 0
@@ -195,7 +195,7 @@ export const createResena = (req, res) => {
         });
       }
 
-      // 3️⃣ Crear la reseña
+
       const sqlInsert = `
         INSERT INTO Reseñas (id_excursion, id_reserva, id_turista, calificacion, comentario, estado)
         VALUES (?, ?, ?, ?, ?, 'publicada')

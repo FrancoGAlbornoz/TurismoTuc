@@ -21,22 +21,22 @@ export const getReservas = (req, res) => {
   const condiciones = [];
   const params = [];
 
-  // 🔹 CONTROL DE HISTORIAL COMPLETO OVERRIDE 🔹
+
   if (estadoreserva === "todas") {
-    // Historial Completo: No filtra por estado ni por eliminado, trae absolutamente todo
+
   } else {
     if (mostrarArchivadas === "true") {
-      // 📂 VISTA DE ARCHIVADAS:
+
       condiciones.push("r.eliminado = 1");
       
-      // Si el admin busca un estado específico dentro del archivo lo filtramos,
-      // pero si está en "relevantes", no agregamos filtro de estado para que aparezcan
-      // automáticamente tanto las finalizadas como las canceladas.
+
+
+
       if (estadoreserva && estadoreserva !== "relevantes") {
         condiciones.push(`r.estado_reserva = '${estadoreserva}'`);
       }
     } else {
-      // 💼 VISTA DE ACTIVAS (Día a día):
+
       condiciones.push("r.eliminado = 0");
       
       if (estadoreserva === "relevantes") {
@@ -47,7 +47,7 @@ export const getReservas = (req, res) => {
     }
   }
 
-  // Filtro de Fechas (se mantiene igual)
+
   if (fechaDesde && fechaHasta) {
     condiciones.push(`DATE(r.fecha_reserva) BETWEEN '${fechaDesde}' AND '${fechaHasta}'`);
   } else if (fechaDesde) {
@@ -169,7 +169,7 @@ export const createReserva = (req, res) => {
     return res.status(400).json({ message: "Faltan datos obligatorios" });
   }
 
-  // 🔎 1️⃣ Verificar si ya existe una pendiente igual
+
   const sqlExiste = `
     SELECT id_reserva 
     FROM Reservas
@@ -192,7 +192,7 @@ export const createReserva = (req, res) => {
       });
     }
 
-    // 🔎 2️⃣ Obtener precio
+
     const sqlPrecio = `
       SELECT e.precio_base
       FROM FechasExcursion f
@@ -215,7 +215,7 @@ export const createReserva = (req, res) => {
       const precioBase = results[0].precio_base;
       const monto_total = precioBase * cantidad_personas;
 
-      // 🔎 3️⃣ Insertar
+
       const sqlInsert = `
         INSERT INTO Reservas
         (id_fecha, id_turista, cantidad_personas, monto_total, estado_reserva)
@@ -267,7 +267,7 @@ export const updateReserva = (req, res) => {
     return res.status(400).json({ message: "Estado de reserva inválido" });
   }
 
-  // 💥 LA MAGIA AUTOMÁTICA: Si pasa a finalizada o cancelada, se auto-archiva
+
   const autoEliminado = ["finalizada", "cancelada"].includes(estado_reserva) ? 1 : 0;
   const fechaEliminacion = autoEliminado ? "NOW()" : "NULL";
 
@@ -492,7 +492,7 @@ export const buscarReservasPorDNI = (req, res) => {
       eliminado: r.eliminado,
     }));
 
-    // Devolvemos array (vacío si no encontró nada). Esto evita 404 en búsquedas.
+
     return res.json(rows);
   });
 };
@@ -505,7 +505,7 @@ export const cancelarReservaTurista = async (req, res) => {
   try {
     await connection.beginTransaction();
 
-    // 1. Obtener datos de la reserva para saber qué fecha y cuántos lugares liberar
+
     const [reservaRows] = await connection.query(
       "SELECT id_fecha, cantidad_personas, estado_reserva FROM Reservas WHERE id_reserva = ?",
       [id],
@@ -518,7 +518,7 @@ export const cancelarReservaTurista = async (req, res) => {
 
     const { id_fecha, cantidad_personas, estado_reserva } = reservaRows[0];
 
-    // Validación: No cancelar si ya está cancelada o finalizada
+
     if (estado_reserva === "cancelada" || estado_reserva === "finalizada") {
       await connection.rollback();
       return res
@@ -528,13 +528,13 @@ export const cancelarReservaTurista = async (req, res) => {
         });
     }
 
-    // 2. Cambiar estado a 'cancelada'
+
     await connection.query(
       "UPDATE Reservas SET estado_reserva = 'cancelada' WHERE id_reserva = ?",
       [id],
     );
 
-    // 3. Devolver los cupos a la fecha correspondiente
+
     await connection.query(
       "UPDATE FechasExcursion SET cupo_disponible = cupo_disponible + ? WHERE id_fecha = ?",
       [cantidad_personas, id_fecha],

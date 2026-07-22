@@ -15,30 +15,30 @@ export const getExcursiones = (req, res) => {
   const condiciones = [];
   const values = [];
 
-  // 1. Filtro de Archivadas (Toggle)
+
   if (mostrarArchivadas === "true") {
     condiciones.push("e.eliminado = 1");
   } else {
     condiciones.push("e.eliminado = 0");
-    // Por defecto ocultamos las inactivas en la vista normal (lo "relevante")
+
     if (!estado || estado === "todas") {
       condiciones.push("e.estado = 'activa'");
     }
   }
 
-  // 2. Filtro de estado explícito
+
   if (estado && estado !== "todas") {
     condiciones.push("e.estado = ?");
     values.push(estado);
   }
 
-  // 3. Buscador General (q)
+
   if (q) {
     condiciones.push("(e.titulo LIKE ? OR e.ubicacion LIKE ?)");
     values.push(`%${q}%`, `%${q}%`);
   }
 
-  // Otros filtros (ubicacion, precios, etc.)
+
   if (ubicacion) { condiciones.push("e.ubicacion LIKE ?"); values.push(`%${ubicacion}%`); }
   if (duracion) { condiciones.push("e.duracion LIKE ?"); values.push(`%${duracion}%`); }
   if (precio_min) { condiciones.push("e.precio_base >= ?"); values.push(precio_min); }
@@ -47,7 +47,7 @@ export const getExcursiones = (req, res) => {
 
   const whereClause = condiciones.length > 0 ? `WHERE ${condiciones.join(" AND ")}` : "";
 
-  // 4. Contar el total para el paginador (usamos DISTINCT para no duplicar por categorías)
+
   const sqlCount = `
     SELECT COUNT(DISTINCT e.id_excursion) AS total 
     FROM Excursiones e
@@ -63,7 +63,7 @@ export const getExcursiones = (req, res) => {
     const totalPages = Math.ceil(total / parseInt(limit));
     const offset = (parseInt(page) - 1) * parseInt(limit);
 
-    // 5. Consulta con subquery para paginar correctamente sin romper las categorías
+
     const sqlData = `
       SELECT e.id_excursion, e.titulo, e.descripcion, e.precio_base, e.duracion,
              e.ubicacion, e.incluye, e.politicas, e.estado, e.fecha_creacion, e.eliminado,
@@ -157,7 +157,7 @@ export const getExcursionById = (req, res) => {
     if (results.length === 0)
       return res.status(404).json({ message: "Excursión no encontrada" });
 
-    // Estructura base
+
     const excursion = {
       id_excursion: results[0].id_excursion,
       titulo: results[0].titulo,
@@ -176,7 +176,7 @@ export const getExcursionById = (req, res) => {
       imagenes: [],
     };
 
-    // Agregar categorías
+
     results.forEach((row) => {
       if (row.id_categoria_excursion && row.nombre_categoria) {
         excursion.categorias.push({
@@ -186,7 +186,7 @@ export const getExcursionById = (req, res) => {
       }
     });
 
-    // Traer imágenes relacionadas
+
     const sqlImgs = `
   SELECT id_multimedia, url, descripcion, tipo
   FROM Multimedia
@@ -202,7 +202,7 @@ export const getExcursionById = (req, res) => {
         return res.status(500).json({ message: "Error al obtener imágenes" });
       }
 
-      // Si no hay imágenes, dejamos el array vacío
+
       excursion.imagenes = imgs || [];
       res.json(excursion);
     });
@@ -563,18 +563,18 @@ export const getTodasLasFechasPaginadas = (req, res) => {
   const condiciones = [];
   const values = [];
 
-  // 1. Filtro de Relevantes vs Archivadas/Cerradas
+
   if (mostrarArchivadas === "true") {
-    // Si pide archivadas, traemos las eliminadas lógicamente o las que tienen estado 'cerrada'
+
     condiciones.push("(f.eliminado = 1 OR f.estado = 'cerrada')");
   } else {
-    // Relevantes: No eliminadas, abiertas, y que sean de HOY en adelante
+
     condiciones.push("f.eliminado = 0");
     condiciones.push("f.estado = 'abierta'");
     condiciones.push("f.fecha >= CURDATE()"); 
   }
 
-  // 2. Buscador por Título de Excursión
+
   if (q) {
     condiciones.push("e.titulo LIKE ?");
     values.push(`%${q}%`);
@@ -640,7 +640,7 @@ export const restoreFechaExcursion = (req, res) => {
 // Obtener todas las imágenes de una excursión
 // Obtener imágenes visibles en la excursión (oficiales + turistas aprobadas)
 export const getMultimediaByExcursion = (req, res) => {
-  // Aceptar ambos nombres de parámetro: :id_excursion o :id
+
   const id_excursion = req.params.id_excursion || req.params.id;
 
   if (!id_excursion) {
@@ -799,7 +799,7 @@ export const notificarGuia = async (req, res) => {
   const { fecha, id_fecha } = req.body;
 
   try {
-    // Obtener datos de la excursión y del guía
+
     const [rows] = await pool.promise().query(
       `SELECT e.titulo, e.ubicacion, u.email, u.nombre
        FROM Excursiones e
@@ -817,7 +817,7 @@ export const notificarGuia = async (req, res) => {
     const { titulo, ubicacion, email, nombre } = rows[0];
     const fechaFormateada = new Date(fecha).toLocaleDateString("es-AR");
 
-    // Configurar transporte de correo
+
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -826,7 +826,7 @@ export const notificarGuia = async (req, res) => {
       },
     });
 
-    // Enviar correo con diseño HTML
+
     await transporter.sendMail({
       from: `"MAAVYT Panel" <${process.env.EMAIL_USER}>`,
       to: email,
@@ -881,16 +881,16 @@ export const updateCategoriasExcursionMultiple = async (req, res) => {
     ids_categorias = [];
   }
 
-  // Aseguramos que sean números válidos
+
   ids_categorias = ids_categorias.map((c) => Number(c)).filter(Boolean);
 
   try {
-    // 1) Limpiar categorías anteriores
+
     await pool
       .promise()
       .query("DELETE FROM ExcursionCategorias WHERE id_excursion = ?", [id]);
 
-    // 2) Insertar nuevas categorías (si hay)
+
     if (ids_categorias.length > 0) {
       const values = ids_categorias.map((idCat) => [id, idCat]);
 

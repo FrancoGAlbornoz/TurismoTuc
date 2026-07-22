@@ -6,6 +6,8 @@ import Swal from "sweetalert2";
 import PaginationComponent from "../Filtros/Paginacion.jsx";
 import BuscadorGeneral from "../Filtros/BuscadorGeneral.jsx"; 
 import * as XLSX from "xlsx";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
 
 export default function MainExcursiones() {
   const [excursiones, setExcursiones] = useState([]);
@@ -19,8 +21,10 @@ export default function MainExcursiones() {
   const [paginaActual, setPaginaActual] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(1);
   const porPagina = 10;
+  const [loading, setLoading] = useState(false);
 
   const fetchExcursiones = async () => {
+    setLoading(true);
     try {
       const params = {
         page: paginaActual,
@@ -40,6 +44,8 @@ export default function MainExcursiones() {
         text: "No se pudieron cargar las excursiones.",
         icon: "error",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -128,7 +134,7 @@ export default function MainExcursiones() {
 
   return (
     <div className="container-fluid py-4">
-      <Card className="shadow-sm">
+      <Card className="card-premium shadow-sm">
         <Card.Body className="p-3">
           
           {/* Encabezado y Filtros */}
@@ -194,8 +200,13 @@ export default function MainExcursiones() {
             </div>
           </div>
 
-          <Table hover responsive className="mb-0 align-middle">
-            <thead className="table-light">
+          {loading ? (
+            <div className="py-4">
+              <Skeleton count={8} height={45} className="mb-2" />
+            </div>
+          ) : (
+            <Table hover responsive className="mb-0 align-middle">
+              <thead className="table-light">
               <tr>
                 <th className="d-none d-md-table-cell">ID</th>
                 <th>Título</th>
@@ -218,7 +229,7 @@ export default function MainExcursiones() {
                     <td>
                       <span
                         className={`badge text-uppercase ${
-                          e.estado === "activa" ? "bg-success" : "bg-warning"
+                          e.estado === "activa" ? "badge-soft-success" : "badge-soft-warning"
                         }`}
                       >
                         {e.estado}
@@ -256,6 +267,7 @@ export default function MainExcursiones() {
                         <Button
                           variant="outline-secondary"
                           size="sm"
+                          className="btn-action"
                           onClick={() => navigate(`/dashboard-admin/excursiones/view/${e.id_excursion}`)}
                           title="Ver detalles"
                         >
@@ -266,6 +278,7 @@ export default function MainExcursiones() {
                           <Button
                             variant="outline-primary"
                             size="sm"
+                            className="btn-action"
                             onClick={() => navigate(`/dashboard-admin/excursiones/edit/${e.id_excursion}`)}
                             title="Editar"
                           >
@@ -277,6 +290,7 @@ export default function MainExcursiones() {
                           <Button
                             variant="outline-success"
                             size="sm"
+                            className="btn-action"
                             onClick={() => handleRestore(e.id_excursion)}
                             title="Restaurar excursión"
                           >
@@ -286,6 +300,7 @@ export default function MainExcursiones() {
                           <Button
                             variant="outline-danger"
                             size="sm"
+                            className="btn-action"
                             onClick={() => handleEliminar(e.id_excursion)}
                             title="Archivar excursión"
                           >
@@ -298,13 +313,18 @@ export default function MainExcursiones() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="8" className="text-center text-muted py-3">
-                    No hay excursiones registradas para este filtro
+                  <td colSpan="8" className="text-center py-5">
+                    <div className="d-flex flex-column align-items-center justify-content-center text-muted">
+                      <i className="bi bi-inbox mb-2" style={{ fontSize: "3rem", opacity: 0.5 }}></i>
+                      <h5>No hay excursiones registradas</h5>
+                      <p className="mb-0 small">No se encontraron resultados para los filtros aplicados.</p>
+                    </div>
                   </td>
                 </tr>
               )}
             </tbody>
           </Table>
+          )}
 
           {/* Componente de Paginación Compartido */}
           <PaginationComponent

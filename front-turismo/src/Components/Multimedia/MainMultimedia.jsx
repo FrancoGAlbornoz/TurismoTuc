@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Card, Table, Button, Spinner, Badge, Tabs, Tab, Form, InputGroup } from "react-bootstrap";
-import { FaCheck, FaTimes, FaTrash, FaExternalLinkAlt, FaFileExcel, FaCalendarAlt, FaCalendarCheck } from "react-icons/fa";
+import { FaCheck, FaTimes, FaArchive, FaExternalLinkAlt, FaFileExcel, FaCalendarAlt, FaCalendarCheck } from "react-icons/fa";
 import Swal from "sweetalert2";
 import PaginationComponent from "../Filtros/Paginacion";
 import * as XLSX from "xlsx";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
 
 const API = "http://localhost:8000";
 
@@ -14,6 +16,7 @@ const MainMultimedia = () => {
   const [activeTab, setActiveTab] = useState("resenas");
   const [accionLoadingId, setAccionLoadingId] = useState(null);
   const [estadoFiltro, setEstadoFiltro] = useState("pendiente"); 
+  const [filtroAnio, setFiltroAnio] = useState("");
   const [fechaDesde, setFechaDesde] = useState("");
   const [fechaHasta, setFechaHasta] = useState("");
 
@@ -25,8 +28,19 @@ const MainMultimedia = () => {
     setLoading(true);
     const endpoint = tab === "resenas" ? "/api/multimedia/pendientes" : "/api/comprobantes/pendientes";
     try {
+      let fDesde = "";
+      let fHasta = "";
+
+      if (filtroAnio === "personalizado") {
+        fDesde = fechaDesde;
+        fHasta = fechaHasta;
+      } else if (filtroAnio !== "") {
+        fDesde = `${filtroAnio}-01-01`;
+        fHasta = `${filtroAnio}-12-31`;
+      }
+
       // Pasamos el estado al backend
-      const res = await axios.get(`${API}${endpoint}`, { params: { page, limit: 10, estado: estadoFiltro, fechaDesde, fechaHasta } });
+      const res = await axios.get(`${API}${endpoint}`, { params: { page, limit: 10, estado: estadoFiltro, fechaDesde: fDesde, fechaHasta: fHasta } });
       
       const arrayDatos = Array.isArray(res.data) ? res.data : (res.data.data || []);
       const newState = {
@@ -47,7 +61,7 @@ const MainMultimedia = () => {
   // Recarga los datos cuando cambiás de pestaña o cambiás el filtro
   useEffect(() => {
     fetchData(activeTab, 1);
-  }, [activeTab, estadoFiltro, fechaDesde, fechaHasta]);
+  }, [activeTab, estadoFiltro, filtroAnio, fechaDesde, fechaHasta]);
 
   const exportToExcel = () => {
     const dataToExport = activeTab === "resenas" ? dataResenas.items : dataComprobantes.items;
@@ -99,20 +113,45 @@ const MainMultimedia = () => {
 
   return (
     <div className="container-fluid py-4">
-      <Card className="shadow-sm">
+      <Card className="card-premium shadow-sm">
         <Card.Header className="bg-white border-0 py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
-          <h5 className="mb-0 text-success fw-bold">Gestión de Multimedia</h5>
+          <h5 className="mb-0 text-success fw-bold">
+            Gestión de Multimedia
+          </h5>
           
           <div className="d-flex align-items-center gap-2 flex-wrap">
             <InputGroup size="sm" style={{ width: "auto" }}>
-              <InputGroup.Text><FaCalendarAlt className="me-1"/> Desde</InputGroup.Text>
-              <Form.Control type="date" value={fechaDesde} onChange={e => setFechaDesde(e.target.value)} />
+              <InputGroup.Text><FaCalendarAlt className="me-1"/> Año</InputGroup.Text>
+              <Form.Select 
+                value={filtroAnio}
+                onChange={(e) => {
+                  setFiltroAnio(e.target.value);
+                  if (e.target.value !== "personalizado") {
+                    setFechaDesde("");
+                    setFechaHasta("");
+                  }
+                }}
+              >
+                <option value="">Este Año ({new Date().getFullYear()})</option>
+                <option value={new Date().getFullYear() - 1}>{new Date().getFullYear() - 1}</option>
+                <option value={new Date().getFullYear() - 2}>{new Date().getFullYear() - 2}</option>
+                <option value={new Date().getFullYear() - 3}>{new Date().getFullYear() - 3}</option>
+                <option value="personalizado">Personalizado</option>
+              </Form.Select>
             </InputGroup>
-            
-            <InputGroup size="sm" style={{ width: "auto" }}>
-              <InputGroup.Text><FaCalendarCheck className="me-1"/> Hasta</InputGroup.Text>
-              <Form.Control type="date" value={fechaHasta} onChange={e => setFechaHasta(e.target.value)} />
-            </InputGroup>
+
+            {filtroAnio === "personalizado" && (
+              <>
+                <InputGroup size="sm" style={{ width: "auto" }}>
+                  <InputGroup.Text>Desde</InputGroup.Text>
+                  <Form.Control type="date" value={fechaDesde} onChange={e => setFechaDesde(e.target.value)} />
+                </InputGroup>
+                <InputGroup size="sm" style={{ width: "auto" }}>
+                  <InputGroup.Text>Hasta</InputGroup.Text>
+                  <Form.Control type="date" value={fechaHasta} onChange={e => setFechaHasta(e.target.value)} />
+                </InputGroup>
+              </>
+            )}
             
             <span className="text-muted small fw-semibold">Mostrar:</span>
             <Form.Select 
@@ -136,7 +175,7 @@ const MainMultimedia = () => {
           </Tabs>
 
           {loading ? (
-            <div className="text-center py-5"><Spinner animation="border" variant="success" /></div>
+            <div className="py-4"><Skeleton count={8} height={45} className="mb-2" /></div>
           ) : (
             <div className="px-3">
               <Table responsive hover className="align-middle">
@@ -163,15 +202,15 @@ const MainMultimedia = () => {
                         <td>
                           {item.url && (
                             <a href={item.url.startsWith("http") ? item.url : `${API}${item.url}`} target="_blank" rel="noreferrer">
-                              {isPdf(item.url) ? <Badge bg="secondary"><FaExternalLinkAlt /> Ver PDF</Badge> : 
+                              {isPdf(item.url) ? <span className="badge badge-soft-secondary"><FaExternalLinkAlt className="me-1"/> Ver PDF</span> : 
                                 <img src={item.url.startsWith("http") ? item.url : `${API}${item.url}`} style={{width: 50, height: 50, objectFit: 'cover', borderRadius: 4}} alt="prev" />}
                             </a>
                           )}
                         </td>
                         <td>
-                          <Badge bg={item.estado_moderacion === 'aprobada' ? 'success' : item.estado_moderacion === 'rechazada' ? 'danger' : 'warning'} text={item.estado_moderacion === 'pendiente' ? 'dark' : 'light'} className="text-uppercase">
+                          <span className={`badge text-uppercase ${item.estado_moderacion === 'aprobada' ? 'badge-soft-success' : item.estado_moderacion === 'rechazada' ? 'badge-soft-danger' : 'badge-soft-warning'}`}>
                             {item.estado_moderacion}
-                          </Badge>
+                          </span>
                         </td>
                         <td>{item.fecha_creacion ? new Date(item.fecha_creacion).toLocaleDateString() : "-"}</td>
                         <td className="text-center">
@@ -179,11 +218,11 @@ const MainMultimedia = () => {
                             {/* Si ya está aprobada/rechazada, ocultamos estos botones */}
                             {isPendiente && (
                               <>
-                                <Button size="sm" variant="outline-success" title="Aprobar" onClick={() => ejecutarAccion(item.id_multimedia, "aprobar", activeTab)} disabled={accionLoadingId === item.id_multimedia}><FaCheck /></Button>
-                                <Button size="sm" variant="outline-secondary" title="Rechazar" onClick={() => ejecutarAccion(item.id_multimedia, "rechazar", activeTab)} disabled={accionLoadingId === item.id_multimedia}><FaTimes /></Button>
+                                <Button size="sm" variant="outline-success" className="btn-action" title="Aprobar" onClick={() => ejecutarAccion(item.id_multimedia, "aprobar", activeTab)} disabled={accionLoadingId === item.id_multimedia}><FaCheck /></Button>
+                                <Button size="sm" variant="outline-secondary" className="btn-action" title="Rechazar" onClick={() => ejecutarAccion(item.id_multimedia, "rechazar", activeTab)} disabled={accionLoadingId === item.id_multimedia}><FaTimes /></Button>
                               </>
                             )}
-                            <Button size="sm" variant="outline-danger" title="Eliminar (Baja lógica)" onClick={() => ejecutarAccion(item.id_multimedia, "eliminar", activeTab)} disabled={accionLoadingId === item.id_multimedia}><FaTrash /></Button>
+                            <Button size="sm" variant="outline-danger" className="btn-action" title="Eliminar (Baja lógica)" onClick={() => ejecutarAccion(item.id_multimedia, "eliminar", activeTab)} disabled={accionLoadingId === item.id_multimedia}><FaArchive /></Button>
                           </div>
                         </td>
                       </tr>
@@ -191,8 +230,12 @@ const MainMultimedia = () => {
                   })}
                   {(activeTab === "resenas" ? dataResenas.items : dataComprobantes.items).length === 0 && (
                     <tr>
-                      <td colSpan="6" className="text-center py-4 text-muted">
-                        No se encontraron archivos multimedia para este estado.
+                      <td colSpan="7" className="text-center py-5">
+                        <div className="d-flex flex-column align-items-center justify-content-center text-muted">
+                          <i className="bi bi-inbox mb-2" style={{ fontSize: "3rem", opacity: 0.5 }}></i>
+                          <h5>No hay archivos multimedia registrados</h5>
+                          <p className="mb-0 small">Intenta buscar con otros filtros o cambia de año.</p>
+                        </div>
                       </td>
                     </tr>
                   )}

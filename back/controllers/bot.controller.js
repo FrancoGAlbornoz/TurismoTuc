@@ -19,7 +19,7 @@ export const getExcursionesActivasBot = (req, res) => {
       ORDER BY titulo
     `;
     
-  // Usamos pool.query con callback (como tu código original)
+
   pool.query(sql, (err, rows) => { // 👈 Usamos 'rows' aquí, ya que 'values' es más común para INSERT/UPDATE.
       if (err) {
           console.error("❌ Error al obtener excursiones para el bot:", err.message);

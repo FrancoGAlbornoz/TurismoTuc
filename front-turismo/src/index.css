@@ -24,3 +24,79 @@ body {
     --font-size-base: 14px;
   }
 }
+
+/* 
+ * =====================================
+ * Estilos Premium / UI Refinada
+ * ===================================== 
+ */
+
+/* Micro-animaciones para botones */
+.btn-action {
+  transition: all 0.2s ease-in-out;
+}
+.btn-action:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Cards Premium con Glassmorphism suave */
+.card-premium {
+  border: none !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03) !important;
+  border-radius: 12px;
+}
+.card-premium > .card-header {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+  border-radius: 12px 12px 0 0 !important;
+}
+
+/* Badges Soft (Translúcidos) */
+.badge-soft-success {
+  background-color: rgba(25, 135, 84, 0.1) !important;
+  color: #198754 !important;
+  border: 1px solid rgba(25, 135, 84, 0.2);
+  border-radius: 50rem;
+  padding: 0.35em 0.65em;
+  font-weight: 600;
+}
+.badge-soft-warning {
+  background-color: rgba(253, 126, 20, 0.1) !important;
+  color: #fd7e14 !important;
+  border: 1px solid rgba(253, 126, 20, 0.2);
+  border-radius: 50rem;
+  padding: 0.35em 0.65em;
+  font-weight: 600;
+}
+.badge-soft-danger {
+  background-color: rgba(220, 53, 69, 0.1) !important;
+  color: #dc3545 !important;
+  border: 1px solid rgba(220, 53, 69, 0.2);
+  border-radius: 50rem;
+  padding: 0.35em 0.65em;
+  font-weight: 600;
+}
+.badge-soft-secondary {
+  background-color: rgba(108, 117, 125, 0.1) !important;
+  color: #6c757d !important;
+  border: 1px solid rgba(108, 117, 125, 0.2);
+  border-radius: 50rem;
+  padding: 0.35em 0.65em;
+  font-weight: 600;
+}
+.badge-soft-info {
+  background-color: rgba(13, 202, 240, 0.1) !important;
+  color: #0dcaf0 !important;
+  border: 1px solid rgba(13, 202, 240, 0.2);
+  border-radius: 50rem;
+  padding: 0.35em 0.65em;
+  font-weight: 600;
+}
+.badge-soft-primary {
+  background-color: rgba(13, 110, 253, 0.1) !important;
+  color: #0d6efd !important;
+  border: 1px solid rgba(13, 110, 253, 0.2);
+  border-radius: 50rem;
+  padding: 0.35em 0.65em;
+  font-weight: 600;
+}

@@ -6,6 +6,8 @@ import Swal from "sweetalert2";
 import PaginationComponent from "../Filtros/Paginacion.jsx";
 import BuscadorGeneral from "../Filtros/BuscadorGeneral.jsx"; 
 import * as XLSX from "xlsx";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
 
 export default function MainTuristas() {
   const [turistas, setTuristas] = useState([]);
@@ -135,7 +137,7 @@ export default function MainTuristas() {
 
   return (
     <div className="container-fluid py-4">
-      <Card className="shadow-sm">
+      <Card className="card-premium shadow-sm">
         <Card.Body>
           {/* Encabezado y Filtros */}
           <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
@@ -156,6 +158,14 @@ export default function MainTuristas() {
             </div>
 
             <div className="d-flex align-items-center gap-2">
+              <Button
+                variant="success"
+                size="sm"
+                onClick={() => navigate("/dashboard-admin/turistas/create")}
+              >
+                <i className="bi bi-plus-circle me-1"></i> Agregar Turista
+              </Button>
+
               {/* Botón Toggle para Mostrar Archivados */}
               <Button
                 variant={mostrarArchivadas ? "success" : "outline-danger"}
@@ -175,12 +185,8 @@ export default function MainTuristas() {
           </div>
 
           {loading ? (
-            <div className="p-4">
-              {[...Array(5)].map((_, i) => (
-                <p key={i} className="placeholder-glow mb-3">
-                  <span className="placeholder col-12 placeholder-lg bg-secondary opacity-25 rounded" style={{ height: "40px" }}></span>
-                </p>
-              ))}
+            <div className="py-4">
+              <Skeleton count={8} height={45} className="mb-2" />
             </div>
           ) : (
             <>
@@ -211,6 +217,7 @@ export default function MainTuristas() {
                             <Button
                               variant="outline-secondary"
                               size="sm"
+                              className="btn-action"
                               title="Ver detalles"
                               onClick={() => navigate(`/dashboard-admin/turistas/view/${t.id_turista}`)}
                             >
@@ -221,6 +228,7 @@ export default function MainTuristas() {
                               <Button
                                 variant="outline-primary"
                                 size="sm"
+                                className="btn-action"
                                 title="Editar"
                                 onClick={() => navigate(`/dashboard-admin/turistas/edit/${t.id_turista}`)}
                               >
@@ -232,6 +240,7 @@ export default function MainTuristas() {
                               <Button
                                 variant="outline-success"
                                 size="sm"
+                                className="btn-action"
                                 title="Restaurar"
                                 onClick={() => handleRestore(t.id_turista)}
                               >
@@ -241,6 +250,7 @@ export default function MainTuristas() {
                               <Button
                                 variant="outline-danger"
                                 size="sm"
+                                className="btn-action"
                                 title="Archivar"
                                 onClick={() => handleDelete(t.id_turista)}
                               >
@@ -253,8 +263,12 @@ export default function MainTuristas() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="6" className="text-center text-muted py-3">
-                        No hay turistas registrados en esta sección
+                      <td colSpan="6" className="text-center py-5">
+                        <div className="d-flex flex-column align-items-center justify-content-center text-muted">
+                          <i className="bi bi-inbox mb-2" style={{ fontSize: "3rem", opacity: 0.5 }}></i>
+                          <h5>No hay turistas registrados</h5>
+                          <p className="mb-0 small">No se encontraron resultados para los filtros aplicados.</p>
+                        </div>
                       </td>
                     </tr>
                   )}

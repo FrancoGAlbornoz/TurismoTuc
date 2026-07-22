@@ -5,6 +5,8 @@ import { Card, Button, Table, Badge, Form, Spinner } from "react-bootstrap";
 import Swal from "sweetalert2";
 import PaginationComponent from "../Filtros/Paginacion"; 
 import * as XLSX from "xlsx";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -107,7 +109,7 @@ export default function MainUsuarios() {
 
   return (
     <div className="container-fluid py-4">
-      <Card className="shadow-sm">
+      <Card className="card-premium shadow-sm">
         <Card.Body className="p-3">
           <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
             <h5 className="fw-bold text-success mb-0">Gestión de Usuarios</h5>
@@ -126,7 +128,7 @@ export default function MainUsuarios() {
           </div>
 
           {loading ? (
-            <div className="text-center py-4"><Spinner animation="border" variant="success" /></div>
+            <div className="py-4"><Skeleton count={8} height={45} className="mb-2" /></div>
           ) : (
             <>
               <Table hover responsive className="mb-0 align-middle">
@@ -153,26 +155,26 @@ export default function MainUsuarios() {
                           <td>{u.telefono || "—"}</td>
                           <td className="text-uppercase">{u.nombre_rol}</td>
                           <td>
-                            <Badge bg={eliminado ? "danger" : "success"}>
+                            <span className={`badge ${eliminado ? "badge-soft-danger" : "badge-soft-success"}`}>
                               {eliminado ? "BAJA" : "ACTIVO"}
-                            </Badge>
+                            </span>
                           </td>
                           <td className="text-center">
                             <div className="btn-group">
-                              <Button variant="outline-secondary" size="sm" onClick={() => navigate(`view/${u.id_usuario}`)}>
+                              <Button variant="outline-secondary" size="sm" className="btn-action" onClick={() => navigate(`view/${u.id_usuario}`)}>
                                 <i className="bi bi-eye"></i>
                               </Button>
                               {!eliminado ? (
                                 <>
-                                  <Button variant="outline-primary" size="sm" onClick={() => navigate(`edit/${u.id_usuario}`)}>
+                                  <Button variant="outline-primary" size="sm" className="btn-action" onClick={() => navigate(`edit/${u.id_usuario}`)}>
                                     <i className="bi bi-pencil"></i>
                                   </Button>
-                                  <Button variant="outline-danger" size="sm" onClick={() => handleBaja(u.id_usuario)}>
-                                    <i className="bi bi-trash"></i>
+                                  <Button variant="outline-danger" size="sm" className="btn-action" onClick={() => handleBaja(u.id_usuario)}>
+                                    <i className="bi bi-archive"></i>
                                   </Button>
                                 </>
                               ) : (
-                                <Button variant="outline-success" size="sm" onClick={() => handleRestore(u.id_usuario)}>
+                                <Button variant="outline-success" size="sm" className="btn-action" onClick={() => handleRestore(u.id_usuario)}>
                                   <i className="bi bi-arrow-counterclockwise"></i>
                                 </Button>
                               )}
@@ -183,7 +185,13 @@ export default function MainUsuarios() {
                     })
                   ) : (
                     <tr>
-                      <td colSpan="7" className="text-center py-3 text-muted">No hay usuarios registrados</td>
+                      <td colSpan="7" className="text-center py-5">
+                        <div className="d-flex flex-column align-items-center justify-content-center text-muted">
+                          <i className="bi bi-inbox mb-2" style={{ fontSize: "3rem", opacity: 0.5 }}></i>
+                          <h5>No hay usuarios registrados</h5>
+                          <p className="mb-0 small">No se encontraron resultados para los filtros aplicados.</p>
+                        </div>
+                      </td>
                     </tr>
                   )}
                 </tbody>

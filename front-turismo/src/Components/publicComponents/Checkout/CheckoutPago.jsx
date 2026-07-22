@@ -250,11 +250,11 @@ export default function CheckoutPago({ turista }) {
       setMsgInfo("Redirigiendo a Mercado Pago...");
 
       const mpItems = items.map((it) => {
-        const cantidad = Number(it.cantidad_personas);
-        const subtotal = Number(it.subtotal);
+        const cantidad = Number(it.cantidad_personas) || 1;
+        const subtotal = Number(it.subtotal) || 0;
 
         return {
-          nombre: it.excursion,
+          nombre: it.excursion || "Excursión",
           cantidad: cantidad,
           precio: Number((subtotal / cantidad).toFixed(2)),
         };
@@ -271,8 +271,8 @@ export default function CheckoutPago({ turista }) {
 
       window.location.href = response.data.init_point;
     } catch (error) {
-      console.error("Error Mercado Pago:", error);
-      setMsgError("No se pudo iniciar el pago con Mercado Pago.");
+      console.error("Error Mercado Pago:", error.response?.data || error.message);
+      setMsgError(error.response?.data?.message || "No se pudo iniciar el pago con Mercado Pago.");
     } finally {
       setProcesandoPago(false);
       setMsgInfo("");

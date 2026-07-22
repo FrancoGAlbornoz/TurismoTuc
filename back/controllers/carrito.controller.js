@@ -31,7 +31,7 @@ export const getCarritoByTurista = async (req, res) => {
       [id_turista],
     );
 
-    // ✅ Si NO hay carrito válido → null
+
     if (results.length === 0) {
       return res.json(null);
     }
@@ -70,7 +70,7 @@ export const addItemCarrito = async (req, res) => {
   const { id_turista, id_fecha, cantidad_personas } = req.body;
 
   try {
-    // 1️⃣ Traer fecha + excursión con precio real
+
     const [fechaRes] = await pool.promise().query(
       `
       SELECT 
@@ -101,7 +101,7 @@ export const addItemCarrito = async (req, res) => {
       });
     }
 
-    // 2️⃣ Buscar carrito abierto VÁLIDO (con items activos)
+
     const [carritoRes] = await pool.promise().query(
       `
       SELECT c.id_carrito
@@ -121,7 +121,7 @@ export const addItemCarrito = async (req, res) => {
 
     let id_carrito;
 
-    // 3️⃣ Si no hay carrito válido → crear uno nuevo
+
     if (carritoRes.length === 0) {
       const [nuevoCarrito] = await pool.promise().query(
         `
@@ -137,7 +137,7 @@ export const addItemCarrito = async (req, res) => {
 
     const subtotal = fecha.precio * cantidad_personas;
 
-    // 4️⃣ Insertar ítem
+
     await pool.promise().query(
       `
       INSERT INTO CarritoItems 
@@ -213,7 +213,7 @@ export const deleteItemCarrito = async (req, res) => {
   const { id_item } = req.params;
 
   try {
-    // 1 Obtener el id_carrito del item
+
     const [[item]] = await pool.promise().query(
       `
       SELECT id_carrito
@@ -229,7 +229,7 @@ export const deleteItemCarrito = async (req, res) => {
 
     const { id_carrito } = item;
 
-    // 2 Eliminar el item (baja lógica)
+
     await pool.promise().query(
       `
       UPDATE CarritoItems
@@ -239,7 +239,7 @@ export const deleteItemCarrito = async (req, res) => {
       [id_item],
     );
 
-    // 3 Ver si quedaron items activos en el carrito
+
     const [[{ total }]] = await pool.promise().query(
       `
       SELECT COUNT(*) AS total
@@ -249,7 +249,7 @@ export const deleteItemCarrito = async (req, res) => {
       [id_carrito],
     );
 
-    // 4 Si no quedan items → cancelar el carrito
+
     if (total === 0) {
       await pool.promise().query(
         `
@@ -278,15 +278,15 @@ export const updateCantidadItem = async (req, res) => {
   const { cantidad_personas } = req.body;
 
   try {
-    // 1️⃣ Validar entrada correctamente
+
     const nuevaCantidad = Number(cantidad_personas);
 
-    // Si llega NaN o 0 o negativo, no permitimos continuar
+
     if (!Number.isFinite(nuevaCantidad) || nuevaCantidad <= 0) {
       return res.status(400).json({ message: "Cantidad inválida." });
     }
 
-    // 2️⃣ Traer el item y su info
+
     const [rows] = await pool.promise().query(
       `
       SELECT 
@@ -315,7 +315,7 @@ export const updateCantidadItem = async (req, res) => {
     const { id_fecha, cantidad_actual, cupo_disponible, precio_unitario } =
       rows[0];
 
-    // 3️⃣ Calcular el cupo real disponible
+
     const cupoReal = (cupo_disponible ?? 0) + cantidad_actual;
 
     if (nuevaCantidad > cupoReal) {
@@ -324,10 +324,10 @@ export const updateCantidadItem = async (req, res) => {
       });
     }
 
-    // 4️⃣ Calcular subtotal
+
     const nuevoSubtotal = nuevaCantidad * (precio_unitario ?? 0);
 
-    // 5️⃣ Actualizar el item sin tocar los cupos todavía
+
     await pool.promise().query(
       `
       UPDATE CarritoItems
@@ -373,7 +373,7 @@ export const vaciarCarrito = async (req, res) => {
 
     const id_carrito = carritoRows[0].id_carrito;
 
-    // baja lógica items
+
     await pool.promise().query(
       `
       UPDATE CarritoItems
@@ -383,7 +383,7 @@ export const vaciarCarrito = async (req, res) => {
       [id_carrito]
     );
 
-    // cerrar carrito (elegí el estado que uses)
+
     await pool.promise().query(
       `
       UPDATE Carrito

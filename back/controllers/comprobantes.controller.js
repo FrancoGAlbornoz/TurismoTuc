@@ -13,7 +13,7 @@ export const subirComprobante = async (req, res) => {
     if (!id_turista) return res.status(400).json({ message: "Falta id_turista" });
     if (!req.file) return res.status(400).json({ message: "Falta archivo" });
 
-    // Si tu middleware uploadComprobante guarda en uploads/comprobantes
+
     const url = `/uploads/comprobantes/${req.file.filename}`;
 
     const sql = `
@@ -25,7 +25,7 @@ export const subirComprobante = async (req, res) => {
 
     const params = ["comprobante", url, descripcion || null, id_turista, id_reserva];
 
-    // ✅ mysql2 promise wrapper (NO uses await pool.query)
+
     const [result] = await pool.promise().query(sql, params);
 
     return res.status(201).json({
@@ -103,7 +103,7 @@ export const aprobarComprobante = async (req, res) => {
   try {
     await conn.beginTransaction();
 
-    // 1️⃣ Aprobar comprobante
+
     const [updateMultimedia] = await conn.query(
       "UPDATE Multimedia SET estado_moderacion = 'aprobada' WHERE id_multimedia = ? AND tipo = 'comprobante'",
       [id]
@@ -114,7 +114,7 @@ export const aprobarComprobante = async (req, res) => {
       return res.status(404).json({ message: "Comprobante no encontrado" });
     }
 
-    // 2️⃣ Obtener id_reserva del comprobante
+
     const [rows] = await conn.query(
       "SELECT id_reserva FROM Multimedia WHERE id_multimedia = ?",
       [id]
@@ -129,7 +129,7 @@ export const aprobarComprobante = async (req, res) => {
       });
     }
 
-    // 3️⃣ Aprobar pago asociado
+
     await conn.query(
       `UPDATE Pagos 
        SET estado_pago = 'aprobado'

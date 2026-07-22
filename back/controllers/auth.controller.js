@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 export const loginUnificado = async (req, res) => {
   const { email, password } = req.body;
 
-  // ESPÍA 1: Ver qué datos llegan desde React
+
   console.log("1. Intento de login. Email recibido:", email, "- Password ingresada:", password);
 
   if (!email || !password) {
@@ -16,7 +16,7 @@ export const loginUnificado = async (req, res) => {
   }
 
   try {
-    // 1) Buscar primero en Usuarios (personal interno)
+
     const [usuarios] = await pool.promise().query(
       `SELECT 
           u.id_usuario,
@@ -35,7 +35,7 @@ export const loginUnificado = async (req, res) => {
       [email]
     );
 
-    // ESPÍA 2
+
     console.log("2. ¿Lo encontró en la tabla Usuarios?:", usuarios.length > 0);
 
     if (usuarios.length > 0) {
@@ -43,7 +43,7 @@ export const loginUnificado = async (req, res) => {
 
       const validPassword = await bcrypt.compare(password, user.password);
       
-      // ESPÍA 3
+
       console.log("3. ¿Contraseña de Usuario coincide con bcrypt?:", validPassword);
 
       if (!validPassword) {
@@ -53,7 +53,7 @@ export const loginUnificado = async (req, res) => {
         });
       }
 
-      // AGREGADO: Generamos el token para el Usuario (antes faltaba)
+
       const token = jwt.sign(
         { id: user.id_usuario, email: user.email, rol: user.nombre_rol, tipo: "usuario" },
         process.env.JWT_SECRET || "clave_supersecreta",
@@ -74,7 +74,7 @@ export const loginUnificado = async (req, res) => {
       });
     }
 
-    // 2) Si no existe en Usuarios, buscar en Turistas
+
     const [turistas] = await pool.promise().query(
       `SELECT 
           id_turista,
@@ -93,7 +93,7 @@ export const loginUnificado = async (req, res) => {
       [email]
     );
 
-    // ESPÍA 4
+
     console.log("4. ¿Lo encontró en la tabla Turistas?:", turistas.length > 0);
 
     if (turistas.length > 0) {
@@ -101,7 +101,7 @@ export const loginUnificado = async (req, res) => {
 
       const validPassword = await bcrypt.compare(password, turista.password);
       
-      // ESPÍA 5
+
       console.log("5. ¿Contraseña de Turista coincide con bcrypt?:", validPassword);
 
       if (!validPassword) {
@@ -134,7 +134,7 @@ export const loginUnificado = async (req, res) => {
       });
     }
 
-    // ESPÍA 6
+
     console.log("6. El correo no existe en ninguna de las dos tablas.");
     return res.status(401).json({
       success: false,

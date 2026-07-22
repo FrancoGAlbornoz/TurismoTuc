@@ -2,26 +2,22 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import axios from "axios";
 import Swal from "sweetalert2";
-import { Card, Button, Table, Dropdown } from "react-bootstrap";
+import { Card, Button, Table, Dropdown, InputGroup, Form } from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useDebounce } from "../../hooks/useDeBounce";
 import PaginationComponent from "../Filtros/Paginacion.jsx";
 import * as XLSX from "xlsx";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
 
 export default function ReservasMain() {
   const [reservas, setReservas] = useState([]);
   const [mostrarArchivadas, setMostrarArchivadas] = useState(false); // 👈 NUEVO: Estado booleano para el botón toggle
   const [estadoreserva, setEstadoreserva] = useState("relevantes");
+  const [filtroAnio, setFiltroAnio] = useState("");
   const [fechaDesde, setFechaDesde] = useState("");
   const [fechaHasta, setFechaHasta] = useState("");
-  const [temporalDesde, setTemporalDesde] = useState(
-    fechaDesde ? new Date(fechaDesde) : null
-  );
-  const [temporalHasta, setTemporalHasta] = useState(
-    fechaHasta ? new Date(fechaHasta) : null
-  );
-  const [openCalendar, setOpenCalendar] = useState(false);
 
   const [dniBuscar, setDniBuscar] = useState("");
   const debouncedDni = useDebounce(dniBuscar, 500);
@@ -40,11 +36,18 @@ export default function ReservasMain() {
     const params = {
       mostrarArchivadas: mostrarArchivadas ? "true" : "false", // Mandamos el string esperado por el back
       estadoreserva,
-      fechaDesde,
-      fechaHasta,
       page: paginaActual,
       limit: porPagina,
     };
+
+    if (filtroAnio === "personalizado") {
+      params.fechaDesde = fechaDesde;
+      params.fechaHasta = fechaHasta;
+    } else if (filtroAnio !== "") {
+      params.fechaDesde = `${filtroAnio}-01-01`;
+      params.fechaHasta = `${filtroAnio}-12-31`;
+    }
+
     try {
       const res = await axios.get(`${import.meta.env.VITE_API_URL}/reservas`, {
         params,
@@ -65,9 +68,16 @@ export default function ReservasMain() {
     const params = {
       mostrarArchivadas: mostrarArchivadas ? "true" : "false",
       estadoreserva,
-      fechaDesde: desde,
-      fechaHasta: hasta,
     };
+
+    if (filtroAnio === "personalizado") {
+      params.fechaDesde = fechaDesde;
+      params.fechaHasta = fechaHasta;
+    } else if (filtroAnio !== "") {
+      params.fechaDesde = `${filtroAnio}-01-01`;
+      params.fechaHasta = `${filtroAnio}-12-31`;
+    }
+
 
     try {
       const res = await axios.get(`${import.meta.env.VITE_API_URL}/reservas`, {
@@ -85,12 +95,12 @@ export default function ReservasMain() {
   // Reinicia la paginación cuando cambian los filtros, el toggle o fechas
   useEffect(() => {
     setPaginaActual(1);
-  }, [estadoreserva, fechaDesde, fechaHasta, mostrarArchivadas]);
+  }, [estadoreserva, filtroAnio, fechaDesde, fechaHasta, mostrarArchivadas]);
 
-  // Carga las reservas
+  // Cada vez que cambia un estado importante, fetch (con o sin archivadas)
   useEffect(() => {
     getReservas();
-  }, [estadoreserva, fechaDesde, fechaHasta, paginaActual, mostrarArchivadas]);
+  }, [estadoreserva, filtroAnio, fechaDesde, fechaHasta, paginaActual, mostrarArchivadas]);
 
   const handleRestore = async (id) => {
     const confirm = await Swal.fire({
@@ -163,13 +173,11 @@ export default function ReservasMain() {
     }
   }, [debouncedDni]);
 
-  if (loading)
-    return <div className="text-center mt-3">Cargando reservas...</div>;
   if (error) return <div className="alert alert-danger mt-3">{error}</div>;
 
   return (
     <div className="container-fluid py-4">
-      <Card className="shadow-sm">
+      <Card className="card-premium shadow-sm">
         <Card.Body className="p-3">
           {/* Encabezado */}
         <div className="d-flex justify-content-between align-items-center mb-3">
@@ -228,91 +236,38 @@ export default function ReservasMain() {
             </Dropdown>
 
             {/* Dropdown: Filtro de fechas */}
-            <Dropdown align="end" autoClose="outside">
-              <Dropdown.Toggle variant="outline-primary" size="sm">
-                <i className="bi bi-calendar-range"></i> Filtrar por fecha
-              </Dropdown.Toggle>
+            <InputGroup size="sm" style={{ width: "auto" }}>
+              <InputGroup.Text><i className="bi bi-calendar-event me-1"></i> Año</InputGroup.Text>
+              <Form.Select 
+                value={filtroAnio}
+                onChange={(e) => {
+                  setFiltroAnio(e.target.value);
+                  if (e.target.value !== "personalizado") {
+                    setFechaDesde("");
+                    setFechaHasta("");
+                  }
+                }}
+              >
+                <option value="">Este Año ({new Date().getFullYear()})</option>
+                <option value={new Date().getFullYear() - 1}>{new Date().getFullYear() - 1}</option>
+                <option value={new Date().getFullYear() - 2}>{new Date().getFullYear() - 2}</option>
+                <option value={new Date().getFullYear() - 3}>{new Date().getFullYear() - 3}</option>
+                <option value="personalizado">Personalizado</option>
+              </Form.Select>
+            </InputGroup>
 
-              <Dropdown.Menu className="p-3" style={{ minWidth: "280px" }}>
-                <Dropdown.Item
-                  onClick={() => {
-                    const hoy = new Date();
-                    const primerDia = new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString().split("T")[0];
-                    const ultimoDia = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).toISOString().split("T")[0];
-                    setFechaDesde(primerDia);
-                    setFechaHasta(ultimoDia);
-                    getReservasConFechas(primerDia, ultimoDia);
-                  }}
-                >
-                  <i className="bi bi-calendar-month text-primary me-2"></i> Este mes
-                </Dropdown.Item>
-
-                <Dropdown.Item
-                  onClick={() => {
-                    const hoy = new Date();
-                    const primerDia = new Date(hoy.getFullYear(), 0, 1).toISOString().split("T")[0];
-                    const ultimoDia = new Date(hoy.getFullYear(), 11, 31).toISOString().split("T")[0];
-                    setFechaDesde(primerDia);
-                    setFechaHasta(ultimoDia);
-                    getReservasConFechas(primerDia, ultimoDia);
-                  }}
-                >
-                  <i className="bi bi-calendar3 text-success me-2"></i> Este año
-                </Dropdown.Item>
-
-                <Dropdown.Divider />
-                <Dropdown.Item onClick={(e) => { e.stopPropagation(); setOpenCalendar(!openCalendar); }}>
-                  Personalizado
-                </Dropdown.Item>
-
-                {openCalendar && (
-                  <div className="p-2">
-                    <label>Desde:</label>
-                    <DatePicker
-                      selected={temporalDesde}
-                      onChange={(date) => setTemporalDesde(date)}
-                      dateFormat="yyyy-MM-dd"
-                      className="form-control mb-2"
-                      placeholderText="Fecha inicio"
-                    />
-                    <label>Hasta:</label>
-                    <DatePicker
-                      selected={temporalHasta}
-                      onChange={(date) => setTemporalHasta(date)}
-                      dateFormat="yyyy-MM-dd"
-                      className="form-control mb-2"
-                      placeholderText="Fecha fin"
-                    />
-                    <Button
-                      variant="primary"
-                      className="w-100 mb-2"
-                      onClick={() => {
-                        if (temporalDesde) setFechaDesde(temporalDesde.toISOString().split("T")[0]);
-                        if (temporalHasta) setFechaHasta(temporalHasta.toISOString().split("T")[0]);
-                        getReservas();
-                        setOpenCalendar(false);
-                      }}
-                    >
-                      Aplicar
-                    </Button>
-                    <Button
-                      variant="outline-secondary"
-                      className="w-100"
-                      onClick={() => {
-                        setFechaDesde("");
-                        setFechaHasta("");
-                        setTemporalDesde(null);
-                        setTemporalHasta(null);
-                        getReservas();
-                        setOpenCalendar(false);
-                      }}
-                    >
-                      Limpiar
-                    </Button>
-                  </div>
-                )}
-              </Dropdown.Menu>
-            </Dropdown>
+            {filtroAnio === "personalizado" && (
+              <>
+                <InputGroup size="sm" style={{ width: "auto" }}>
+                  <InputGroup.Text>Desde</InputGroup.Text>
+                  <Form.Control type="date" value={fechaDesde} onChange={e => setFechaDesde(e.target.value)} />
+                </InputGroup>
+                <InputGroup size="sm" style={{ width: "auto" }}>
+                  <InputGroup.Text>Hasta</InputGroup.Text>
+                  <Form.Control type="date" value={fechaHasta} onChange={e => setFechaHasta(e.target.value)} />
+                </InputGroup>
+              </>
+            )}
 
             <Button
               variant={mostrarArchivadas ? "success" : "outline-danger"}
@@ -345,6 +300,10 @@ export default function ReservasMain() {
               </p>
             ))}
           </div>
+        ) : loading ? (
+          <div className="py-4">
+            <Skeleton count={8} height={45} className="mb-2" />
+          </div>
         ) : (
           <>
             {/* Tabla de reservas */}
@@ -376,12 +335,12 @@ export default function ReservasMain() {
                     <span
                       className={`badge text-uppercase ${
                         r.estado_reserva === "confirmada"
-                          ? "bg-success"
+                          ? "badge-soft-success"
                           : r.estado_reserva === "pendiente"
-                          ? "bg-warning"
+                          ? "badge-soft-warning"
                           : r.estado_reserva === "finalizada"
-                          ? "bg-info"
-                          : "bg-danger"
+                          ? "badge-soft-info"
+                          : "badge-soft-danger"
                       }`}
                     >
                       {r.estado_reserva}
@@ -395,6 +354,7 @@ export default function ReservasMain() {
                         to={`/dashboard-admin/reservas/view/${r.id_reserva}`}
                         variant="outline-secondary"
                         size="sm"
+                        className="btn-action"
                         title="Ver Voucher"
                       >
                         <i className="bi bi-eye"></i>
@@ -405,6 +365,7 @@ export default function ReservasMain() {
                         to={`/dashboard-admin/reservas/edit/${r.id_reserva}`}
                         variant="outline-primary"
                         size="sm"
+                        className="btn-action"
                         title="Editar Reserva"
                       >
                         <i className="bi bi-pencil"></i>
@@ -415,6 +376,7 @@ export default function ReservasMain() {
                         <Button
                           variant="outline-success"
                           size="sm"
+                          className="btn-action"
                           onClick={() => handleRestore(r.id_reserva)}
                           title="Restaurar Reserva"
                         >
@@ -427,8 +389,12 @@ export default function ReservasMain() {
               ))
             ) : (
               <tr>
-                <td colSpan="9" className="text-center text-muted py-3">
-                  No hay reservas registradas para este filtro
+                <td colSpan="9" className="text-center py-5">
+                  <div className="d-flex flex-column align-items-center justify-content-center text-muted">
+                    <i className="bi bi-inbox mb-2" style={{ fontSize: "3rem", opacity: 0.5 }}></i>
+                    <h5>No hay reservas registradas</h5>
+                    <p className="mb-0 small">Intenta buscar con otros filtros o cambia de año.</p>
+                  </div>
                 </td>
               </tr>
             )}

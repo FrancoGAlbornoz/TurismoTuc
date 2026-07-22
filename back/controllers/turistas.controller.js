@@ -12,7 +12,7 @@ export const getTuristas = (req, res) => {
   const condiciones = [];
   const params = [];
 
-  // 🔹 REEMPLAZAMOS EL FILTRO VIEJO POR EL TOGGLE NUEVO
+
   if (mostrarArchivadas === "true") {
     condiciones.push("eliminado = 1");
   } else {
@@ -95,7 +95,7 @@ export const buscarTuristaPorDNI = (req, res) => {
   const offset = (parseInt(page) - 1) * parseInt(limit);
   const searchDNI = `${dni}%`;
   
-  // 🔹 Si buscamos, que busque en la tabla correcta (activos o archivados)
+
   const isArchivada = mostrarArchivadas === "true" ? 1 : 0;
 
   const sqlCount = `SELECT COUNT(*) AS total FROM Turistas WHERE dni LIKE ? AND eliminado = ?`;
@@ -205,7 +205,7 @@ export const updateTurista = async (req, res) => {
     if (result.affectedRows === 0)
       return res.status(404).json({ message: "Turista no encontrado" });
 
-    // 🔹 Obtener el turista actualizado y devolverlo al front
+
     const [rows] = await pool
       .promise()
       .query(
@@ -219,7 +219,7 @@ export const updateTurista = async (req, res) => {
 
     const turista = rows[0];
 
-    // 🔹 Normalizamos el formato igual que el login
+
     res.json({
       id: turista.id_turista, // 👈 clave consistente
       nombre: turista.nombre,
@@ -265,26 +265,26 @@ export const getReservasByTurista = async (req, res) => {
   try {
     const { id } = req.params;
     
-    // Recibimos los parámetros que enviará React por la URL
+
     const { historial = 'false', page = 1 } = req.query;
 
     const isHistorial = historial === 'true';
     const limit = isHistorial ? 10 : 5;
     const offset = (Number(page) - 1) * limit;
 
-    // 1. Armamos la condición base según la vista
+
     let baseWhere = "WHERE r.id_turista = ? AND r.eliminado = 0";
     if (!isHistorial) {
       baseWhere += " AND r.estado_reserva IN ('confirmada', 'pendiente')";
     }
 
-    // 2. Consulta de conteo (Necesaria para que React sepa cuántas páginas hay en total)
+
     const countSql = `SELECT COUNT(*) as total FROM Reservas r ${baseWhere}`;
     const [countResult] = await pool.promise().query(countSql, [id]);
     const totalRegistros = countResult[0].total;
     const totalPages = Math.ceil(totalRegistros / limit) || 1;
 
-    // 3. Consulta principal con Ordenamiento de Prioridad usando FIELD()
+
     let orderClause = isHistorial
       ? "ORDER BY FIELD(r.estado_reserva, 'confirmada', 'pendiente', 'finalizada', 'cancelada'), f.fecha ASC"
       : "ORDER BY FIELD(r.estado_reserva, 'confirmada', 'pendiente'), f.fecha ASC";
@@ -307,7 +307,7 @@ export const getReservasByTurista = async (req, res) => {
 
     const [reservas] = await pool.promise().query(sql, [id, limit, offset]);
 
-    // 4. Devolvemos un objeto con los datos y la metadata de paginación
+
     res.json({
       reservas,
       totalPages,

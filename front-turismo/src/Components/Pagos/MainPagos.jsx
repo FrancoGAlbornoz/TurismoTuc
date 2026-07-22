@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { Card, Table, Button, Badge, Spinner, Dropdown, Form, InputGroup } from "react-bootstrap";
 import Swal from "sweetalert2";
-import BuscadorGeneral from "../Filtros/BuscadorGeneral"; 
-import PaginationComponent from "../Filtros/Paginacion"; 
+import BuscadorGeneral from "../Filtros/BuscadorGeneral";
+import PaginationComponent from "../Filtros/Paginacion";
 import * as XLSX from "xlsx";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
 
 export default function MainPagos() {
   const [pagos, setPagos] = useState([]);
@@ -13,9 +15,9 @@ export default function MainPagos() {
   // Estados de Filtros
   const [filtroEstado, setFiltroEstado] = useState("pendiente");
   const [busqueda, setBusqueda] = useState("");
+  const [filtroAnio, setFiltroAnio] = useState("");
   const [fechaDesde, setFechaDesde] = useState("");
   const [fechaHasta, setFechaHasta] = useState("");
-
   // Paginación
   const [paginaActual, setPaginaActual] = useState(1);
   const [totalPaginas, setTotalPaginas] = useState(1);
@@ -23,15 +25,25 @@ export default function MainPagos() {
   const fetchPagos = async () => {
     setLoading(true);
     try {
+      let fDesde = "";
+      let fHasta = "";
+
+      if (filtroAnio === "personalizado") {
+        fDesde = fechaDesde;
+        fHasta = fechaHasta;
+      } else if (filtroAnio !== "") {
+        fDesde = `${filtroAnio}-01-01`;
+        fHasta = `${filtroAnio}-12-31`;
+      }
+
       const params = {
         page: paginaActual,
         limit: 10,
         estado: filtroEstado !== "todos" ? filtroEstado : null,
         q: busqueda,
-        fechaDesde,
-        fechaHasta,
+        fechaDesde: fDesde,
+        fechaHasta: fHasta,
       };
-
       const res = await axios.get(`${import.meta.env.VITE_API_URL}/pagos`, {
         params,
       });
@@ -47,11 +59,11 @@ export default function MainPagos() {
   // Resetear a pág 1 cuando cambian los filtros
   useEffect(() => {
     setPaginaActual(1);
-  }, [filtroEstado, busqueda, fechaDesde, fechaHasta]);
+  }, [filtroEstado, busqueda, filtroAnio, fechaDesde, fechaHasta]);
 
   useEffect(() => {
     fetchPagos();
-  }, [paginaActual, filtroEstado, busqueda, fechaDesde, fechaHasta]);
+  }, [paginaActual, filtroEstado, busqueda, filtroAnio, fechaDesde, fechaHasta]);
 
   const exportToExcel = () => {
     if (pagos.length === 0) {
@@ -94,12 +106,14 @@ export default function MainPagos() {
 
   return (
     <div className="container-fluid py-4">
-      <Card className="shadow-sm">
+      <Card className="card-premium shadow-sm">
         <Card.Body className="p-3">
           {/* Cabecera con Filtros y Buscador */}
           <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
             <div>
-              <h5 className="fw-bold text-success mb-2">Gestión de Pagos</h5>
+              <h5 className="fw-bold text-success mb-2">
+                Gestión de Pagos
+              </h5>
               {/* Usamos tu componente estandarizado */}
               <div style={{ maxWidth: "250px" }}>
                 <BuscadorGeneral
@@ -112,15 +126,38 @@ export default function MainPagos() {
             {/* Estilo idéntico a Excursiones/Turistas */}
             <div className="d-flex align-items-center gap-2 flex-wrap">
               <InputGroup size="sm" style={{ width: "auto" }}>
-                <InputGroup.Text><i className="bi bi-calendar-event me-1"></i> Desde</InputGroup.Text>
-                <Form.Control type="date" value={fechaDesde} onChange={e => setFechaDesde(e.target.value)} />
+                <InputGroup.Text><i className="bi bi-calendar-event me-1"></i> Año</InputGroup.Text>
+                <Form.Select 
+                  value={filtroAnio}
+                  onChange={(e) => {
+                    setFiltroAnio(e.target.value);
+                    if (e.target.value !== "personalizado") {
+                      setFechaDesde("");
+                      setFechaHasta("");
+                    }
+                  }}
+                >
+                  <option value="">Este Año ({new Date().getFullYear()})</option>
+                  <option value={new Date().getFullYear() - 1}>{new Date().getFullYear() - 1}</option>
+                  <option value={new Date().getFullYear() - 2}>{new Date().getFullYear() - 2}</option>
+                  <option value={new Date().getFullYear() - 3}>{new Date().getFullYear() - 3}</option>
+                  <option value="personalizado">Personalizado</option>
+                </Form.Select>
               </InputGroup>
-              
-              <InputGroup size="sm" style={{ width: "auto" }}>
-                <InputGroup.Text><i className="bi bi-calendar-event-fill me-1"></i> Hasta</InputGroup.Text>
-                <Form.Control type="date" value={fechaHasta} onChange={e => setFechaHasta(e.target.value)} />
-              </InputGroup>
-              
+
+              {filtroAnio === "personalizado" && (
+                <>
+                  <InputGroup size="sm" style={{ width: "auto" }}>
+                    <InputGroup.Text>Desde</InputGroup.Text>
+                    <Form.Control type="date" value={fechaDesde} onChange={e => setFechaDesde(e.target.value)} />
+                  </InputGroup>
+                  <InputGroup size="sm" style={{ width: "auto" }}>
+                    <InputGroup.Text>Hasta</InputGroup.Text>
+                    <Form.Control type="date" value={fechaHasta} onChange={e => setFechaHasta(e.target.value)} />
+                  </InputGroup>
+                </>
+              )}
+
               <Dropdown align="end">
                 <Dropdown.Toggle variant="outline-primary" size="sm">
                   <i className="bi bi-funnel"></i> Filtrar estado:{" "}
@@ -139,7 +176,7 @@ export default function MainPagos() {
                   )}
                 </Dropdown.Menu>
               </Dropdown>
-              
+
               <Button variant="outline-success" size="sm" onClick={exportToExcel} title="Exportar a Excel">
                 <i className="bi bi-file-earmark-excel"></i> Excel
               </Button>
@@ -147,8 +184,8 @@ export default function MainPagos() {
           </div>
 
           {loading ? (
-            <div className="text-center py-5">
-              <Spinner animation="border" variant="success" />
+            <div className="py-4">
+              <Skeleton count={8} height={45} className="mb-2" />
             </div>
           ) : (
             <Table hover responsive className="align-middle">
@@ -159,14 +196,15 @@ export default function MainPagos() {
                   <th>Método</th>
                   <th>Monto</th>
                   <th>Estado</th>
-                  <th>Fecha</th>
+                  <th>Fecha de pago</th>
                   <th>Reserva</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                {pagos.map((p) => (
-                  <tr key={p.id_pago}>
+                {pagos.length > 0 ? (
+                  pagos.map((p) => (
+                    <tr key={p.id_pago}>
                     <td>{p.id_pago}</td>
                     <td>
                       {p.turista_nombre} {p.turista_apellido}
@@ -174,17 +212,17 @@ export default function MainPagos() {
                     <td>{p.metodo}</td>
                     <td>${Number(p.monto).toLocaleString("es-AR")}</td>
                     <td>
-                      <Badge
-                        bg={
+                      <span
+                        className={`badge text-uppercase ${
                           p.estado_pago === "aprobado"
-                            ? "success"
+                            ? "badge-soft-success"
                             : p.estado_pago === "pendiente"
-                              ? "warning"
-                              : "danger"
-                        }
+                              ? "badge-soft-warning"
+                              : "badge-soft-danger"
+                        }`}
                       >
-                        {p.estado_pago.toUpperCase()}
-                      </Badge>
+                        {p.estado_pago}
+                      </span>
                     </td>
                     <td>{p.fecha_pago ? new Date(p.fecha_pago).toLocaleDateString() : "-"}</td>
                     <td>{p.id_reserva}</td>
@@ -194,6 +232,7 @@ export default function MainPagos() {
                           <Button
                             size="sm"
                             variant="outline-success"
+                            className="btn-action"
                             onClick={() =>
                               actualizarEstado(p.id_pago, "aprobado")
                             }
@@ -203,6 +242,7 @@ export default function MainPagos() {
                           <Button
                             size="sm"
                             variant="outline-danger"
+                            className="btn-action"
                             onClick={() =>
                               actualizarEstado(p.id_pago, "rechazado")
                             }
@@ -213,7 +253,18 @@ export default function MainPagos() {
                       )}
                     </td>
                   </tr>
-                ))}
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="8" className="text-center py-5">
+                    <div className="d-flex flex-column align-items-center justify-content-center text-muted">
+                      <i className="bi bi-inbox mb-2" style={{ fontSize: "3rem", opacity: 0.5 }}></i>
+                      <h5>No hay pagos registrados</h5>
+                      <p className="mb-0 small">Intenta buscar con otros filtros o cambia de año.</p>
+                    </div>
+                  </td>
+                </tr>
+              )}
               </tbody>
             </Table>
           )}

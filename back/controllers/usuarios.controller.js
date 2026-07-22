@@ -17,7 +17,7 @@ export const getRoles = (req, res) => {
 // USUARIOS
 // =========================
 export const getUsuarios = (req, res) => {
-  // Recibimos page y limit desde el front
+
   const { status = "active", page = 1, limit = 10 } = req.query; 
 
   let where = "u.eliminado = 0";
@@ -26,10 +26,10 @@ export const getUsuarios = (req, res) => {
 
   const offset = (parseInt(page) - 1) * parseInt(limit);
 
-  // 1. Contamos el total para saber cuántas páginas hay
+
   const sqlCount = `SELECT COUNT(*) AS total FROM Usuarios u WHERE ${where}`;
   
-  // 2. Traemos la info paginada
+
   const sqlData = `
     SELECT u.id_usuario, u.nombre, u.apellido, u.email, u.telefono,
            r.nombre_rol, u.estado, u.eliminado
@@ -49,7 +49,7 @@ export const getUsuarios = (req, res) => {
     pool.query(sqlData, [parseInt(limit), parseInt(offset)], (err, dataResult) => {
       if (err) return res.status(500).json({ message: "Error al obtener usuarios" });
       
-      // Devolvemos el formato estandarizado
+
       res.json({
         data: dataResult,
         totalPages,
@@ -200,7 +200,7 @@ export const resetPassword = (req, res) => {
           return res.status(400).json({ message: "Token expirado" });
         }
         const hashedPassword = await bcrypt.hash(nuevaPassword, 10);
-        // Actualizar contraseña en Turistas
+
         pool.query(
           "UPDATE Turistas SET password=?, reset_token=NULL, reset_token_expiration=NULL WHERE id_turista=?",
           [hashedPassword, id_turista],

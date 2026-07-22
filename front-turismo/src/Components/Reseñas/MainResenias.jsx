@@ -6,6 +6,8 @@ import Swal from "sweetalert2";
 import PaginationComponent from "../Filtros/Paginacion";
 import BuscadorGeneral from "../Filtros/BuscadorGeneral";
 import * as XLSX from "xlsx";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
 
 const API = import.meta.env.VITE_API_URL;
 
@@ -16,6 +18,7 @@ export default function MainResenias() {
   
   const [orden, setOrden] = useState(null); // null | 'desc' | 'asc'
   const [busqueda, setBusqueda] = useState("");
+  const [filtroAnio, setFiltroAnio] = useState("");
   const [fechaDesde, setFechaDesde] = useState("");
   const [fechaHasta, setFechaHasta] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -25,9 +28,20 @@ export default function MainResenias() {
   const fetchReseñas = async () => {
     setLoading(true);
     try {
+      let fDesde = "";
+      let fHasta = "";
+
+      if (filtroAnio === "personalizado") {
+        fDesde = fechaDesde;
+        fHasta = fechaHasta;
+      } else if (filtroAnio !== "") {
+        fDesde = `${filtroAnio}-01-01`;
+        fHasta = `${filtroAnio}-12-31`;
+      }
+
       const res = await axios.get(`${API}/resenias`, {
         // ACÁ ESTABA EL ERROR: Agregamos "ordenCalificacion: orden" para que el backend lo reciba
-        params: { page: currentPage, limit: 10, q: busqueda, ordenCalificacion: orden, fechaDesde, fechaHasta },
+        params: { page: currentPage, limit: 10, q: busqueda, ordenCalificacion: orden, fechaDesde: fDesde, fechaHasta: fHasta },
       });
       setReseñas(res.data.data || []);
       setTotalPages(res.data.totalPages || 1);
@@ -42,12 +56,12 @@ export default function MainResenias() {
   // Si cambia la búsqueda, el orden o las fechas, reseteamos a la página 1
   useEffect(() => {
     setCurrentPage(1);
-  }, [busqueda, orden, fechaDesde, fechaHasta]);
+  }, [busqueda, orden, filtroAnio, fechaDesde, fechaHasta]);
 
   // Se ejecuta cada vez que cambia la página, la búsqueda, el orden o las fechas
   useEffect(() => {
     fetchReseñas();
-  }, [currentPage, busqueda, orden, fechaDesde, fechaHasta]);
+  }, [currentPage, busqueda, orden, filtroAnio, fechaDesde, fechaHasta]);
 
   const exportToExcel = () => {
     if (reseñas.length === 0) {
@@ -105,22 +119,47 @@ export default function MainResenias() {
 
   return (
     <div className="container-fluid py-4">
-      <Card className="shadow-sm">
+      <Card className="card-premium shadow-sm">
         <Card.Body className="p-3">
           {/* Cabecera Profesional */}
           <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-            <h5 className="fw-bold text-success mb-0">Gestión de Reseñas</h5>
+            <h5 className="fw-bold text-success mb-0">
+              Gestión de Reseñas
+            </h5>
             
             <div className="d-flex align-items-center gap-2 flex-wrap">
               <InputGroup size="sm" style={{ width: "auto" }}>
-                <InputGroup.Text><i className="bi bi-calendar-event me-1"></i> Desde</InputGroup.Text>
-                <Form.Control type="date" value={fechaDesde} onChange={e => setFechaDesde(e.target.value)} />
+                <InputGroup.Text><i className="bi bi-calendar-event me-1"></i> Año</InputGroup.Text>
+                <Form.Select 
+                  value={filtroAnio}
+                  onChange={(e) => {
+                    setFiltroAnio(e.target.value);
+                    if (e.target.value !== "personalizado") {
+                      setFechaDesde("");
+                      setFechaHasta("");
+                    }
+                  }}
+                >
+                  <option value="">Este Año ({new Date().getFullYear()})</option>
+                  <option value={new Date().getFullYear() - 1}>{new Date().getFullYear() - 1}</option>
+                  <option value={new Date().getFullYear() - 2}>{new Date().getFullYear() - 2}</option>
+                  <option value={new Date().getFullYear() - 3}>{new Date().getFullYear() - 3}</option>
+                  <option value="personalizado">Personalizado</option>
+                </Form.Select>
               </InputGroup>
-              
-              <InputGroup size="sm" style={{ width: "auto" }}>
-                <InputGroup.Text><i className="bi bi-calendar-event-fill me-1"></i> Hasta</InputGroup.Text>
-                <Form.Control type="date" value={fechaHasta} onChange={e => setFechaHasta(e.target.value)} />
-              </InputGroup>
+
+              {filtroAnio === "personalizado" && (
+                <>
+                  <InputGroup size="sm" style={{ width: "auto" }}>
+                    <InputGroup.Text>Desde</InputGroup.Text>
+                    <Form.Control type="date" value={fechaDesde} onChange={e => setFechaDesde(e.target.value)} />
+                  </InputGroup>
+                  <InputGroup size="sm" style={{ width: "auto" }}>
+                    <InputGroup.Text>Hasta</InputGroup.Text>
+                    <Form.Control type="date" value={fechaHasta} onChange={e => setFechaHasta(e.target.value)} />
+                  </InputGroup>
+                </>
+              )}
               
               <div style={{ width: "250px" }}>
                  <BuscadorGeneral placeholder="Turista o excursión..." onBuscar={setBusqueda} />
@@ -144,7 +183,7 @@ export default function MainResenias() {
           {error && <div className="alert alert-danger py-2">{error}</div>}
 
           {loading ? (
-             <div className="text-center py-5"><Spinner animation="border" variant="success" /></div>
+             <div className="py-4"><Skeleton count={8} height={45} className="mb-2" /></div>
           ) : (
             <Table hover responsive className="align-middle">
               <thead className="table-light">
@@ -165,25 +204,33 @@ export default function MainResenias() {
                     <td>{r.id_resena}</td>
                     <td><div className="fw-semibold">{r.excursion}</div></td>
                     <td>{r.turista}</td>
-                    <td><Badge bg="warning" text="dark">⭐ {r.calificacion}</Badge></td>
+                    <td><span className="badge badge-soft-warning text-dark px-2 py-1">⭐ {r.calificacion}</span></td>
                     <td style={{ maxWidth: "250px" }} className="text-truncate" title={r.comentario}>{r.comentario}</td>
                     <td>{new Date(r.fecha_resena).toLocaleDateString("es-AR")}</td>
                     <td>
-                      <Badge className="text-uppercase" bg={r.estado === "publicada" ? "success" : "secondary"}>
+                      <span className={`badge text-uppercase ${r.estado === "publicada" ? "badge-soft-success" : "badge-soft-secondary"}`}>
                         {r.estado}
-                      </Badge>
+                      </span>
                     </td>
                     <td className="text-center">
-                      <Button variant="outline-primary" size="sm" className="me-2" onClick={() => navigate(`/dashboard-admin/reseñas/edit/${r.id_resena}`)}>
+                      <Button variant="outline-primary" size="sm" className="btn-action me-2" onClick={() => navigate(`/dashboard-admin/reseñas/edit/${r.id_resena}`)}>
                         <i className="bi bi-pencil"></i>
                       </Button>
-                      <Button variant="outline-danger" size="sm" onClick={() => handleEliminar(r.id_resena)}>
-                        <i className="bi bi-trash"></i>
+                      <Button variant="outline-danger" size="sm" className="btn-action" onClick={() => handleEliminar(r.id_resena)}>
+                        <i className="bi bi-archive"></i>
                       </Button>
                     </td>
                   </tr>
                 )) : (
-                  <tr><td colSpan="8" className="text-center py-4 text-muted">No hay reseñas para mostrar.</td></tr>
+                  <tr>
+                    <td colSpan="8" className="text-center py-5">
+                      <div className="d-flex flex-column align-items-center justify-content-center text-muted">
+                        <i className="bi bi-inbox mb-2" style={{ fontSize: "3rem", opacity: 0.5 }}></i>
+                        <h5>No hay reseñas registradas</h5>
+                        <p className="mb-0 small">Intenta buscar con otros filtros o cambia de año.</p>
+                      </div>
+                    </td>
+                  </tr>
                 )}
               </tbody>
             </Table>
