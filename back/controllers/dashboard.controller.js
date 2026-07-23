@@ -99,7 +99,7 @@ export const getReservasPorMes = (req, res) => {
   const sql = `
     SELECT r.id_reserva, t.nombre AS turista, t.email, t.telefono,
            e.titulo AS excursion, f.fecha AS fecha_excursion, f.hora_salida, 
-           r.cantidad_personas, r.estado_reserva, r.monto_total
+           r.cantidad_personas, r.estado_reserva, r.monto_total, r.fecha_reserva
     FROM Reservas r
     JOIN Turistas t ON r.id_turista = t.id_turista
     JOIN FechasExcursion f ON r.id_fecha = f.id_fecha
