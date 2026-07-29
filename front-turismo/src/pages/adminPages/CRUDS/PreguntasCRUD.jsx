@@ -54,20 +54,20 @@ export default function PreguntasPersonalizacionAdmin() {
 
   const fetchCategorias = async () => {
     const res = await axios.get(
-      "http://localhost:8000/api/personalizacion/categorias",
+      `${import.meta.env.VITE_API_URL}/personalizacion/categorias`,
     );
     setCategorias(res.data);
   };
 
   const fetchPreguntas = async () => {
     const res = await axios.get(
-      "http://localhost:8000/api/personalizacion/preguntas",
+      `${import.meta.env.VITE_API_URL}/personalizacion/preguntas`,
     );
     setPreguntas(res.data);
   };
 
   const fetchExcursiones = async () => {
-    const res = await axios.get("http://localhost:8000/api/excursiones");
+    const res = await axios.get(`${import.meta.env.VITE_API_URL}/excursiones`);
     setExcursiones(res.data.data || []);
   };
 
@@ -75,7 +75,7 @@ export default function PreguntasPersonalizacionAdmin() {
     try {
       // Esta es la nueva ruta que creamos en el backend
       const res = await axios.get(
-        "http://localhost:8000/api/personalizacion/asignaciones",
+        `${import.meta.env.VITE_API_URL}/personalizacion/asignaciones`,
       );
       setAsignaciones(res.data);
     } catch (error) {
@@ -91,7 +91,7 @@ export default function PreguntasPersonalizacionAdmin() {
     e.preventDefault();
     if (!nuevaCategoria.trim()) return;
     try {
-      await axios.post("http://localhost:8000/api/personalizacion/categorias", {
+      await axios.post(`${import.meta.env.VITE_API_URL}/personalizacion/categorias`, {
         nombre_categoria: nuevaCategoria,
       });
       Swal.fire("¡Listo!", "Categoría creada correctamente", "success");
@@ -113,7 +113,7 @@ export default function PreguntasPersonalizacionAdmin() {
     if (result.isConfirmed) {
       try {
         await axios.put(
-          `http://localhost:8000/api/personalizacion/categorias/eliminar/${id}`,
+          `${import.meta.env.VITE_API_URL}/personalizacion/categorias/eliminar/${id}`,
         );
         fetchCategorias();
         Swal.fire("Eliminado", "La categoría ha sido eliminada.", "success");
@@ -133,7 +133,7 @@ export default function PreguntasPersonalizacionAdmin() {
       );
     }
     try {
-      await axios.post("http://localhost:8000/api/personalizacion/preguntas", {
+      await axios.post(`${import.meta.env.VITE_API_URL}/personalizacion/preguntas`, {
         id_categoria: categoriaSeleccionada,
         texto_pregunta: nuevaPregunta,
         tipo_respuesta: tipoRespuesta,
@@ -152,7 +152,7 @@ export default function PreguntasPersonalizacionAdmin() {
       return Swal.fire("Atención", "Seleccioná ambos campos", "warning");
     }
     try {
-      await axios.post("http://localhost:8000/api/personalizacion/excursion", {
+      await axios.post(`${import.meta.env.VITE_API_URL}/personalizacion/excursion`, {
         id_excursion: excursionSeleccionada,
         id_pregunta: preguntaSeleccionada,
       });
@@ -178,7 +178,7 @@ export default function PreguntasPersonalizacionAdmin() {
       try {
         // Mandamos ambos IDs en la URL
         await axios.put(
-          `http://localhost:8000/api/personalizacion/asignaciones/${idExcursion}/${idPregunta}`,
+          `${import.meta.env.VITE_API_URL}/personalizacion/asignaciones/${idExcursion}/${idPregunta}`,
         );
 
         Swal.fire("Eliminado", "Pregunta quitada con éxito.", "success");

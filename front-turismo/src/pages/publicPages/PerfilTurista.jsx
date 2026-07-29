@@ -10,6 +10,7 @@ import {
   Form,
   Table,
   Badge,
+  ButtonGroup,
 } from "react-bootstrap";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
@@ -89,7 +90,7 @@ export default function PerfilTurista() {
       setLoading(true);
       try {
         const res = await axios.get(
-          `http://localhost:8000/api/turistas/${turistaId}/reservas?historial=${mostrarFinalizadas}&page=${currentPage}`,
+          `${import.meta.env.VITE_API_URL}/turistas/${turistaId}/reservas?historial=${mostrarFinalizadas}&page=${currentPage}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
@@ -113,8 +114,8 @@ export default function PerfilTurista() {
   }, [turistaId, token, hydrated, mostrarFinalizadas, currentPage]);
 
   // --- HANDLERS ---
-  const handleSwitchChange = (e) => {
-    setMostrarFinalizadas(e.target.checked);
+  const handleToggleView = (isHistorial) => {
+    setMostrarFinalizadas(isHistorial);
     setCurrentPage(1); // Reiniciar paginación al cambiar de vista
   };
 
@@ -133,7 +134,7 @@ export default function PerfilTurista() {
     if (result.isConfirmed) {
       try {
         await axios.put(
-          `http://localhost:8000/api/reservas/${idReserva}/cancelar`,
+          `${import.meta.env.VITE_API_URL}/reservas/${idReserva}/cancelar`,
           {},
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -161,7 +162,7 @@ export default function PerfilTurista() {
 
     try {
       const res = await axios.put(
-        `http://localhost:8000/api/turistas/${turistaId}`,
+        `${import.meta.env.VITE_API_URL}/turistas/${turistaId}`,
         formData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -361,14 +362,24 @@ export default function PerfilTurista() {
               </h5>
 
               <div className="d-flex align-items-center gap-3">
-                <Form.Check 
-                  type="switch"
-                  id="historial-switch"
-                  label="Ver historial"
-                  checked={mostrarFinalizadas}
-                  onChange={handleSwitchChange}
-                />
-                <Badge bg="success" pill>
+                <ButtonGroup size="sm" className="shadow-sm border rounded">
+                  <Button
+                    variant={!mostrarFinalizadas ? "success" : "white"}
+                    className={!mostrarFinalizadas ? "fw-bold" : "text-muted"}
+                    onClick={() => handleToggleView(false)}
+                  >
+                    Activas
+                  </Button>
+                  <Button
+                    variant={mostrarFinalizadas ? "success" : "white"}
+                    className={mostrarFinalizadas ? "fw-bold" : "text-muted"}
+                    onClick={() => handleToggleView(true)}
+                  >
+                    Historial
+                  </Button>
+                </ButtonGroup>
+                
+                <Badge bg="light" text="secondary" className="border fw-medium px-2 py-1">
                   Total: {totalRegistros}
                 </Badge>
               </div>
@@ -377,112 +388,121 @@ export default function PerfilTurista() {
             <Card.Body className="p-0">
               <Alert
                 variant="warning"
-                className="m-3 border-0 shadow-sm d-flex align-items-center"
+                className="m-3 border-0 border-start border-warning border-4 shadow-sm d-flex align-items-center bg-warning-subtle text-dark"
               >
                 <i className="bi bi-clock-history me-3 fs-4 text-warning"></i>
                 <div>
-                  <strong>¡Recordatorio importante!</strong> Deberás presentarte
+                  <strong className="text-warning-emphasis">¡Recordatorio importante!</strong> Deberás presentarte
                   en nuestra agencia (Rivadavia 1051), con una identificación,
                   en el horario pactado.
                 </div>
               </Alert>
 
-              <Table hover responsive className="align-middle mb-0">
-                <thead className="table-light">
+              <Table responsive className="align-middle mb-0 table-borderless">
+                <thead className="border-bottom text-muted small text-uppercase">
                   <tr>
-                    <th className="ps-3 text-success">Excursión</th>
-                    <th className="text-success">Guía</th>
-                    <th className="text-success">Fecha / Hora</th>
-                    <th className="text-success text-center">Estado</th>
-                    <th className="text-success text-center">Acciones</th>
+                    <th className="ps-4 py-3 fw-semibold">Excursión</th>
+                    <th className="py-3 fw-semibold">Guía</th>
+                    <th className="py-3 fw-semibold">Fecha / Hora</th>
+                    <th className="py-3 fw-semibold text-center">Estado</th>
+                    <th className="py-3 fw-semibold text-center">Acciones</th>
                   </tr>
                 </thead>
 
                 <tbody>
                   {reservas.length > 0 ? (
                     reservas.map((r) => (
-                      <tr key={r.id_reserva}>
-                        <td className="ps-3 py-3">
-                          <div className="fw-bold">{r.excursion_nombre}</div>
-                          <small className="text-muted">
-                            {r.cantidad_personas} personas
-                          </small>
-                        </td>
-
-                        <td>
-                          <div className="small fw-semibold text-primary">
-                            <i className="bi bi-person-badge me-1"></i>
-                            {r.guia_nombre || "Por asignar"}
+                      <tr key={r.id_reserva} className="border-bottom">
+                        <td className="ps-4 py-4">
+                          <div className="fw-bold text-dark fs-6">{r.excursion_nombre}</div>
+                          <div className="text-muted small mt-1 d-flex align-items-center gap-1">
+                            <i className="bi bi-people"></i> {r.cantidad_personas} personas
                           </div>
                         </td>
 
-                        <td>
-                          <div className="small fw-bold">
+                        <td className="py-4">
+                          <div className="d-flex align-items-center gap-2">
+                            <div className="bg-light rounded-circle d-flex align-items-center justify-content-center text-primary" style={{width: '32px', height: '32px'}}>
+                              <i className="bi bi-person-fill"></i>
+                            </div>
+                            <span className="small fw-medium text-secondary">
+                              {r.guia_nombre || "Por asignar"}
+                            </span>
+                          </div>
+                        </td>
+
+                        <td className="py-4">
+                          <div className="fw-semibold text-dark">
+                            <i className="bi bi-calendar3 me-2 text-muted"></i>
                             {new Date(r.fecha_salida).toLocaleDateString("es-AR")}
                           </div>
-                          <div className="small text-muted">
+                          <div className="small text-muted mt-1 ms-4">
+                            <i className="bi bi-clock me-1"></i>
                             {r.hora_salida?.slice(0, 5) || "--:--"} hs
                           </div>
                         </td>
 
-                        <td className="text-center">
-                          <Badge
-                            bg={
+                        <td className="text-center py-4">
+                          <span
+                            className={`badge rounded-pill px-3 py-2 fw-semibold ${
                               r.estado_reserva === "confirmada"
-                                ? "success"
+                                ? "bg-success-subtle text-success border border-success-subtle"
                                 : r.estado_reserva === "pendiente"
-                                ? "warning text-dark"
+                                ? "bg-warning-subtle text-warning-emphasis border border-warning-subtle"
                                 : r.estado_reserva === "finalizada"
-                                ? "primary"
+                                ? "bg-primary-subtle text-primary border border-primary-subtle"
                                 : r.estado_reserva === "cancelada"
-                                ? "danger"
-                                : "secondary"
-                            }
+                                ? "bg-danger-subtle text-danger border border-danger-subtle"
+                                : "bg-secondary-subtle text-secondary border border-secondary-subtle"
+                            }`}
                           >
                             {(r.estado_reserva || "Pendiente").toUpperCase()}
-                          </Badge>
+                          </span>
                         </td>
 
-                        <td className="text-center">
+                        <td className="text-center py-4">
                           <div className="d-flex justify-content-center gap-2">
                             {r.estado_reserva !== "cancelada" && (
                               <Button
-                                variant="outline-primary"
+                                variant="light"
                                 size="sm"
-                                className="rounded-pill"
+                                className="rounded-circle d-flex align-items-center justify-content-center text-primary shadow-sm"
+                                style={{width: '36px', height: '36px'}}
                                 onClick={() => handleDescargarVoucher(r)}
                                 title="Descargar Voucher PDF"
                               >
-                                <i className="bi bi-file-earmark-pdf"></i>
+                                <i className="bi bi-download"></i>
                               </Button>
                             )}
 
                             {(r.estado_reserva === "pendiente" ||
                               r.estado_reserva === "confirmada") && (
                               <Button
-                                variant="outline-danger"
+                                variant="light"
                                 size="sm"
-                                className="rounded-pill"
+                                className="rounded-circle d-flex align-items-center justify-content-center text-danger shadow-sm"
+                                style={{width: '36px', height: '36px'}}
                                 onClick={() =>
                                   handleCancelarReserva(r.id_reserva)
                                 }
                                 title="Cancelar Reserva"
                               >
-                                <i className="bi bi-x-circle"></i>
+                                <i className="bi bi-x-lg"></i>
                               </Button>
                             )}
 
                             {r.estado_reserva === "finalizada" && (
                               <Button
-                                variant="outline-success"
+                                variant="light"
                                 size="sm"
-                                className="rounded-pill"
+                                className="rounded-circle d-flex align-items-center justify-content-center text-warning shadow-sm"
+                                style={{width: '36px', height: '36px'}}
                                 onClick={() =>
                                   navigate(`/calificar/${r.id_reserva}`)
                                 }
+                                title="Calificar Excursión"
                               >
-                                <i className="bi bi-star-fill me-1"></i>{" "}
-                                Calificar
+                                <i className="bi bi-star-fill"></i>
                               </Button>
                             )}
                           </div>

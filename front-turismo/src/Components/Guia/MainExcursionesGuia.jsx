@@ -15,7 +15,7 @@ export default function MainExcursionesGuia() {
     const fetchExcursiones = async () => {
       try {
         const res = await axios.get(
-          `http://localhost:8000/api/excursiones/guia/${user.id}`
+          `${import.meta.env.VITE_API_URL}/excursiones/guia/${user.id}`
         );
         setExcursiones(res.data);
       } catch (err) {

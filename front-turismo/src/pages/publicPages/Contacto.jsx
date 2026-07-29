@@ -72,7 +72,7 @@ export default function Contacto() {
     }
 
     try {
-      await axios.post("http://localhost:8000/api/contacto", form);
+      await axios.post(`${import.meta.env.VITE_API_URL}/contacto`, form);
       Swal.fire({
         icon: "success",
         title: t("contactUs.alert.successTitle"),

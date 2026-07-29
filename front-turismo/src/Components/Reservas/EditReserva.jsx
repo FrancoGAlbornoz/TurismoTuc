@@ -39,9 +39,9 @@ export default function EditReserva() {
     const fetchData = async () => {
       try {
         const [reservaRes, excursionesRes] = await Promise.all([
-          axios.get(`http://localhost:8000/api/reservas/${id}`),
+          axios.get(`${import.meta.env.VITE_API_URL}/reservas/${id}`),
           // 👈 SOLUCIÓN 1: Le pedimos 100 excursiones para que el select esté completo
-          axios.get("http://localhost:8000/api/excursiones?limit=100"), 
+          axios.get(`${import.meta.env.VITE_API_URL}/excursiones?limit=100`), 
         ]);
 
         const reservaData = reservaRes.data;
@@ -53,7 +53,7 @@ export default function EditReserva() {
 
         if (reservaData.id_excursion) {
           const fechasRes = await axios.get(
-            `http://localhost:8000/api/excursiones/${reservaData.id_excursion}/fechas`
+            `${import.meta.env.VITE_API_URL}/excursiones/${reservaData.id_excursion}/fechas`
           );
           setFechasExcursion(fechasRes.data);
         }
@@ -74,7 +74,7 @@ export default function EditReserva() {
     if (id_excursion) {
       try {
         const res = await axios.get(
-          `http://localhost:8000/api/excursiones/${id_excursion}/fechas`
+          `${import.meta.env.VITE_API_URL}/excursiones/${id_excursion}/fechas`
         );
         setFechasExcursion(res.data);
       } catch (err) {
@@ -94,7 +94,7 @@ export default function EditReserva() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`http://localhost:8000/api/reservas/${id}`, reserva);
+      await axios.put(`${import.meta.env.VITE_API_URL}/reservas/${id}`, reserva);
       Swal.fire({
         icon: "success",
         title: "Reserva actualizada",

@@ -28,7 +28,7 @@ export default function PreguntasPersonalizadas() {
       try {
         // Pedimos preguntas para cada excursión en paralelo
         const promesas = reservasRealizadas.map(async (reserva) => {
-          const res = await axios.get(`http://localhost:8000/api/personalizacion/excursion/${reserva.id_excursion}`);
+          const res = await axios.get(`${import.meta.env.VITE_API_URL}/personalizacion/excursion/${reserva.id_excursion}`);
           return {
             ...reserva, // id_reserva, nombre_excursion
             preguntas: res.data // Array de preguntas
@@ -68,7 +68,7 @@ export default function PreguntasPersonalizadas() {
       }));
 
       // Enviamos todo en una sola petición
-      await axios.post("http://localhost:8000/api/personalizacion/respuestas", 
+      await axios.post(`${import.meta.env.VITE_API_URL}/personalizacion/respuestas`, 
         { bloques },
         { headers: { Authorization: `Bearer ${token}` } }
       );

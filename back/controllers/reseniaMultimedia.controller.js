@@ -22,7 +22,7 @@ export const uploadImagenResena = async (req, res) => {
   }
 
   try {
-    // 0) Buscar la excursión asociada a esta reseña (TABLA: Reseñas)
+
     const [rowsRes] = await pool.promise().query(
       "SELECT id_excursion FROM Reseñas WHERE id_resena = ?",
       [id]
@@ -37,7 +37,7 @@ export const uploadImagenResena = async (req, res) => {
 
     const id_excursion = rowsRes[0].id_excursion;
 
-    // 1) Subir a Cloudinary usando buffer
+
     const resultado = await new Promise((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(
         { folder: "maavyt_resenas" },
@@ -52,7 +52,7 @@ export const uploadImagenResena = async (req, res) => {
     const secureUrl = resultado.secure_url;
     const publicId = resultado.public_id;
 
-    // 2) Insertar en Multimedia con estado 'pendiente'
+
     const sql = `
       INSERT INTO Multimedia 
       (tipo, url, descripcion, id_excursion, id_usuario, id_turista, id_resena, eliminado, estado_moderacion)
@@ -92,7 +92,7 @@ export const uploadImagenResena = async (req, res) => {
 // GET /api/multimedia/pendientes
 // -------------------------------------------------------------------
 export const getPendientesMultimedia = async (req, res) => {
-  // Ahora recibimos el "estado" desde el frontend (por defecto "pendiente")
+
   const { page = 1, limit = 10, estado = 'pendiente', fechaDesde, fechaHasta } = req.query;
   const offset = (parseInt(page) - 1) * parseInt(limit);
 

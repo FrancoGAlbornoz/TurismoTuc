@@ -23,12 +23,12 @@ export default function ViewReserva() {
     const fetchData = async () => {
       try {
         // 1️⃣ Cargar la reserva
-        const res = await axios.get(`http://localhost:8000/api/reservas/${id}`);
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/reservas/${id}`);
         setReserva(res.data);
 
         // 2️⃣ Cargar respuestas personalizadas
         const resp = await axios.get(
-          `http://localhost:8000/api/personalizacion/reserva/${id}`
+          `${import.meta.env.VITE_API_URL}/personalizacion/reserva/${id}`
         );
         setRespuestas(resp.data || []);
 

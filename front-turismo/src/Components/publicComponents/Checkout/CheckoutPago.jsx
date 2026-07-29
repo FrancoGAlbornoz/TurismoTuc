@@ -26,7 +26,7 @@ export default function CheckoutPago({ turista }) {
         const id_turista = turista.id_turista || turista.id;
 
         const carRes = await axios.get(
-          `http://localhost:8000/api/carrito/${id_turista}`,
+          `${import.meta.env.VITE_API_URL}/carrito/${id_turista}`,
         );
 
         if (!carRes.data) {
@@ -36,7 +36,7 @@ export default function CheckoutPago({ turista }) {
         }
 
         const itemsRes = await axios.get(
-          `http://localhost:8000/api/carrito/${carRes.data.id_carrito}/items`,
+          `${import.meta.env.VITE_API_URL}/carrito/${carRes.data.id_carrito}/items`,
         );
 
         if (!itemsRes.data || itemsRes.data.length === 0) {
@@ -120,7 +120,7 @@ export default function CheckoutPago({ turista }) {
     fd.append("id_turista", id_turista);
     fd.append("descripcion", referenciaFinal ? `Ref: ${referenciaFinal}` : "");
 
-    await axios.post("http://localhost:8000/api/comprobantes", fd, {
+    await axios.post(`${import.meta.env.VITE_API_URL}/comprobantes`, fd, {
       headers: { "Content-Type": "multipart/form-data" },
     });
   };
@@ -159,7 +159,7 @@ export default function CheckoutPago({ turista }) {
         };
 
         const resReserva = await axios.post(
-          "http://localhost:8000/api/reservas",
+          `${import.meta.env.VITE_API_URL}/reservas`,
           payloadReserva,
         );
 
@@ -169,7 +169,7 @@ export default function CheckoutPago({ turista }) {
         }
 
         // B) Registrar Pago (referencia opcional)
-        await axios.post("http://localhost:8000/api/pagos/transferencia", {
+        await axios.post(`${import.meta.env.VITE_API_URL}/pagos/transferencia`, {
           id_reserva: nuevoIdReserva,
           referencia: referenciaFinal,
         });
@@ -193,7 +193,7 @@ export default function CheckoutPago({ turista }) {
 
       // Vaciar carrito
       try {
-        await axios.delete(`http://localhost:8000/api/carrito/vaciar/${id_turista}`);
+        await axios.delete(`${import.meta.env.VITE_API_URL}/carrito/vaciar/${id_turista}`);
         useCarritoStore.getState().clearCarrito();
         
       } catch (error) {
@@ -227,7 +227,7 @@ export default function CheckoutPago({ turista }) {
   //   const ids = [];
 
   //   for (const item of items) {
-  //     const res = await axios.post("http://localhost:8000/api/reservas", {
+  //     const res = await axios.post(`${import.meta.env.VITE_API_URL}/reservas`, {
   //       id_turista,
   //       id_fecha: item.id_fecha,
   //       cantidad_personas: item.cantidad_personas,
@@ -250,18 +250,18 @@ export default function CheckoutPago({ turista }) {
       setMsgInfo("Redirigiendo a Mercado Pago...");
 
       const mpItems = items.map((it) => {
-        const cantidad = Number(it.cantidad_personas);
-        const subtotal = Number(it.subtotal);
+        const cantidad = Number(it.cantidad_personas) || 1;
+        const subtotal = Number(it.subtotal) || 0;
 
         return {
-          nombre: it.excursion,
+          nombre: it.excursion || "Excursión",
           cantidad: cantidad,
           precio: Number((subtotal / cantidad).toFixed(2)),
         };
       });
 
       const response = await axios.post(
-        "http://localhost:8000/api/pagos/crear-pago",
+        `${import.meta.env.VITE_API_URL}/pagos/crear-pago`,
         {
           items: mpItems,
           id_turista: turista.id_turista || turista.id,
@@ -271,8 +271,8 @@ export default function CheckoutPago({ turista }) {
 
       window.location.href = response.data.init_point;
     } catch (error) {
-      console.error("Error Mercado Pago:", error);
-      setMsgError("No se pudo iniciar el pago con Mercado Pago.");
+      console.error("Error Mercado Pago:", error.response?.data || error.message);
+      setMsgError(error.response?.data?.message || "No se pudo iniciar el pago con Mercado Pago.");
     } finally {
       setProcesandoPago(false);
       setMsgInfo("");

@@ -24,7 +24,7 @@ export default function EditExcursion() {
     const fetchData = async () => {
       try {
         const resExc = await axios.get(
-          `http://localhost:8000/api/excursiones/${id}`
+          `${import.meta.env.VITE_API_URL}/excursiones/${id}`
         );
         const data = resExc.data;
 
@@ -37,17 +37,17 @@ export default function EditExcursion() {
         setIdsCategorias(idsIniciales);
 
         const resImgs = await axios.get(
-          `http://localhost:8000/api/excursiones/${id}/multimedia`
+          `${import.meta.env.VITE_API_URL}/excursiones/${id}/multimedia`
         );
         setImagenes(resImgs.data);
 
         const resCats = await axios.get(
-          "http://localhost:8000/api/categorias"
+          `${import.meta.env.VITE_API_URL}/categorias`
         );
         setCategorias(resCats.data);
 
         const resGuias = await axios.get(
-          "http://localhost:8000/api/excursiones/guias"
+          `${import.meta.env.VITE_API_URL}/excursiones/guias`
         );
         setGuias(resGuias.data);
       } catch (err) {
@@ -73,10 +73,10 @@ export default function EditExcursion() {
   const handleEliminarImagen = async (id_multimedia) => {
     try {
       await axios.delete(
-        `http://localhost:8000/api/excursiones/multimedia/${id_multimedia}`
+        `${import.meta.env.VITE_API_URL}/excursiones/multimedia/${id_multimedia}`
       );
       const resImgs = await axios.get(
-        `http://localhost:8000/api/excursiones/${id}/multimedia`
+        `${import.meta.env.VITE_API_URL}/excursiones/${id}/multimedia`
       );
       setImagenes(resImgs.data);
     } catch (err) {
@@ -96,7 +96,7 @@ export default function EditExcursion() {
       formData.append("imagen", archivoImagen);
 
       const res = await axios.post(
-        "http://localhost:8000/api/excursiones/imagen",
+        `${import.meta.env.VITE_API_URL}/excursiones/imagen`,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -129,17 +129,17 @@ export default function EditExcursion() {
     e.preventDefault();
     try {
       await axios.put(
-        `http://localhost:8000/api/excursiones/${id}`,
+        `${import.meta.env.VITE_API_URL}/excursiones/${id}`,
         excursion
       );
 
       await axios.put(
-        `http://localhost:8000/api/excursiones/${id}/categorias`,
+        `${import.meta.env.VITE_API_URL}/excursiones/${id}/categorias`,
         { ids_categorias: idsCategorias }
       );
 
       if (nuevaUrl.trim() !== "") {
-        await axios.post("http://localhost:8000/api/excursiones/multimedia", {
+        await axios.post(`${import.meta.env.VITE_API_URL}/excursiones/multimedia`, {
           id_excursion: id,
           url: nuevaUrl,
           descripcion: "Imagen agregada desde la edición",
@@ -147,7 +147,7 @@ export default function EditExcursion() {
         });
 
         const resImgs = await axios.get(
-          `http://localhost:8000/api/excursiones/${id}/multimedia`
+          `${import.meta.env.VITE_API_URL}/excursiones/${id}/multimedia`
         );
         setImagenes(resImgs.data);
         setNuevaUrl("");

@@ -64,7 +64,7 @@ export default function RegisterTurista() {
     }
 
     try {
-      const res = await axios.post("http://localhost:8000/api/auth/turistas/register", formData);
+      const res = await axios.post(`${import.meta.env.VITE_API_URL}/auth/turistas/register`, formData);
       if (res.status === 201) {
         setSuccess("Cuenta creada correctamente. Ya podés iniciar sesión.");
         setTimeout(() => navigate("/login"), 2000);

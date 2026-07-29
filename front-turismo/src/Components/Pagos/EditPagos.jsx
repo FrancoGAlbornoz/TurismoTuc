@@ -23,7 +23,7 @@ export default function EditPagos() {
   useEffect(() => {
     const fetchPago = async () => {
   try {
-    const res = await axios.get("http://localhost:8000/api/pagos");
+    const res = await axios.get(`${import.meta.env.VITE_API_URL}/pagos`);
     
     // CORRECCIÓN: Acceder a .data.data
     const listaPagos = res.data.data || [];
@@ -47,7 +47,7 @@ export default function EditPagos() {
   const handleGuardar = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`http://localhost:8000/api/pagos/${id}`, {
+      await axios.put(`${import.meta.env.VITE_API_URL}/pagos/${id}`, {
         nuevo_estado: nuevoEstado,
         referencia,
       });

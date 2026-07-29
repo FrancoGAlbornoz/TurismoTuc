@@ -6,6 +6,8 @@ import Swal from "sweetalert2";
 import PaginationComponent from "../Filtros/Paginacion.jsx";
 import BuscadorGeneral from "../Filtros/BuscadorGeneral.jsx"; 
 import * as XLSX from "xlsx";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
 
 export default function MainFechasExcursion() {
   const [fechas, setFechas] = useState([]);
@@ -31,7 +33,7 @@ export default function MainFechasExcursion() {
       };
 
       // 👈 Usamos el nuevo endpoint para tabla plana
-      const res = await axios.get("http://localhost:8000/api/excursiones/fechas-paginadas", { params });
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/excursiones/fechas-paginadas`, { params });
       setFechas(res.data.data || []);
       setTotalPaginas(res.data.totalPages || 1);
     } catch (err) {
@@ -66,7 +68,7 @@ export default function MainFechasExcursion() {
     if (!confirmar.isConfirmed) return;
 
     try {
-      await axios.delete(`http://localhost:8000/api/excursiones/fechas/${id_fecha}`);
+      await axios.delete(`${import.meta.env.VITE_API_URL}/excursiones/fechas/${id_fecha}`);
       Swal.fire({
         icon: "success",
         title: "Archivada",
@@ -93,7 +95,7 @@ export default function MainFechasExcursion() {
     if (!confirmar.isConfirmed) return;
 
     try {
-      await axios.put(`http://localhost:8000/api/excursiones/fechas/restore/${id_fecha}`);
+      await axios.put(`${import.meta.env.VITE_API_URL}/excursiones/fechas/restore/${id_fecha}`);
       Swal.fire({
         icon: "success",
         title: "Restaurada",
@@ -132,7 +134,7 @@ export default function MainFechasExcursion() {
 
   return (
     <div className="container-fluid py-4">
-      <Card className="shadow-sm">
+      <Card className="card-premium shadow-sm">
         <Card.Body className="p-3">
           
           {/* Encabezado y Filtros */}
@@ -182,9 +184,8 @@ export default function MainFechasExcursion() {
 
           {/* Tabla Plana Global */}
           {loading ? (
-            <div className="text-center py-5">
-              <Spinner animation="border" variant="success" />
-              <p className="mt-3 text-muted">Cargando fechas...</p>
+            <div className="py-4">
+              <Skeleton count={8} height={45} className="mb-2" />
             </div>
           ) : (
             <>
@@ -224,8 +225,8 @@ export default function MainFechasExcursion() {
                               <span
                                 className={`badge text-uppercase ${
                                   f.estado === "abierta" && !f.eliminado
-                                    ? "bg-success"
-                                    : "bg-secondary"
+                                    ? "badge-soft-success"
+                                    : "badge-soft-secondary"
                                 }`}
                               >
                                 {f.eliminado ? "ARCHIVADA" : f.estado}
@@ -237,6 +238,7 @@ export default function MainFechasExcursion() {
                                   <Button
                                     variant="outline-primary"
                                     size="sm"
+                                    className="btn-action"
                                     onClick={() => navigate(`/dashboard-admin/fechas/edit/${f.id_fecha}`)}
                                     title="Editar"
                                   >
@@ -248,6 +250,7 @@ export default function MainFechasExcursion() {
                                   <Button
                                     variant="outline-success"
                                     size="sm"
+                                    className="btn-action"
                                     onClick={() => handleRestore(f.id_fecha)}
                                     title="Restaurar fecha"
                                   >
@@ -257,6 +260,7 @@ export default function MainFechasExcursion() {
                                   <Button
                                     variant="outline-danger"
                                     size="sm"
+                                    className="btn-action"
                                     onClick={() => handleCerrar(f.id_fecha)}
                                     title="Cerrar y Archivar"
                                   >
@@ -271,8 +275,12 @@ export default function MainFechasExcursion() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="7" className="text-center text-muted py-3">
-                        No hay fechas registradas para este filtro
+                      <td colSpan="7" className="text-center py-5">
+                        <div className="d-flex flex-column align-items-center justify-content-center text-muted">
+                          <i className="bi bi-inbox mb-2" style={{ fontSize: "3rem", opacity: 0.5 }}></i>
+                          <h5>No hay fechas registradas</h5>
+                          <p className="mb-0 small">No se encontraron resultados para los filtros aplicados.</p>
+                        </div>
                       </td>
                     </tr>
                   )}

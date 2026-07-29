@@ -15,8 +15,8 @@ export default function ViewTurista() {
     const fetchTuristaYReservas = async () => {
       try {
         const [turistaRes, reservasRes] = await Promise.all([
-          axios.get(`http://localhost:8000/api/turistas/${id}`),
-          axios.get(`http://localhost:8000/api/turistas/${id}/reservas`),
+          axios.get(`${import.meta.env.VITE_API_URL}/turistas/${id}`),
+          axios.get(`${import.meta.env.VITE_API_URL}/turistas/${id}/reservas`),
         ]);
         setTurista(turistaRes.data);
         setReservas(reservasRes.data);

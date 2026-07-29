@@ -29,7 +29,7 @@ export default function CreateUsuario() {
   useEffect(() => {
     const fetchRoles = async () => {
       try {
-        const res = await axios.get("http://localhost:8000/api/usuarios/roles");
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/usuarios/roles`);
         setRoles(res.data);
       } catch (err) {
         console.error("Error al cargar roles:", err);
@@ -49,7 +49,7 @@ export default function CreateUsuario() {
     setMessage("");
 
     try {
-      await axios.post("http://localhost:8000/api/usuarios", form);
+      await axios.post(`${import.meta.env.VITE_API_URL}/usuarios`, form);
       setMessage("✅ Usuario creado exitosamente.");
       setTimeout(() => navigate("/dashboard-admin/usuarios"), 1500);
     } catch (err) {

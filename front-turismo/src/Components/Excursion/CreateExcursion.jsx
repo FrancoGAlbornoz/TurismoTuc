@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Swal from "sweetalert2";
-import { Form, Row, Col, Button, Card } from "react-bootstrap";
+import { Form, Row, Col, Button, Card, Spinner } from "react-bootstrap";
 
 export default function CreateExcursion() {
   const navigate = useNavigate();
@@ -28,11 +28,12 @@ export default function CreateExcursion() {
   // NUEVO: archivo local y estado de subida
   const [archivoImagen, setArchivoImagen] = useState(null);
   const [subiendoImagen, setSubiendoImagen] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const fetchCategorias = async () => {
       try {
-        const res = await axios.get("http://localhost:8000/api/categorias");
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/categorias`);
         setCategorias(res.data);
       } catch (err) {
         console.error("Error al obtener categorías:", err);
@@ -42,7 +43,7 @@ export default function CreateExcursion() {
     const fetchGuias = async () => {
       try {
         const res = await axios.get(
-          "http://localhost:8000/api/excursiones/guias"
+          `${import.meta.env.VITE_API_URL}/excursiones/guias`
         );
         setGuias(res.data);
       } catch (err) {
@@ -77,7 +78,7 @@ export default function CreateExcursion() {
       formData.append("imagen", archivoImagen);
 
       const res = await axios.post(
-        "http://localhost:8000/api/excursiones/imagen",
+        `${import.meta.env.VITE_API_URL}/excursiones/imagen`,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -109,10 +110,11 @@ export default function CreateExcursion() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSaving(true);
     try {
       // 1) Crear excursión
       const res = await axios.post(
-        "http://localhost:8000/api/excursiones",
+        `${import.meta.env.VITE_API_URL}/excursiones`,
         form
       );
       const id_excursion = res.data.id;
@@ -120,14 +122,14 @@ export default function CreateExcursion() {
       // 2) Guardar categorías asociadas (si hay)
       if (idsCategorias.length > 0) {
         await axios.put(
-          `http://localhost:8000/api/excursiones/${id_excursion}/categorias`,
+          `${import.meta.env.VITE_API_URL}/excursiones/${id_excursion}/categorias`,
           { ids_categorias: idsCategorias }
         );
       }
 
       // 3) Guardar imagen principal (URL)
       if (urlImagen.trim() !== "") {
-        await axios.post("http://localhost:8000/api/excursiones/multimedia", {
+        await axios.post(`${import.meta.env.VITE_API_URL}/excursiones/multimedia`, {
           id_excursion,
           url: urlImagen,
           descripcion: "Imagen principal de la excursión",
@@ -150,6 +152,8 @@ export default function CreateExcursion() {
         title: "Error al crear excursión",
         text: "Por favor, revisa los datos ingresados.",
       });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -364,11 +368,25 @@ export default function CreateExcursion() {
               </div>
             </Form.Group>
 
-            <div className="d-flex justify-content-end">
-              <Button type="submit" variant="success">
-                Crear excursión
-              </Button>
-            </div>
+            <div className="d-flex justify-content-end gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => navigate("/dashboard-admin/excursiones")}
+                >
+                  Cancelar
+                </Button>
+                <Button type="submit" variant="success" disabled={saving}>
+                  {saving ? (
+                    <>
+                      <Spinner size="sm" className="me-2" />
+                      Guardando...
+                    </>
+                  ) : (
+                    "Guardar Excursión"
+                  )}
+                </Button>
+              </div>
           </Card.Body>
         </Card>
       </Form>

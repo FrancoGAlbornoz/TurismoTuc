@@ -8,7 +8,7 @@ export default function FechasExcursion({ id_excursion }) {
   useEffect(() => {
     const fetchFechas = async () => {
       try {
-        const res = await axios.get(`http://localhost:8000/api/excursiones/${id_excursion}/fechas`);
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/excursiones/${id_excursion}/fechas`);
         setFechas(res.data);
       } catch (err) {
         console.error("Error al obtener fechas:", err);
@@ -19,12 +19,12 @@ export default function FechasExcursion({ id_excursion }) {
 
   const handleAddFecha = async () => {
     try {
-      await axios.post("http://localhost:8000/api/excursiones/fechas-excursion", {
+      await axios.post(`${import.meta.env.VITE_API_URL}/excursiones/fechas-excursion`, {
         id_excursion,
         ...nueva,
       });
       setNueva({ fecha: "", hora_salida: "", cupo_maximo: "" });
-      const res = await axios.get(`http://localhost:8000/api/excursiones/${id_excursion}/fechas`);
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/excursiones/${id_excursion}/fechas`);
       setFechas(res.data);
     } catch (err) {
       console.error("Error al agregar fecha:", err);

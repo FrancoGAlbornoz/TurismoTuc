@@ -31,7 +31,10 @@ export const getMetricas = (req, res) => {
         ) * 100, 1
       ) AS ocupacion,
 
-      IFNULL(ROUND((SELECT AVG(rz.calificacion) FROM Reseñas rz WHERE rz.estado = 'publicada'), 1), 0) AS rating_promedio
+      IFNULL(ROUND((SELECT AVG(rz.calificacion) FROM Reseñas rz WHERE rz.estado = 'publicada'), 1), 0) AS rating_promedio,
+
+      /* Turistas Totales */
+      (SELECT COUNT(*) FROM Turistas WHERE eliminado = 0) AS turistas_totales
   `;
 
   pool.query(sql, (err, results) => {
@@ -41,9 +44,9 @@ export const getMetricas = (req, res) => {
 };
 
 // =============================
-// RESERVAS DEL DÍA (TABLA SUPERIOR)
+// RESERVAS PENDIENTES
 // =============================
-export const getReservasHoy = (req, res) => {
+export const getReservasPendientes = (req, res) => {
   const sql = `
     SELECT r.id_reserva, t.nombre AS turista, e.titulo AS excursion, 
            f.fecha AS fecha_excursion, f.hora_salida, 
@@ -52,14 +55,13 @@ export const getReservasHoy = (req, res) => {
     JOIN Turistas t ON r.id_turista = t.id_turista
     JOIN FechasExcursion f ON r.id_fecha = f.id_fecha
     JOIN Excursiones e ON f.id_excursion = e.id_excursion
-    WHERE DATE(r.fecha_reserva) = CURDATE() 
+    WHERE r.estado_reserva = 'pendiente'
       AND r.eliminado = 0
-      AND r.estado_reserva NOT IN ('cancelada', 'finalizada') -- CAMBIO AQUÍ
     ORDER BY r.fecha_reserva DESC;
   `;
 
   pool.query(sql, (err, results) => {
-    if (err) return res.status(500).json({ message: "Error en reservas hoy" });
+    if (err) return res.status(500).json({ message: "Error en reservas pendientes" });
     res.json(results);
   });
 };
@@ -88,3 +90,27 @@ export const getReservasProximas = (req, res) => {
     res.json(results);
   });
 };
+
+// =============================
+// RESERVAS POR MES
+// =============================
+export const getReservasPorMes = (req, res) => {
+  const { anio, mes } = req.params;
+  const sql = `
+    SELECT r.id_reserva, t.nombre AS turista, t.email, t.telefono,
+           e.titulo AS excursion, f.fecha AS fecha_excursion, f.hora_salida, 
+           r.cantidad_personas, r.estado_reserva, r.monto_total, r.fecha_reserva
+    FROM Reservas r
+    JOIN Turistas t ON r.id_turista = t.id_turista
+    JOIN FechasExcursion f ON r.id_fecha = f.id_fecha
+    JOIN Excursiones e ON f.id_excursion = e.id_excursion
+    WHERE YEAR(f.fecha) = ? AND MONTH(f.fecha) = ?
+      AND r.eliminado = 0
+    ORDER BY f.fecha ASC;
+  `;
+
+  pool.query(sql, [anio, mes], (err, results) => {
+    if (err) return res.status(500).json({ message: "Error al obtener reservas por mes" });
+    res.json(results);
+  });
+};

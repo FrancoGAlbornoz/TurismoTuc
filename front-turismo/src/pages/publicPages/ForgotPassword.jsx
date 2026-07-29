@@ -14,7 +14,7 @@ export default function ForgotPassword() {
     setIsLoading(true);
 
     try {
-      await axios.post("http://localhost:8000/api/usuarios/forgot-password", { email });
+      await axios.post(`${import.meta.env.VITE_API_URL}/usuarios/forgot-password`, { email });
       Swal.fire({
         icon: "success",
         title: "Correo enviado",

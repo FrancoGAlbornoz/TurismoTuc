@@ -14,7 +14,7 @@ export default function CategoryCarousel() {
   useEffect(() => {
     const fetchCategorias = async () => {
       try {
-        const res = await axios.get("http://localhost:8000/api/categorias");
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/categorias`);
         setCategorias(res.data);
       } catch (err) {
         console.error("Error al cargar categorías:", err);

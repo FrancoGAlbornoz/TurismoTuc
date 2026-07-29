@@ -16,7 +16,7 @@ export default function ViewUsuario() {
   useEffect(() => {
     const fetchUsuario = async () => {
       try {
-        const res = await axios.get(`http://localhost:8000/api/usuarios/${id}`);
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/usuarios/${id}`);
         setUsuario(res.data);
       } catch (err) {
         console.error("Error al obtener usuario:", err);
@@ -30,12 +30,12 @@ export default function ViewUsuario() {
 
   const fetchExcursionesYFechas = async () => {
     try {
-      const resExc = await axios.get(`http://localhost:8000/api/excursiones/guia/${id}`);
+      const resExc = await axios.get(`${import.meta.env.VITE_API_URL}/excursiones/guia/${id}`);
       const excursiones = resExc.data;
 
       const detalles = await Promise.all(
         excursiones.map(async (exc) => {
-          const resFechas = await axios.get(`http://localhost:8000/api/excursiones/${exc.id_excursion}/fechas`);
+          const resFechas = await axios.get(`${import.meta.env.VITE_API_URL}/excursiones/${exc.id_excursion}/fechas`);
           return resFechas.data.map((fecha) => ({
             id_excursion: exc.id_excursion,
             titulo: exc.titulo,
@@ -64,7 +64,7 @@ export default function ViewUsuario() {
   const handleNotificar = async (item) => {
     setNotificando(item.id_fecha);
     try {
-      await axios.post(`http://localhost:8000/api/excursiones/notificar/${item.id_excursion}`, {
+      await axios.post(`${import.meta.env.VITE_API_URL}/excursiones/notificar/${item.id_excursion}`, {
         fecha: item.fecha,
       });
 

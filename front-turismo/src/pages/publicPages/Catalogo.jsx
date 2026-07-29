@@ -32,7 +32,7 @@ export default function Catalogo() {
   const fetchExcursiones = async () => {
     try {
       setLoading(true);
-      let url = "http://localhost:8000/api/excursiones";
+      let url = `${import.meta.env.VITE_API_URL}/excursiones`;
 
       if (categoriaSeleccionada) {
         url += `?categoria=${encodeURIComponent(categoriaSeleccionada)}`;

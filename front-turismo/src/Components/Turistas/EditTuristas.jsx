@@ -20,7 +20,7 @@ export default function EditTurista() {
   useEffect(() => {
     const fetchTurista = async () => {
       try {
-        const res = await axios.get(`http://localhost:8000/api/turistas/${id}`);
+        const res = await axios.get(`${import.meta.env.VITE_API_URL}/turistas/${id}`);
         setTurista(res.data);
       } catch (err) {
         console.error("Error al cargar turista:", err);
@@ -38,7 +38,7 @@ export default function EditTurista() {
     e.preventDefault();
 
     try {
-      await axios.put(`http://localhost:8000/api/turistas/${id}`, turista);
+      await axios.put(`${import.meta.env.VITE_API_URL}/turistas/${id}`, turista);
 
       await Swal.fire({
         icon: "success",
