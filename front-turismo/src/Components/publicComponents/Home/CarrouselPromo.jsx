@@ -10,7 +10,7 @@ export default function CarrouselExcursiones() {
     const fetchExcursiones = async () => {
       try {
         const res = await axios.get(`${import.meta.env.VITE_API_URL}/excursiones`);
-        setExcursiones(res.data.data || []); // Aseguramos que sea un array
+        setExcursiones(res.data.data || []);
         console.log("Datos que llegan al carrusel:", res.data.data);
       } catch (err) {
         console.error("Error cargando carrusel:", err);

@@ -3,14 +3,17 @@ import { useTranslation } from "react-i18next";
 
 export default function SearchResults({ resultados, busquedaRealizada }) {
   const { t } = useTranslation();
+  console.log(resultados);
+console.log(Array.isArray(resultados));
 
   if (!busquedaRealizada) return null;
 
+  const listaResultados = Array.isArray(resultados) ? resultados : [];
   return (
     <section className="container py-5">
       <h4 className="fw-bold mb-4">{t("search.titulo")}</h4>
 
-      {resultados.length === 0 ? (
+      {listaResultados.length === 0 ? (
         <div className="text-center py-5">
           <span className="text-muted fs-5">
             No se encontraron excursiones relacionadas con tu búsqueda.
@@ -18,7 +21,7 @@ export default function SearchResults({ resultados, busquedaRealizada }) {
         </div>
       ) : (
         <div className="row">
-          {resultados.map((exc) => (
+          {listaResultados.map((exc) => (
             <div key={exc.id_excursion} className="col-md-4 mb-4">
               <Link
                 to={`/excursion/${exc.id_excursion}`}
