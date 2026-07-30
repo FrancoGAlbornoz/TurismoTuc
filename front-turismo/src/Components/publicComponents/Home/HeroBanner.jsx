@@ -18,7 +18,7 @@ export default function HeroBanner({ setResultados, setBusquedaRealizada }) {
       setBusquedaRealizada(true);
       const res = await axios.get(`${import.meta.env.VITE_API_URL}/excursiones?q=${query}`);
       console.log("RESULTADOS BUSQUEDA:", res.data);
-      setResultados(res.data);
+      setResultados(res.data.data);
     } catch (err) {
       console.error("Error al buscar excursiones:", err);
       setResultados([]);
@@ -29,7 +29,7 @@ export default function HeroBanner({ setResultados, setBusquedaRealizada }) {
 
   return (
     <section className="hero-section position-relative">
-      {/* 🎥 Video de fondo */}
+      {/* Video de fondo */}
       <video
         autoPlay
         muted
@@ -41,7 +41,7 @@ export default function HeroBanner({ setResultados, setBusquedaRealizada }) {
         Tu navegador no soporta el video.
       </video>
 
-      {/* 🧾 Contenido encima del video */}
+      {/* Contenido encima del video */}
       <div className="hero-overlay d-flex justify-content-center align-items-center text-white text-center px-3">
         <div className="container">
           <div className="row justify-content-center">
